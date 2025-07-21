@@ -60,8 +60,11 @@ build/
 .settings
 .springBeans
 .sts4-cache
+*.properties
 
 ### vue ###
+.env
+
 # Logs
 logs
 *.log
