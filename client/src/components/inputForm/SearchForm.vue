@@ -4,7 +4,7 @@ import DatePickerFromTo from './DatePickerFromTo.vue';
 
 const props = defineProps({
   filters: {
-    type: Array,
+    type: Object,
     required: true
   }
 });
@@ -18,7 +18,7 @@ const searchOptions = ref({});
 // 단, dateRange 타입의 필터는 fromValue와 toValue로 분리하여 처리
 const initializeSearchOptions = () => {
   const options = {};
-  props.filters.forEach(element => {
+  props.filters.filters.forEach(element => {
     if (element.type === 'dateRange') {
       options[element.name + 'From'] = '';
       options[element.name + 'To'] = '';
@@ -42,7 +42,7 @@ const confirm = () => {
 
 // 필터별로 그룹화 (칸 수 고려해서 배치)
 const groupedFilters = computed(() => {
-  const filters = props.filters;
+  const filters = props.filters.filters;
   const rows = [];
   let currentRow = [];
   let currentRowCols = 0;
@@ -76,6 +76,17 @@ const groupedFilters = computed(() => {
 </script>
 <template>
   <div class="p-6 bg-gray-50 shadow-md rounded-md">
+    <!-- 테이블 상단 (타이틀 + 엑셀 다운로드 버튼) -->
+    <div class="grid grid-cols-1 gap-4 mb-4">
+      <div class="flex justify-between">
+        <div>
+          <div class="font-semibold text-2xl">{{ filters.title }}</div>
+        </div>
+        <div class="flex items-center gap-2 flex-nowrap">
+          <!-- <Button label="엑셀 다운로드" severity="success" class="min-w-fit whitespace-nowrap" outlined /> -->
+        </div>
+      </div>
+    </div>
     
     <!-- 각 행별로 렌더링 -->
     <div 
@@ -89,7 +100,7 @@ const groupedFilters = computed(() => {
         class="flex items-center gap-2"
         :class="(filter.type === 'dateRange' || filter.type === 'textarea') ? 'col-span-2' : 'col-span-1'"
       >
-        <span class="text-lg font-medium text-gray-700 whitespace-nowrap w-28 flex-shrink-0 text-right">{{ filter.label }}</span>
+        <span class="text-lg font-medium text-gray-700 whitespace-nowrap w-28 flex-shrink-0 text-center">{{ filter.label }}</span>
 
         <!-- Text Input -->
         <InputText v-if="filter.type === 'text'" :id="'filter-' + rowIndex + '-' + filterIndex" type="text"

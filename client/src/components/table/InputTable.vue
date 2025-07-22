@@ -49,57 +49,23 @@ defineExpose({
         </div>
       </div>
     </div>
-    <DataTable
-      v-model:selection="selectedProducts"
-      class="p-datatable-sm"
-      :value="indexedData"
-      :dataKey="'id'"
-      showGridlines scrollable
-      :scrollHeight="maxHeight"
-      :tableStyle="`min-width: 50rem; max-width: ${props.maxWidth};`"
-    >
-      <Column 
-        v-if="props.selected"
-        selectionMode="multiple"
-        headerStyle="width: 3rem"
-      ></Column>
-      <Column
-        v-for="col in props.columns"
-        :key="col.id"
-        :field="col.field"
-        :header="col.header"
-      >
+    <DataTable v-model:selection="selectedProducts" class="p-datatable-sm" :value="indexedData" :dataKey="'id'"
+      showGridlines scrollable :scrollHeight="maxHeight"
+      :tableStyle="`min-width: 50rem; max-width: ${props.maxWidth};`">
+      <Column v-if="props.selected" selectionMode="multiple" headerStyle="width: 3rem"></Column>
+      <Column v-for="col in props.columns" :key="col.id" :field="col.field" :header="col.header">
         <template #body="slotProps">
-          <InputText
-            v-if="col.inputType === 'text'"
-            v-model="slotProps.data[col.field]"
-          />
-          <InputGroup
-            v-else-if="col.inputType === 'item-search'"
-          >
+          <InputText v-if="col.inputType === 'text'" v-model="slotProps.data[col.field]" />
+          <InputGroup v-else-if="col.inputType === 'item-search'">
             <InputText v-model="slotProps.data[col.field]" />
             <Button icon="pi pi-search" class="p-button-outlined" />
           </InputGroup>
-          <DatePicker
-            v-else-if="col.inputType === 'date'"
-            v-model="slotProps.data[col.field]"
-            :showIcon="true"
-            :showButtonBar="true"
-            dateFormat="yy-mm-dd"
-          />
-          <Select
-            v-else-if="col.inputType === 'select'"
-            v-model="slotProps.data[col.field]"
-            :options="col.options"
-            optionLabel="name"
-            placeholder="Select"
-          />
-          <InputNumber
-            v-else-if="col.inputType === 'number'"
-            v-model="slotProps.data[col.field]"
-            inputId="integeronly"
-            :fluid="true"
-          />
+          <DatePicker v-else-if="col.inputType === 'date'" v-model="slotProps.data[col.field]" :showIcon="true"
+            :showButtonBar="true" dateFormat="yy-mm-dd" />
+          <Select v-else-if="col.inputType === 'select'" v-model="slotProps.data[col.field]" :options="col.options"
+            optionLabel="name" placeholder="Select" />
+          <InputNumber v-else-if="col.inputType === 'number'" v-model="slotProps.data[col.field]" inputId="integeronly"
+            :fluid="true" />
           <template v-else>
             <span v-if="col.type === 'text'" class="text-left">
               {{ slotProps.data[col.field] }}
