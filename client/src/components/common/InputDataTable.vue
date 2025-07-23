@@ -1,86 +1,107 @@
 <script setup>
-import InputText from 'primevue/inputtext';
 import { ref } from 'vue';
+import InputMaster from '@/components/inputForm/InputMaster.vue';
 import InputTable from '@/components/table/InputTable.vue';
+
+const emit = defineEmits(['submit']);
+
+const props = defineProps({
+  title: { 
+    type: String,
+    default: '폼 기본정보'
+  },
+  defaultForm: {
+    type: Object,
+    default: () => ({})
+  },
+  formSchema: {
+    type: Array,
+    required: true
+  },
+  defaultTable: {
+    type: Object,
+    default: () => ({})
+  },
+  columns: {
+    type: Array,
+    required: true
+  },
+  tableHeight: {
+    type: String,
+    default: '400px'
+  }
+});
 
 const inputTableRef = ref(null);
 
-const products = ref([
-  { name: "기본", price: null, date: null, text: 'hello'},
-  { name: null, price: null, date: null, text: '1000.234' }
-]);
 
-const columns = [
-  { field: 'name', header: '상품명', inputType: 'item-search' },
-  { field: 'date', header: '날짜', inputType: 'date' },
-  { field: 'price', header: '가격', inputType: 'number' },
-  { field: 'select', header: '콤보박스', inputType: 'select', options: [{ name: '옵션1', value: 1 }, { name: '옵션2', value: 2 }] },
-  { field: 'text', header: '텍스트', type: 'number' }
-];
+function defaultFormData() {
+  return props.formSchema.map(element => ({
+    [element.id]: props.defaultForm[element.id] || ''
+  })).reduce((acc, curr) => ({
+    ...acc, ...curr
+  }), {});
+}
+
+function defaultTableData() {
+  return props.columns.map(column => ({
+    [column.field]: props.defaultTable[column.field] || ''
+  })).reduce((acc, curr) => ({
+    ...acc, ...curr
+  }), {});
+}
+
+function defaultTable() {
+  return [ defaultTableData() ];
+}
+
+const formData = ref(defaultFormData());
+const tableData = ref(defaultTable());
+
+const resetFormHandler = () => {
+  formData.value = defaultFormData();
+  tableData.value = defaultTable();
+};
+
+const saveFormHandler = () => {
+  emit('submit', formData.value, tableData.value.map(({id, ...rest}) => rest));
+};
 
 const addProductHandler = () => {
-  products.value.push({ name: null, price: null, date: null, text: '' });
+  tableData.value.push({ ...props.columns.map(column => ({
+      [column.field]: props.defaultTable[column.field] || ''
+    })).reduce((acc, curr) => ({
+      ...acc, ...curr
+    }), {}), id: tableData.value.reduce(
+    (max, current) => (current.id > max ? current.id : max)
+    , 0) + 1 
+  });
 };
 
 const removeProductHandler = () => {
   const selected = inputTableRef.value.getSelection();
   const selectedIds = selected.map(item => item.id);
-  products.value = products.value.filter((p, idx) => !selectedIds.includes(idx + 1));
+  
+  tableData.value = tableData.value.filter((p, idx) => !selectedIds.includes(p.id));
   inputTableRef.value.clearSelection();
 };
 </script>
 <template>
   <Fluid>
-    <div class="card flex flex-col gap-4">
-      <div class="flex justify-between items-center">
-        <div class="font-semibold text-xl">발주서 정보</div>
-        <div class="flex gap-2">
-          <Button label="등록"></Button>
-          <Button label="취소" severity="secondary" />
-        </div>
-      </div>
-      <div class="grid grid-cols-2 gap-6">
-        <!-- 왼쪽 컬럼 -->
-        <div class="flex flex-col gap-4">
-          <div class="grid grid-cols-12 gap-2">
-            <label for="name1" class="flex items-center justify-center col-span-12 mb-2 sm:col-span-3 sm:mb-0 bg-green-200">Name</label>
-            <div class="col-span-12 sm:col-span-9">
-              <InputText id="name1" type="text" />
-            </div>
-          </div>
-          <div class="grid grid-cols-12 gap-2">
-            <label for="email1" class="flex items-center justify-center col-span-12 mb-2 sm:col-span-3 sm:mb-0 bg-green-200">Email</label>
-            <div class="col-span-12 sm:col-span-9">
-              <InputText id="email1" type="text" />
-            </div>
-          </div>
-        </div>
-          
-          <!-- 오른쪽 컬럼 -->
-          <div class="flex flex-col gap-4">
-            <div class="grid grid-cols-12 gap-2">
-              <label for="name2" class="flex items-center justify-center col-span-12 mb-2 sm:col-span-3 sm:mb-0 bg-green-200">Name</label>
-              <div class="col-span-12 sm:col-span-9">
-                <InputText id="name2" type="text" />
-              </div>
-            </div>
-            <div class="grid grid-cols-12 gap-2">
-              <label for="email2" class="flex items-center justify-center col-span-12 mb-2 sm:col-span-3 sm:mb-0 bg-green-200">Email</label>
-              <div class="col-span-12 sm:col-span-9">
-                <InputText id="email2" type="text" />
-              </div>
-            </div>
-          </div>
-      </div>
-    </div>
+    <InputMaster title="발주서정보" :formData="formData" :formSchema="props.formSchema">
+      <template #btn>
+        <Button label="초기화" class="min-w-fit whitespace-nowrap" severity="secondary" @click="resetFormHandler" />
+        <Button label="저장" @click="saveFormHandler" />
+      </template>
+    </InputMaster>
 
     <InputTable 
       :ref="'inputTableRef'"
-      title="테이블 인풋"
-      :data="products"
-      :columns="columns"
+      title="상품 목록"
+      :data="tableData"
+      :columns="props.columns"
       :selected="true"
-      maxHeight="800px"
+      :maxHeight="props.tableHeight"
     >
       <template #btn>
         <Button label="추가" @click="addProductHandler" />
@@ -89,5 +110,3 @@ const removeProductHandler = () => {
     </InputTable>
   </Fluid>
 </template>
-<style scoped>
-</style>
