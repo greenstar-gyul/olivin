@@ -16,10 +16,6 @@ const props = defineProps({
     type: Object,
     required: true
   },
-  title: {
-    type: String,
-    default: ''
-  },
   columns: {
     type: Array,
     default: []
@@ -67,7 +63,7 @@ watch(
     <div class="grid grid-cols-1 gap-4 mb-4">
       <div class="flex justify-between">
         <div>
-          <div class="font-semibold text-2xl">{{ title }}</div>
+          <div class="font-semibold text-2xl">{{ header.title }}</div>
         </div>
         <div class="flex items-center gap-2 flex-nowrap">
           <!-- <Button label="엑셀 다운로드" severity="success" class="min-w-fit whitespace-nowrap" outlined /> -->
@@ -81,10 +77,12 @@ watch(
       <!-- <Column selectionMode="multiple" headerStyle="width: 3rem" /> -->
 
       <!-- 동적 컬럼 생성 -->
-      <Column v-for="item in items" :key="item" :field="item" :header="header[item] ?? item">
+      <Column v-for="item in items" :key="item" :field="item" :header="header.header[item] ?? item">
         <!-- 날짜포맷변경을 위해 추가한 파트 -->
         <template #body="slotProps">
-          {{ slotProps.data[item] }}
+          <span :class="header.rightAligned && header.rightAligned.includes(item) ? 'text-right block' : ''">
+            {{ slotProps.data[item] }}
+          </span>
         </template>
       </Column>
     </DataTable>
