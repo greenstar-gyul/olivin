@@ -75,7 +75,7 @@ const groupedFilters = computed(() => {
 
 </script>
 <template>
-  <div class="p-6 bg-gray-50 shadow-md rounded-md">
+  <div class="card flex flex-col gap-4">
     <!-- 테이블 상단 (타이틀 + 엑셀 다운로드 버튼) -->
     <div class="grid grid-cols-1 gap-4 mb-4">
       <div class="flex justify-between">

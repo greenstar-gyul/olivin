@@ -28,10 +28,10 @@ filters.value.filters = [
   { type: 'text', label: '제품명', value: '', placeholder: '', name: 'name' },
   { type: 'text', label: '제품분류', value: '', placeholder: '', name: 'category' },
   { type: 'text', label: '공급사', value: '', fromPlaceholder: '', name: 'publisher' },
+  { type: 'text', label: '지점', value: '', placeholder: '', name: 'store' },
   { type: 'dateRange', label: '공급사', value: '', fromPlaceholder: '', name: 'publisher' },
   { type: 'dateRange', label: '공급사', value: '', fromPlaceholder: '', name: 'publisher' },
   { type: 'dateRange', label: '공급사', value: '', fromPlaceholder: '', name: 'publisher' },
-  { type: 'text', label: '지점', value: '', placeholder: '', name: 'store' }
 ];
 
 const searchData = (searchOptions) => {

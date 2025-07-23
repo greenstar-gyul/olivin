@@ -1,58 +1,63 @@
 <script setup>
-import InputText from 'primevue/inputtext';
-import { ref } from 'vue';
-import InputTable from '@/components/table/InputTable.vue';
-import InputMaster from '@/components/inputForm/InputMaster.vue';
+import InputDataTable from '@/components/common/InputDataTable.vue';
 
-const inputTableRef = ref(null);
+/* Form Data */
 
-const products = ref([
-  { name: "기본", price: null, date: null, text: 'hello'},
-  { name: null, price: null, date: null, text: '1000.234' }
-]);
-
-const columns = [
-  { field: 'name', header: '상품명', inputType: 'item-search' },
-  { field: 'date', header: '날짜', inputType: 'date' },
-  { field: 'price', header: '가격', inputType: 'number' },
-  { field: 'price', header: '가격', inputType: 'number' },
-  { field: 'price', header: '가격', inputType: 'number' },
-  { field: 'select', header: '콤보박스', inputType: 'select', options: [{ name: '옵션1', value: 1 }, { name: '옵션2', value: 2 }] },
-  { field: 'text', header: '텍스트', type: 'number' }
-];
-
-const addProductHandler = () => {
-  products.value.push({ name: null, price: null, date: null, text: '' });
+// 폼 기본값
+const defaultForm = {
+  data: 0.11,
 };
 
-const removeProductHandler = () => {
-  const selected = inputTableRef.value.getSelection();
-  const selectedIds = selected.map(item => item.id);
-  products.value = products.value.filter((p, idx) => !selectedIds.includes(idx + 1));
-  inputTableRef.value.clearSelection();
+// 폼 스키마
+const formSchema = [
+  { type: 'item-search', label: '상품명', id: 'itemName' },
+  { type: 'text', label: '상품설명', id: 'description' },
+  { type: 'date', label: '날짜', id: 'date' },
+  { type: 'number-float', label: '가격', id: 'price' },
+  { type: 'select', label: '콤보박스', id: 'select', 
+    options: [
+      { name: '옵션1', value: 1 },
+      { name: '옵션2', value: 2 }
+    ]
+  },
+  { type: 'data', label: '데이터', id: 'data', data: 'number' },
+];
+
+/* Input Table */
+
+// 테이블 기본값
+const defaultTable = {
+  name: '기본',
+  price: '100',
+  text: 'hello'
+};
+
+// 테이블 컬럼 정의
+const columns = [
+  { inputType: 'item-search', header: '상품명', field: 'name' },
+  { inputType: 'date', header: '날짜', field: 'date' },
+  { inputType: 'number', header: '가격', field: 'price' },
+  { inputType: 'select', header: '콤보박스', field: 'select',
+    options: [
+      { name: '옵션1', value: 1 },
+      { name: '옵션2', value: 2 }
+    ]
+  },
+  { type: 'number', header: '텍스트', field: 'text' }
+];
+
+
+/* Submit */
+
+// 폼과 테이블 데이터를 저장하는 핸들러
+const saveFormHandler = (formData, tableData) => {
+  console.log('formData:', formData);
+  console.log('tableData:', tableData);
 };
 </script>
 <template>
-  <Fluid>
-    <InputMaster 
-    :masterInputs="{
-      title: '마스터 - 디테일 입력 테스트',
-      inputs: [
-        { name: 'name', label: '이름', type: 'text', placeholder: '이름을 입력하세요' },
-        { name: 'email', label: '이메일', type: 'text', placeholder: '이메일을 입력하세요' },
-        { name: 'date', label: '날짜', type: 'date', placeholder: '날짜를 선택하세요' },
-        { name: 'number', label: '숫자', type: 'number', placeholder: '숫자를 입력하세요' }
-      ]
-    }"></InputMaster>
-
-    <InputTable :ref="'inputTableRef'" title="테이블 인풋" :data="products" :columns="columns" :selected="true"
-      maxHeight="800px">
-      <template #btn>
-        <Button label="추가" @click="addProductHandler" />
-        <Button label="삭제" severity="danger" @click="removeProductHandler" />
-      </template>
-    </InputTable>
-  </Fluid>
+  <InputDataTable title="발주서정보"
+    :defaultForm="defaultForm" :formSchema="formSchema"
+    :defaultTable="defaultTable" :columns="columns"
+    @submit="saveFormHandler" />
 </template>
-<style scoped>
-</style>
