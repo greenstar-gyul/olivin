@@ -44,29 +44,38 @@ function defaultFormData() {
 }
 
 function defaultTableData() {
-  return [
-    props.columns.map(column => ({
-      [column.field]: props.defaultTable[column.field] || ''
-    })).reduce((acc, curr) => ({
-      ...acc, ...curr
-    }), {})
-  ];
+  return props.columns.map(column => ({
+    [column.field]: props.defaultTable[column.field] || ''
+  })).reduce((acc, curr) => ({
+    ...acc, ...curr
+  }), {});
+}
+
+function defaultTable() {
+  return [ defaultTableData() ];
 }
 
 const formData = ref(defaultFormData());
-const tableData = ref(defaultTableData());
+const tableData = ref(defaultTable());
 
 const resetFormHandler = () => {
   formData.value = defaultFormData();
-  tableData.value = defaultTableData();
+  tableData.value = defaultTable();
 };
 
 const saveFormHandler = () => {
-  emit('submit', formData.value, tableData.value);
+  emit('submit', formData.value, tableData.value.map(({id, ...rest}) => rest));
 };
 
 const addProductHandler = () => {
-  tableData.value.push({ ...props.defaultTable, id: tableData.value.length + 1 });
+  tableData.value.push({ ...props.columns.map(column => ({
+      [column.field]: props.defaultTable[column.field] || ''
+    })).reduce((acc, curr) => ({
+      ...acc, ...curr
+    }), {}), id: tableData.value.reduce(
+    (max, current) => (current.id > max ? current.id : max)
+    , 0) + 1 
+  });
 };
 
 const removeProductHandler = () => {
