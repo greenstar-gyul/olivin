@@ -7,21 +7,37 @@ import InputNumber from 'primevue/inputnumber';
 import DatePicker from 'primevue/datepicker';
 
 const props = defineProps({
-  data: { type: Array, required: true },
-  columns: { type: Array, required: true },
-  header: { type: Object, default: () => ({}) },
-  title: { type: String, default: '기본 테이블 폼' },
-  selected: { type: Boolean, default: false },
-  maxHeight: { type: String, default: '400px' },
-  maxWidth: { type: String, default: '100%' },
+  data: {
+    type: Array,
+    required: true
+  },
+  columns: {
+    type: Array,
+    required: true
+  },
+  header: {
+    type: Object,
+    default: () => ({})
+  },
+  title: {
+    type: String,
+    default: '기본 테이블 폼'
+  },
+  selected: {
+    type: Boolean,
+    default: false
+  },
+  maxHeight: {
+    type: String,
+    default: '400px'
+  },
+  maxWidth: {
+    type: String,
+    default: '100%'
+  }
 });
 
 const selectedProducts = ref([]);
-
-const indexedData = computed(() => {
-  return props.data.map((item, idx) => ({ ...item, id: idx + 1 }));
-});
-
 
 const getSelection = () => {
   return selectedProducts.value;
@@ -49,23 +65,37 @@ defineExpose({
         </div>
       </div>
     </div>
-    <DataTable v-model:selection="selectedProducts" class="p-datatable-sm" :value="indexedData" :dataKey="'id'"
+    <DataTable v-model:selection="selectedProducts" class="p-datatable-sm"
+      :value="data" :dataKey="'id'"
       showGridlines scrollable :scrollHeight="maxHeight"
-      :tableStyle="`min-width: 50rem; max-width: ${props.maxWidth};`">
+      :tableStyle="`min-width: 50rem; max-width: ${props.maxWidth};`"
+    >
       <Column v-if="props.selected" selectionMode="multiple" headerStyle="width: 3rem"></Column>
+
       <Column v-for="col in props.columns" :key="col.id" :field="col.field" :header="col.header">
         <template #body="slotProps">
-          <InputText v-if="col.inputType === 'text'" v-model="slotProps.data[col.field]" />
+          <!-- Text Input -->
+          <InputText v-if="col.inputType === 'text'" v-model="slotProps.data[col.field]" :placeholder="col.placeholder || 'Enter text...'" />
+
+          <!-- Item Search -->
           <InputGroup v-else-if="col.inputType === 'item-search'">
-            <InputText v-model="slotProps.data[col.field]" />
+            <InputText v-model="slotProps.data[col.field]" :placeholder="col.placeholder || 'Enter item name...'" />
             <Button icon="pi pi-search" class="p-button-outlined" />
           </InputGroup>
+
+          <!-- DatePicker -->
           <DatePicker v-else-if="col.inputType === 'date'" v-model="slotProps.data[col.field]" :showIcon="true"
-            :showButtonBar="true" dateFormat="yy-mm-dd" />
+            :showButtonBar="true" dateFormat="yy-mm-dd" :placeholder="col.placeholder || 'Select date...'" />
+
+          <!-- Select -->
           <Select v-else-if="col.inputType === 'select'" v-model="slotProps.data[col.field]" :options="col.options"
-            optionLabel="name" placeholder="Select" />
+            optionLabel="name" :placeholder="col.placeholder || 'Select option...'" />
+
+          <!-- Number Input -->
           <InputNumber v-else-if="col.inputType === 'number'" v-model="slotProps.data[col.field]" inputId="integeronly"
-            :fluid="true" />
+            :fluid="true" :placeholder="col.placeholder || 'Enter number...'" />
+
+          <!-- Data -->
           <template v-else>
             <span v-if="col.type === 'text'" class="text-left">
               {{ slotProps.data[col.field] }}

@@ -1,79 +1,76 @@
 <script setup>
-import InputText from 'primevue/inputtext';
-import { ref } from 'vue';
-import InputTable from '@/components/table/InputTable.vue';
 
-const inputTableRef = ref(null);
-
-const products = ref([
-  { name: "기본", price: null, date: null, text: 'hello'},
-  { name: null, price: null, date: null, text: '1000.234' }
-]);
-
-const columns = [
-  { field: 'name', header: '상품명', inputType: 'item-search' },
-  { field: 'date', header: '날짜', inputType: 'date' },
-  { field: 'price', header: '가격', inputType: 'number' },
-  { field: 'select', header: '콤보박스', inputType: 'select', options: [{ name: '옵션1', value: 1 }, { name: '옵션2', value: 2 }] },
-  { field: 'text', header: '텍스트', type: 'number' }
-];
-
-const addProductHandler = () => {
-  products.value.push({ name: null, price: null, date: null, text: '' });
-};
-
-const removeProductHandler = () => {
-  const selected = inputTableRef.value.getSelection();
-  const selectedIds = selected.map(item => item.id);
-  products.value = products.value.filter((p, idx) => !selectedIds.includes(idx + 1));
-  inputTableRef.value.clearSelection();
-};
+const props = defineProps({
+  title: { 
+    type: String,
+    default: '기본 테이블 폼'
+  },
+  formData: {
+    type: Object,
+    required: true
+  },
+  formSchema: {
+    type: Object,
+    required: true
+  }
+});
 </script>
 <template>
   <Fluid>
     <div class="card flex flex-col gap-4">
       <div class="flex justify-between items-center">
-        <div class="font-semibold text-xl">발주서 정보</div>
-        <div class="flex gap-2">
-          <Button label="등록"></Button>
-          <Button label="취소" severity="secondary" />
+        <div class="font-semibold text-2xl">{{ title }}</div>
+        <div class="flex items-center gap-2 flex-nowrap">
+          <slot name="btn"></slot>
         </div>
       </div>
       <div class="grid grid-cols-2 gap-6">
-        <!-- 왼쪽 컬럼 -->
-        <div class="flex flex-col gap-4">
+        <div v-for="(element, idx) in formSchema" :key="idx" class="flex flex-col gap-4">
           <div class="grid grid-cols-12 gap-2">
-            <label for="name1" class="flex items-center justify-center col-span-12 mb-2 sm:col-span-3 sm:mb-0 bg-green-200">Name</label>
+            <label :for="'form-' + element.id" class="flex items-center justify-center col-span-12 mb-2 sm:col-span-3 sm:mb-0">{{ element.label }}</label>
             <div class="col-span-12 sm:col-span-9">
-              <InputText id="name1" type="text" />
-            </div>
-          </div>
-          <div class="grid grid-cols-12 gap-2">
-            <label for="email1" class="flex items-center justify-center col-span-12 mb-2 sm:col-span-3 sm:mb-0 bg-green-200">Email</label>
-            <div class="col-span-12 sm:col-span-9">
-              <InputText id="email1" type="text" />
+              <!-- 입력 : text, combobox, number(float), data, searchInput(공급) -->
+              
+              <!-- Text Input -->
+              <InputText v-if="element.type === 'text'" :id="'form-' + element.id" type="text"
+                v-model="formData[element.id]" :placeholder="element.placeholder || 'Enter text...'" />
+
+              <InputGroup v-else-if="element.type === 'item-search'">
+                <InputText v-model="formData[element.id]" :placeholder="element.placeholder || 'Enter item name...'" />
+                <Button icon="pi pi-search" class="p-button-outlined" />
+              </InputGroup>
+
+              <!-- Textarea Input -->
+              <!-- <Textarea v-else-if="element.type === 'textarea'" :id="'form-' + element.id"
+                v-model="formData[element.id]" :placeholder="element.placeholder || ''" rows="3" /> -->
+              
+              <!-- Date Picker -->
+              <DatePicker v-else-if="element.type === 'date'" :id="'form-' + element.id"
+                v-model="formData[element.id]" :placeholder="element.placeholder || 'Enter date...'"
+                dateFormat="yy-mm-dd" class="flex-1" :show-icon="true" :show-button-bar="true" />
+
+              <!-- Select Input -->
+              <Select v-else-if="element.type === 'select'" :id="'form-' + element.id" v-model="formData[element.id]" :options="element.options"
+                optionLabel="name" :placeholder="element.placeholder || 'Select option...'" />
+
+              <!-- Number Input -->
+              <InputNumber v-else-if="element.type === 'number-float'" :id="'form-' + element.id" v-model="formData[element.id]" inputId="minmaxfraction"
+                :placeholder="element.placeholder || 'Enter number...'" :fluid="true" :minFractionDigits="2" />
+              <InputNumber v-else-if="element.type === 'number'" :id="'form-' + element.id" v-model="formData[element.id]" inputId="integeronly"
+                :placeholder="element.placeholder || 'Enter number...'" :fluid="true" />
+              
+              <template v-else-if="element.type === 'data'">
+                <span v-if="element.data === 'text'" class="text-left">
+                  {{ formData[element.id] }}
+                </span>
+                <span v-else-if="element.data === 'number'" class="text-right">
+                  {{ Number(formData[element.id]).toLocaleString() }}
+                </span>
+              </template>
             </div>
           </div>
         </div>
-          
-          <!-- 오른쪽 컬럼 -->
-          <div class="flex flex-col gap-4">
-            <div class="grid grid-cols-12 gap-2">
-              <label for="name2" class="flex items-center justify-center col-span-12 mb-2 sm:col-span-3 sm:mb-0 bg-green-200">Name</label>
-              <div class="col-span-12 sm:col-span-9">
-                <InputText id="name2" type="text" />
-              </div>
-            </div>
-            <div class="grid grid-cols-12 gap-2">
-              <label for="email2" class="flex items-center justify-center col-span-12 mb-2 sm:col-span-3 sm:mb-0 bg-green-200">Email</label>
-              <div class="col-span-12 sm:col-span-9">
-                <InputText id="email2" type="text" />
-              </div>
-            </div>
-          </div>
       </div>
     </div>
   </Fluid>
 </template>
-<style scoped>
-</style>
