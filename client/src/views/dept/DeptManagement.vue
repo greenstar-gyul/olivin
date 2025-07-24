@@ -43,6 +43,5 @@ const searchData = (searchOptions) => {
 
 </script>
 <template>
-  <SearchForm :filters="filters" :items="items" :header="header" @searchData="searchData"></SearchForm>
   <FrozenTable :filters="filters" :items="items" :header="header" @searchData="searchData"></FrozenTable>
 </template>

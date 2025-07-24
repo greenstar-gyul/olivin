@@ -17,7 +17,12 @@ const router = createRouter({
                 {
                     path: '/views/A_leder',
                     name: '거래처원장',
-                    component: () => import('@/views/A_leder/LederMangement.vue')
+                    component: () => import('@/views/account/AccountLeder.vue')
+                },
+                {
+                    path: '/views/Dept',
+                    name: '부서기준정보',
+                    component: () => import('@/views/account/DeptManagement.vue')
                 },
                 {
                     path: '/uikit/formlayout',

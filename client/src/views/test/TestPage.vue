@@ -114,6 +114,7 @@ const searchData = (searchOptions) => {
   console.log('Searching with options:', searchOptions);
 };
 
+<<<<<<< HEAD
 // 검색 모달을 열 때 호출되는 함수
 // case 문을 사용하여 모달 이름(item-search 타입의 name을 따름)에 따라 다른 모달을 열 수 있도록 구현
 const handleOpenModal = (filterName) => {
@@ -193,6 +194,11 @@ const searchModal2 = (searchValue) => {
 onMounted(() => {
   getSampleData();
 });
+=======
+function searchData(options) {
+  
+}
+>>>>>>> 5b8755b (거래처원장 2025.07.24)
 
 </script>
 <template>
