@@ -48,6 +48,8 @@ const model = ref([
         to: '/account',
         items: [
             { label: '거래처원장', icon: 'pi pi-fw pi-book', to: '/views/account' },
+            { label: '부서정보', icon: 'pi pi-fw pi-tablet', to: '/views/dept' },
+            { label: '사원정보', icon: 'pi pi-fw pi-id-card', to: '/views/emp' },
         ]
     },
     {   

@@ -14,14 +14,19 @@ const router = createRouter({
                     component: () => import('@/views/Dashboard.vue')
                 },
                 {
-                    path: '/views/A_leder',
+                    path: '/views/account',
                     name: '거래처원장',
                     component: () => import('@/views/account/AccountLeder.vue')
                 },
                 {
-                    path: '/views/Dept',
+                    path: '/views/dept',
                     name: '부서기준정보',
-                    component: () => import('@/views/account/DeptManagement.vue')
+                    component: () => import('@/views/dept/DeptManagement.vue')
+                },
+                {
+                    path: '/views/emp',
+                    name: '사원기준정보',
+                    component: () => import('@/views/emp/EmpManagement.vue')
                 },
                 {
                     path: '/uikit/formlayout',

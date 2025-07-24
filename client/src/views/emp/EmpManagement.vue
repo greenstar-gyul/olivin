@@ -7,8 +7,8 @@ const filters = ref({
   filters: [
     { type: 'text', label: '회사코드', value: '', placeholder: '', name: 'name' },
     { type: 'text', label: '회사명', value: '', placeholder: '', name: 'category' },
-    { type: 'text', label: '부서명', value: '', placeholder: '', name: 'store' },
     { type: 'text', label: '부서정보', value: '', fromPlaceholder: '', name: 'publisher' },
+    { type: 'text', label: '사원이름', value: '', placeholder: '', name: 'store' },
   ]
 });
 
@@ -39,20 +39,20 @@ const inputs = ref({
   inputs: [
     { type: 'text', label: '회사정보', value: '', placeholder: '', name: 'name' },
     { type: 'text', label: '회사명', value: '', placeholder: '', name: 'category' },
-    { type: 'select', label: '부서명', value:'', placeholder: '', name: 'select1', options: [
+    { type: 'select', label: '직급', value:'', placeholder: '', name: 'select1', options: [
       { name: '직급 1', value: '직급 1' },
       { name: '지급 2', value: '직급 2' },
       { name: '직급 3', value: '직급 3' }
     ]},
-    { type: 'select', label: '직급', value:'', placeholder: '', name: 'select2', options: [
+    { type: 'select', label: '부서명', value:'', placeholder: '', name: 'select2', options: [
       { name: '부서 1', value: '부서 1' },
       { name: '부서 2', value: '부서 2' },
       { name: '부서 3', value: '부서 3' }
     ]},
-    { type: 'text', label: '등록자', value: '', placeholder: '', name: 'store' },
-    { type: 'text', label: '연락처', value: '', fromPlaceholder: '', name: 'id' },
-    { type: 'text', label: '기타', value: '', fromPlaceholder: '', name: 'password' },
-    { type: 'textarea', label: '비고', value: '', fromPlaceholder: '', name: 'note' },
+    { type: 'number', label: '사원코드', value: '', placeholder: '', name: 'nums' },
+    { type: 'text', label: '사원이름', value: '', placeholder: '', name: 'store' },
+    { type: 'text', label: '아이디', value: '', fromPlaceholder: '', name: 'id' },
+    { type: 'text', label: '비밀번호', value: '', fromPlaceholder: '', name: 'password' },
   ]
 })
 
