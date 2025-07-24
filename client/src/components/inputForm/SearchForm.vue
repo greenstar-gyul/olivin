@@ -127,6 +127,11 @@ const groupedFilters = computed(() => {
         <InputNumber v-else-if="filter.type === 'number'" :id="'filter-' + rowIndex + '-' + filterIndex"
           v-model="searchOptions[filter.name]" :placeholder="filter.placeholder || 'Enter number...'" class="flex-1" />
 
+        <!-- Select Input -->
+        <Select v-else-if="filter.type === 'select'" :id="'filter-' + rowIndex + '-' + filterIndex"
+          v-model="searchOptions[filter.name]" :options="filter.options"
+          optionLabel="name" optionValue="value" :placeholder="filter.placeholder || 'Select option...'" class="flex-1" />
+
         <!-- Default fallback to text input -->
         <InputText v-else :id="'filter-' + rowIndex + '-' + filterIndex" type="text"
           v-model="searchOptions[filter.name]" :placeholder="filter.placeholder || 'Enter text...'" class="flex-1" />
