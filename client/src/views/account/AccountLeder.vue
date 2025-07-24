@@ -27,13 +27,15 @@ items.value = StockService.getStockList();
 const filters = ref({});
 filters.value.title = '조회 조건';
 filters.value.filters = [
-  { type: 'text', label: '제품명', value: '', placeholder: '', name: 'name' },
-  { type: 'text', label: '제품분류', value: '', placeholder: '', name: 'category' },
-  { type: 'text', label: '공급사', value: '', fromPlaceholder: '', name: 'publisher' },
-  { type: 'text', label: '지점', value: '', placeholder: '', name: 'store' },
+  { type: 'select', label: '회계단위', value:'', placeholder: '', name: 'select2', options: [
+      { name: '단위 1', value: '전기' },
+      { name: '단위 2', value: '당해' }
+    ]},
+  { type: 'text', label: '계정코드', value: '', placeholder: '', name: 'category' },
+  { type: 'text', label: '거래처코드', value: '', placeholder: '', name: 'store' },
+  { type: 'text', label: '거래처명', value: '', placeholder: '', name: 'store' },
   { type: 'dateRange', label: '회계기간', value: '', fromPlaceholder: '', name: 'publisher' },
-  { type: 'dateRange', label: '공급사', value: '', fromPlaceholder: '', name: 'publisher' },
-  { type: 'dateRange', label: '공급사', value: '', fromPlaceholder: '', name: 'publisher' },
+  { type: 'text', label: '이름', value: '', fromPlaceholder: '', name: 'publisher' },
 ];
 
 const searchData = (searchOptions) => {
