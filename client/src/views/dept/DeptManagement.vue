@@ -3,9 +3,11 @@
 import { ref } from 'vue';
 import SearchTable from '../../components/common/SearchTable.vue';
 import { StockService } from '@/service/StockService';
+import FrozenTable from '@/components/common/FrozenTable.vue';
+import SearchForm from '@/components/inputForm/SearchForm.vue';
 
 const header = ref({
-  title: '조회 테스트',
+  title: '거래처원장',
   header: {
     id: 'ID', 
     name: '제품명', 
@@ -29,7 +31,7 @@ filters.value.filters = [
   { type: 'text', label: '제품분류', value: '', placeholder: '', name: 'category' },
   { type: 'text', label: '공급사', value: '', fromPlaceholder: '', name: 'publisher' },
   { type: 'text', label: '지점', value: '', placeholder: '', name: 'store' },
-  { type: 'dateRange', label: '공급사', value: '', fromPlaceholder: '', name: 'publisher' },
+  { type: 'dateRange', label: '회계기간', value: '', fromPlaceholder: '', name: 'publisher' },
   { type: 'dateRange', label: '공급사', value: '', fromPlaceholder: '', name: 'publisher' },
   { type: 'dateRange', label: '공급사', value: '', fromPlaceholder: '', name: 'publisher' },
 ];
@@ -38,11 +40,8 @@ const searchData = (searchOptions) => {
   console.log('Searching with options:', searchOptions);
 };
 
-function searchData(options) {
-  
-}
 
 </script>
 <template>
-  <SearchTable :filters="filters" :items="items" :header="header" @searchData="searchData"></SearchTable>
+  <FrozenTable :filters="filters" :items="items" :header="header" @searchData="searchData"></FrozenTable>
 </template>
