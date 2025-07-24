@@ -114,6 +114,11 @@ const router = createRouter({
                     name: 'test2',
                     component: () => import('@/views/test/InputTestPage.vue')
                 },
+                {
+                    path: '/test3',
+                    name: 'test3',
+                    component: () => import('@/views/test/StandardInputTestPage.vue')
+                },
             ]
         },
         {
