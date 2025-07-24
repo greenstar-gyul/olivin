@@ -32,6 +32,11 @@ filters.value.filters = [
   { type: 'dateRange', label: '공급사', value: '', fromPlaceholder: '', name: 'publisher' },
   { type: 'dateRange', label: '공급사', value: '', fromPlaceholder: '', name: 'publisher' },
   { type: 'dateRange', label: '공급사', value: '', fromPlaceholder: '', name: 'publisher' },
+  { type: 'select', label: '선택', value: '', placeholder: '', name: 'select', options: [
+    { name: '옵션 1', value: 'Option 1' },
+    { name: '옵션 2', value: 'Option 2' },
+    { name: '옵션 3', value: 'Option 3' }
+  ] }
 ];
 
 const searchData = (searchOptions) => {
