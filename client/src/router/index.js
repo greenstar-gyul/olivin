@@ -120,6 +120,16 @@ const router = createRouter({
                     component: () => import('@/views/test/StandardInputTestPage.vue')
                 },
                 {
+                    path: '/test4',
+                    name: 'test4',
+                    component: () => import('@/views/test/ViewTestPage.vue')
+                },
+                {
+                    path: '/test5',
+                    name: 'test5',
+                    component: () => import('@/views/test/InputMultiTablePage.vue')
+                },
+                {
                     path: '/standard/supplier',
                     name: 'supplier',
                     component: () => import('@/views/standard/SupplierStandardPage.vue')
