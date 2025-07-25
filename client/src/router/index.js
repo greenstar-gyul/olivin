@@ -151,6 +151,16 @@ const router = createRouter({
                     component: () => import('@/views/test/InputTestPage.vue'),
                     meta: { permissions: ['system.manage'] }
                 }
+                {
+                    path: '/test4',
+                    name: 'test4',
+                    component: () => import('@/views/test/ViewTestPage.vue')
+                },
+                {
+                    path: '/test5',
+                    name: 'test5',
+                    component: () => import('@/views/test/InputMultiTablePage.vue')
+                },
             ]
         },
         // 로그인 불필요 페이지들
