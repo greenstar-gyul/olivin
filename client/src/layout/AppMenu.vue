@@ -29,6 +29,7 @@ const model = ref([
         label: '재고 / 물류',
         to: '/inventory',
         items: [
+            { label: '출고관리', icon: 'pi pi-fw pi-book', to: '/outbndMgmt' },
 
         ]
     },
