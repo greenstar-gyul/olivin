@@ -1,66 +1,85 @@
 <script setup>
-import StandardInput from '@/components/common/StandardInput.vue';
+import StandardInput from '@/components/common/StandardApproval.vue';
 import { ref } from 'vue';
 
 const filters = ref({
-  title: '조회 조건',
+  title: '승인 요청 조회',
   filters: [
-    { type: 'text', label: '제품명', value: '', placeholder: '', name: 'name' },
-    { type: 'text', label: '제품분류', value: '', placeholder: '', name: 'category' },
-    { type: 'text', label: '공급사', value: '', fromPlaceholder: '', name: 'publisher' },
-    { type: 'text', label: '지점', value: '', placeholder: '', name: 'store' },
-    { type: 'dateRange', label: '날짜 범위', value: '', fromPlaceholder: '', name: 'dateRange' }
+    { type: 'text', label: '제품명', value: '', name: 'name' },
+    { type: 'text', label: '제품분류', value: '', name: 'category' },
+    { type: 'text', label: '공급사', value: '', name: 'publisher' },
+    { type: 'dateRange', label: '신청일 범위', value: '', name: 'dateRange' }
   ]
 });
 
 const items = ref([
-  { id: 1, name: '제품 A', category: '카테고리 1', publisher: '공급사 A', store: '지점 A', size: '규격 A', quantity: 100, safe: 50 },
-  { id: 2, name: '제품 B', category: '카테고리 2', publisher: '공급사 B', store: '지점 B', size: '규격 B', quantity: 200, safe: 100 },
-  { id: 3, name: '제품 C', category: '카테고리 3', publisher: '공급사 C', store: '지점 C', size: '규격 C', quantity: 300, safe: 150 },
-  
+  { id: 1, name: '블루베리 크림', category: '화장품', publisher: '제이뷰티', price: 13000, registrant: '김영희', requestDate: '2025-07-22' },
+  { id: 2, name: '시카폼 클렌저', category: '화장품', publisher: '에버뷰티', price: 9500, registrant: '홍길동', requestDate: '2025-07-23' },
 ]);
 
 const header = ref({
-  title: '조회 테스트',
+  title: '제품 승인 요청 목록',
   header: {
-    id: 'ID', 
-    name: '제품명', 
-    category: '제품분류', 
-    publisher: '공급사', 
-    store: '지점', 
-    size: '규격', 
-    quantity: '현재 재고', 
-    safe: '안전 재고'
+    id: 'ID',
+    name: '제품명',
+    category: '제품분류',
+    publisher: '공급사',
+    price: '판매단가',
+    registrant: '등록자',
+    requestDate: '신청일자'
   },
-  rightAligned: ['quantity', 'safe']
+  rightAligned: ['price']
 });
 
 const inputs = ref({
-  title: '입력 폼',
+  title: '제품 정보 및 승인 처리',
   inputs: [
-    { type: 'text', label: '제품명', value: '', placeholder: '', name: 'name' },
-    { type: 'text', label: '사업자 번호', value: '', placeholder: '', name: 'category' },
-    { type: 'text', label: '공급사', value: '', fromPlaceholder: '', name: 'publisher' },
-    { type: 'text', label: '지점', value: '', placeholder: '', name: 'store' },
-    { type: 'number', label: '숫자', value: '', placeholder: '', name: 'nums' },
-    { type: 'textarea', label: '비고', value: '', fromPlaceholder: '', name: 'note' },
-    { type: 'select', label: '선택', value:'', placeholder: '', name: 'select', options: [
-      { name: '옵션 1', value: 'Option 1' },
-      { name: '옵션 2', value: 'Option 2' },
-      { name: '옵션 3', value: 'Option 3' }
-    ] }
+    { type: 'text', label: '제품명', value: '', name: 'name', readonly: true },
+    { type: 'text', label: '제품분류', value: '', name: 'category', readonly: true },
+    { type: 'text', label: '공급사', value: '', name: 'publisher', readonly: true },
+    { type: 'number', label: '판매단가', value: '', name: 'price', readonly: true },
+    { type: 'text', label: '등록자', value: '', name: 'registrant', readonly: true },
+    { type: 'date', label: '신청일자', value: '', name: 'requestDate', readonly: true },
+    { type: 'textarea', label: '설명', value: '', name: 'description', placeholder: '제품 설명을 입력하세요' },
   ]
-})
+});
+
+// 선택 시 상세 정보 입력폼에 바인딩
+const onRowSelect = (row) => {
+  inputs.value.inputs.forEach(input => {
+    if (input.name in row) input.value = row[input.name]
+  });
+};
 
 const searchData = (searchOptions) => {
-  console.log('Searching with options:', searchOptions);
+  console.log('승인 제품 검색:', searchOptions);
 };
 
 const saveData = (inputData) => {
-  console.log('Saving data:', inputData);
+  console.log('선택 제품 승인 처리:', inputData);
 };
 
+const handleApprove = (selectedData) => {
+  console.log('승인 처리:', selectedData);
+  alert('제품이 승인되었습니다.');
+};
+
+const handleReject = (selectedData) => {
+  console.log('반려 처리:', selectedData);
+  alert('제품이 반려되었습니다.');
+};
 </script>
+
 <template>
-  <StandardInput :filters="filters" :items="items" :header="header" :inputs="inputs" @searchData="searchData" @saveData="saveData"></StandardInput>
+  <StandardInput
+    :filters="filters"
+    :items="items"
+    :header="header"
+    :inputs="inputs"
+    @searchData="searchData"
+    @saveData="saveData"
+    @rowSelect="onRowSelect"
+    @approve="handleApprove"
+    @reject="handleReject"
+  />
 </template>

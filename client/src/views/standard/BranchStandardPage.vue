@@ -5,7 +5,7 @@ import { ref } from 'vue';
 const filters = ref({
   title: '조회 조건',
   filters: [
-    { type: 'text', label: '제품명', value: '', placeholder: '', name: 'name' },
+    { type: 'text', label: '업체명', value: '', placeholder: '', name: 'name' },
     { type: 'text', label: '제품분류', value: '', placeholder: '', name: 'category' },
     { type: 'text', label: '공급사', value: '', fromPlaceholder: '', name: 'publisher' },
     { type: 'text', label: '지점', value: '', placeholder: '', name: 'store' },
