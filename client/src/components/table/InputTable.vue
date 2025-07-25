@@ -97,10 +97,10 @@ defineExpose({
 
           <!-- Data -->
           <template v-else>
-            <span v-if="col.type === 'text'" class="text-left">
+            <span v-if="col.type === 'text'" class="text-left block">
               {{ slotProps.data[col.field] }}
             </span>
-            <span v-else-if="col.type === 'number'" class="text-right">
+            <span v-else-if="col.type === 'number'" class="text-right block">
               {{ Number(slotProps.data[col.field]).toLocaleString() }}
             </span>
           </template>

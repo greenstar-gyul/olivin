@@ -13,6 +13,12 @@ const props = defineProps({
     required: true
   }
 });
+
+const emit = defineEmits(['formSearch']);
+
+const searchItem = () => {
+  emit('formSearch');
+};
 </script>
 <template>
   <Fluid>
@@ -36,7 +42,7 @@ const props = defineProps({
 
               <InputGroup v-else-if="element.type === 'item-search'">
                 <InputText v-model="formData[element.id]" :placeholder="element.placeholder || 'Enter item name...'" />
-                <Button icon="pi pi-search" class="p-button-outlined" />
+                <Button icon="pi pi-search" class="p-button-outlined" @click="searchItem" />
               </InputGroup>
 
               <!-- Textarea Input -->
