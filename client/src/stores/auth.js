@@ -33,63 +33,11 @@ export const useAuthStore = defineStore('auth', () => {
     return roleName.value === roleNameToCheck
   }
 
-  // 📍 기능별 권한 체크 (권한명 기반)
-  const permissions = computed(() => ({
-    // 재고 관리 권한들
-    canViewInventory: hasPermission('inventory.view'),
-    canCreateInventory: hasPermission('inventory.create'),
-    canUpdateInventory: hasPermission('inventory.update'),
-    canDeleteInventory: hasPermission('inventory.delete'),
-    canManageInventory: hasAnyPermission(['inventory.create', 'inventory.update', 'inventory.delete']),
-    
-    // 주문 관리 권한들
-    canViewOrders: hasPermission('orders.view'),
-    canCreateOrders: hasPermission('orders.create'),
-    canUpdateOrders: hasPermission('orders.update'),
-    canDeleteOrders: hasPermission('orders.delete'),
-    canManageOrders: hasAnyPermission(['orders.create', 'orders.update', 'orders.delete']),
-    
-    // 사용자 관리 권한들
-    canViewUsers: hasPermission('users.view'),
-    canCreateUsers: hasPermission('users.create'),
-    canUpdateUsers: hasPermission('users.update'),
-    canDeleteUsers: hasPermission('users.delete'),
-    canManageUsers: hasAnyPermission(['users.create', 'users.update', 'users.delete']),
-    
-    // 보고서 권한들
-    canViewReports: hasPermission('reports.view'),
-    canViewBranchReports: hasPermission('reports.branch.view'),
-    canViewAllReports: hasPermission('reports.all.view'),
-    
-    // 시스템 관리 권한들
-    canManageSystem: hasPermission('system.manage'),
-    canViewSystemLogs: hasPermission('system.logs.view'),
-    
-    // 지점별 접근 권한
-    canViewAllBranches: hasPermission('branches.all.view'),
-    canViewOwnBranch: hasPermission('branches.own.view'),
-    
-    // 공급업체 관리
-    canManageSuppliers: hasPermission('suppliers.manage'),
-    canViewSuppliers: hasPermission('suppliers.view')
-  }))
-
-  // 📍 역할별 간편 체크 (호환성 유지)
-  const roleChecks = computed(() => ({
-    isHeadquarterAdmin: hasRole('headquarter_admin'),
-    isHeadquarterSales: hasRole('headquarter_sales'),
-    isBranchAdmin: hasRole('branch_admin'),
-    isBranchEmployee: hasRole('branch_employee'),
-    isSupplier: hasRole('supplier'),
-    isHeadquarter: hasAnyPermission(['branches.all.view']), // 본사 직원들
-    isBranch: hasRole('branch_admin') || hasRole('branch_employee')
-  }))
-
   // Actions
-  const login = async (email, password) => {
+  const login = async (employeeId, password) => {
     loading.value = true
     try {
-      const res = await axios.post('/auth/login', { email, password })
+      const res = await axios.post('/api/auth/login', { employeeId, password })
       
       // 기본 사용자 정보 저장
       token.value = res.data.token
@@ -133,7 +81,7 @@ export const useAuthStore = defineStore('auth', () => {
   const initializeAuth = async () => {
     if (token.value) {
       try {
-        const res = await axios.get('/auth/me')
+        const res = await axios.get('/api/auth/me')
         
         user.value = res.data.user
         userRole.value = res.data.role
@@ -158,7 +106,7 @@ export const useAuthStore = defineStore('auth', () => {
   // 📍 권한 동적 업데이트 (관리자가 권한 변경 시)
   const refreshPermissions = async () => {
     try {
-      const res = await axios.get('/auth/permissions')
+      const res = await axios.get('/api/auth/permissions')
       userPermissions.value = res.data.permissions
       console.log('🔄 권한 정보 업데이트 완료')
       return true
@@ -223,12 +171,6 @@ export const useAuthStore = defineStore('auth', () => {
     hasAnyPermission,
     hasAllPermissions,
     hasRole,
-    
-    // 기능별 권한들
-    ...permissions.value,
-    
-    // 역할별 체크 (호환성)
-    ...roleChecks.value,
     
     // Actions
     login,

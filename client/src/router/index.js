@@ -14,23 +14,6 @@ const router = createRouter({
                     name: 'dashboard',
                     component: () => import('@/views/Dashboard.vue')
                 },
-                
-                // 📍 팀원들이 여기에 추가할 영역 - 권한명 기반
-                // 예시:
-                // {
-                //     path: '/admin/inventory',
-                //     name: 'adminInventory',
-                //     component: () => import('@/views/admin/InventoryManagement.vue'),
-                //     meta: { permissions: ['inventory.manage', 'inventory.view'] }
-                // },
-                // {
-                //     path: '/sales/inventory', 
-                //     name: 'salesInventory',
-                //     component: () => import('@/views/sales/InventoryView.vue'),
-                //     meta: { permissions: ['inventory.view'] }
-                // },
-                
-                // 기존 UI킷들 (시스템 관리 권한)
                 {
                     path: '/uikit/formlayout',
                     name: 'formlayout',
@@ -150,7 +133,7 @@ const router = createRouter({
                     name: 'test2',
                     component: () => import('@/views/test/InputTestPage.vue'),
                     meta: { permissions: ['system.manage'] }
-                }
+                },
                 {
                     path: '/test4',
                     name: 'test4',

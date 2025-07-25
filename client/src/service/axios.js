@@ -3,7 +3,7 @@ import axios from 'axios'
 
 // 기본 axios 인스턴스 생성
 const instance = axios.create({
-  baseURL: process.env.VUE_APP_API_URL || 'http://localhost:3049/api', // 환경변수 사용
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3049/', // 환경변수 사용
   timeout: 15000, // 15초 타임아웃
   headers: {
     'Content-Type': 'application/json',
@@ -20,7 +20,7 @@ instance.interceptors.request.use(
     }
     
     // 요청 로그 (개발 환경에서만)
-    if (process.env.NODE_ENV === 'development') {
+    if (import.meta.env.DEV) {
       console.log(`🚀 API 요청: ${config.method?.toUpperCase()} ${config.url}`)
     }
     
@@ -36,7 +36,7 @@ instance.interceptors.request.use(
 instance.interceptors.response.use(
   (response) => {
     // 성공 응답 로그 (개발 환경에서만)
-    if (process.env.NODE_ENV === 'development') {
+    if (import.meta.env.DEV) {
       console.log(`✅ API 응답: ${response.config.method?.toUpperCase()} ${response.config.url}`, response.data)
     }
     return response

@@ -1,0 +1,59 @@
+<!-- PermissionMapper.xml -->
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.olivin.app.auth.mapper.PermissionMapper">
+
+    <!-- Result Map -->
+    <resultMap id="PermissionResultMap" type="com.olivin.app.auth.service.PermissionVO">
+        <id property="permId" column="PERM_ID"/>
+        <result property="permName" column="PERM_NAME"/>
+        <result property="permDescription" column="PERM_DESCRIPTION"/>
+    </resultMap>
+
+    <!-- 권한 ID로 조회 -->
+    <select id="findByPermId" parameterType="long" resultMap="PermissionResultMap">
+        SELECT 
+            PERM_ID,
+            PERM_NAME,
+            PERM_DESCRIPTION
+        FROM PERMISSIONS
+        WHERE PERM_ID = #{permId}
+    </select>
+
+    <!-- 권한 이름으로 조회 -->
+    <select id="findByPermName" parameterType="string" resultMap="PermissionResultMap">
+        SELECT 
+            PERM_ID,
+            PERM_NAME,
+            PERM_DESCRIPTION
+        FROM PERMISSIONS
+        WHERE PERM_NAME = #{permName}
+    </select>
+
+    <!-- 모든 권한 조회 -->
+    <select id="findAllPermissions" resultMap="PermissionResultMap">
+        SELECT 
+            PERM_ID,
+            PERM_NAME,
+            PERM_DESCRIPTION
+        FROM PERMISSIONS
+        ORDER BY PERM_ID
+    </select>
+
+    <!-- 사원별 권한 조회 (사원번호로) -->
+    <select id="findPermissionsByEmployeeId" parameterType="string" resultMap="PermissionResultMap">
+        SELECT 
+            p.PERM_ID,
+            p.PERM_NAME,
+            p.PERM_DESCRIPTION
+        FROM PERMISSIONS p
+        INNER JOIN ROLE_PERMISSION rp ON p.PERM_ID = rp.PERM_ID
+        INNER JOIN EMPLOYEES e ON rp.ROLE_ID = e.ROLE_ID
+        WHERE e.EMPLOYEE_ID = #{employeeId}
+        AND e.STATUS = 'ACTIVE'
+        ORDER BY p.PERM_ID
+    </select>
+
+</mapper>

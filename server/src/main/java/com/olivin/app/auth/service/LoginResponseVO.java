@@ -1,0 +1,47 @@
+// LoginResponseVO.java
+package com.olivin.app.auth.service;
+
+import lombok.Data;
+import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
+import java.util.List;
+
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+public class LoginResponseVO {
+    
+    private String token;                           // JWT 토큰
+    private UserInfoVO user;                        // 사용자 정보
+    private RoleInfoVO role;                        // 역할 정보
+    private List<PermissionInfoVO> permissions;     // 권한 목록
+    
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    public static class UserInfoVO {
+        private String employeeId;      // 사원번호
+        private String empName;         // 사원명
+        private String email;           // 이메일
+        private String position;        // 직책
+        private Long departmentId;      // 부서ID
+        private String deptName;        // 부서명
+    }
+    
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    public static class RoleInfoVO {
+        private Long roleId;            // 역할ID
+        private String roleName;        // 역할명
+    }
+    
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    public static class PermissionInfoVO {
+        private Long permId;            // 권한ID
+        private String permName;        // 권한명
+        private String permDescription; // 권한 설명
+    }
+}

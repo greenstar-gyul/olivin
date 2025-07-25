@@ -1,10 +1,86 @@
 <script setup>
 import FloatingConfigurator from '@/components/FloatingConfigurator.vue';
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
+// 🔥 추가: 로그인 로직
+import { useAuthStore } from '@/stores/auth';
+import { useRouter } from 'vue-router';
 
-const email = ref('');
+// 기존 UI 상태 유지
+const employeeId = ref('');
 const password = ref('');
 const checked = ref(false);
+
+// 🔥 새로 추가: 로그인 관련 상태
+const authStore = useAuthStore();
+const router = useRouter();
+const loginError = ref('');
+const isLoggingIn = ref(false);
+
+// 🔥 로그인 처리 함수
+const handleLogin = async () => {
+    console.log('🔥 로그인 버튼 클릭됨!', { employeeId: employeeId.value, password: password.value });
+    
+    // 입력값 검증
+    if (!employeeId.value.trim()) {
+        loginError.value = '아이디를 입력해주세요.';
+        return;
+    }
+    
+    if (!password.value.trim()) {
+        loginError.value = '비밀번호를 입력해주세요.';
+        return;
+    }
+    
+    loginError.value = '';
+    isLoggingIn.value = true;
+    
+    try {
+        console.log('🚀 로그인 시도 중...');
+        
+        // 로그인 시도
+        const result = await authStore.login(employeeId.value, password.value);
+        
+        if (result.success) {
+            console.log('✅ 로그인 성공!');
+            
+            // 아이디 저장 처리
+            if (checked.value) {
+                localStorage.setItem('savedEmployeeId', employeeId.value);
+            } else {
+                localStorage.removeItem('savedEmployeeId');
+            }
+            
+            // 대시보드로 리다이렉트
+            console.log('🚀 대시보드로 이동 시도...');
+            router.push('/');
+        } else {
+            // 로그인 실패 처리
+            loginError.value = result.error || '로그인에 실패했습니다.';
+            console.error('❌ 로그인 실패:', result.error);
+        }
+    } catch (error) {
+        loginError.value = '서버 연결에 실패했습니다. 잠시 후 다시 시도해주세요.';
+        console.error('❌ 로그인 에러:', error);
+    } finally {
+        isLoggingIn.value = false;
+    }
+};
+
+// 🔥 저장된 아이디 불러오기
+onMounted(() => {
+    const savedEmployeeId = localStorage.getItem('savedEmployeeId');
+    if (savedEmployeeId) {
+        employeeId.value = savedEmployeeId;
+        checked.value = true;
+    }
+});
+
+// 🔥 Enter 키 처리
+const handleKeyPress = (event) => {
+    if (event.key === 'Enter') {
+        handleLogin();
+    }
+};
 </script>
 
 <template>
@@ -32,25 +108,61 @@ const checked = ref(false);
                             </g>
                         </svg>
                         <div class="text-surface-900 dark:text-surface-0 text-3xl font-medium mb-4">로그인</div>
-                        <!-- <span class="text-muted-color font-medium">로그인로그인로그인</span> -->
+                        <span class="text-muted-color font-medium">SCM 시스템에 로그인하세요</span>
                     </div>
 
-                    <div>
-                        <label for="email1" class="block text-surface-900 dark:text-surface-0 text-xl font-medium mb-2">ID</label>
-                        <InputText id="email1" type="text" placeholder="아이디" class="w-full md:w-[30rem] mb-8" v-model="email" />
+                    <!-- 🔥 form 태그로 감싸기 -->
+                    <form @submit.prevent="handleLogin">
+                        <div>
+                            <label for="employeeId1" class="block text-surface-900 dark:text-surface-0 text-xl font-medium mb-2">ID</label>
+                            <InputText 
+                                id="employeeId1" 
+                                type="text" 
+                                placeholder="아이디" 
+                                class="w-full md:w-[30rem] mb-2" 
+                                v-model="employeeId"
+                                :disabled="isLoggingIn"
+                                @keypress="handleKeyPress"
+                                required
+                            />
 
-                        <label for="password1" class="block text-surface-900 dark:text-surface-0 font-medium text-xl mb-2">Password</label>
-                        <Password id="password1" v-model="password" placeholder="비밀번호" :toggleMask="true" class="mb-4" fluid :feedback="false"></Password>
+                            <label for="password1" class="block text-surface-900 dark:text-surface-0 font-medium text-xl mb-2 mt-6">Password</label>
+                            <Password 
+                                id="password1" 
+                                v-model="password" 
+                                placeholder="비밀번호" 
+                                :toggleMask="true" 
+                                class="mb-2" 
+                                fluid 
+                                :feedback="false"
+                                :disabled="isLoggingIn"
+                                @keypress="handleKeyPress"
+                                required
+                            />
 
-                        <div class="flex items-center justify-between mt-2 mb-8 gap-8">
-                            <div class="flex items-center">
-                                <Checkbox v-model="checked" id="rememberme1" binary class="mr-2"></Checkbox>
-                                <label for="rememberme1">아이디 저장</label>
+                            <!-- 🔥 에러 메시지 표시 -->
+                            <div v-if="loginError" class="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                                <p class="text-red-600 text-sm">{{ loginError }}</p>
                             </div>
-                            <span class="font-medium no-underline ml-2 text-right cursor-pointer text-primary">비밀번호 찾기</span>
+
+                            <div class="flex items-center justify-between mt-2 mb-8 gap-8">
+                                <div class="flex items-center">
+                                    <Checkbox v-model="checked" id="rememberme1" binary class="mr-2" :disabled="isLoggingIn"></Checkbox>
+                                    <label for="rememberme1">아이디 저장</label>
+                                </div>
+                                <span class="font-medium no-underline ml-2 text-right cursor-pointer text-primary">비밀번호 찾기</span>
+                            </div>
+                            
+                            <!-- 🔥 Button을 실제 로그인과 연결 -->
+                            <Button 
+                                type="submit"
+                                :label="isLoggingIn ? '로그인 중...' : 'Sign In'" 
+                                class="w-full"
+                                :disabled="isLoggingIn"
+                                :loading="isLoggingIn"
+                            />
                         </div>
-                        <Button label="Sign In" class="w-full" as="router-link" to="/"></Button>
-                    </div>
+                    </form>
                 </div>
             </div>
         </div>
