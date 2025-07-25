@@ -58,12 +58,15 @@ const props = defineProps({
               <InputNumber v-else-if="element.type === 'number'" :id="'form-' + element.id" v-model="formData[element.id]" inputId="integeronly"
                 :placeholder="element.placeholder || 'Enter number...'" :fluid="true" />
               
-              <template v-else-if="element.type === 'data'">
-                <span v-if="element.data === 'text'" class="text-left">
-                  {{ formData[element.id] }}
-                </span>
-                <span v-else-if="element.data === 'number'" class="text-right">
+              <template v-else>
+                <span v-if="element.data === 'number'" class="text-right">
                   {{ Number(formData[element.id]).toLocaleString() }}
+                </span>
+                <span v-else-if="element.data === 'date'" class="text-right">
+                  {{ new Date(formData[element.id]).toLocaleDateString() }}
+                </span>
+                <span v-else class="text-left">
+                  {{ formData[element.id] }}
                 </span>
               </template>
             </div>
