@@ -129,6 +129,14 @@ const router = createRouter({
                     name: 'test5',
                     component: () => import('@/views/test/InputMultiTablePage.vue')
                 },
+
+                /* inventory */
+                {
+                    path: '/outbndMgmt',
+                    name: 'outbndMgmt',
+                    component: () => import('@/views/inventory/outbndMgmt.vue')
+                },
+                /* end of inventory */
             ]
         },
         {
