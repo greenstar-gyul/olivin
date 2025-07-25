@@ -129,6 +129,26 @@ const router = createRouter({
                     name: 'test5',
                     component: () => import('@/views/test/InputMultiTablePage.vue')
                 },
+                {
+                    path: '/standard/supplier',
+                    name: 'supplier',
+                    component: () => import('@/views/standard/SupplierStandardPage.vue')
+                },
+                {
+                    path: '/standard/branch',
+                    name: 'branch',
+                    component: () => import('@/views/standard/BranchStandardPage.vue')
+                },
+                {
+                    path: '/standard/product',
+                    name: 'product',
+                    component: () => import('@/views/standard/ProductStandardPage.vue')
+                },
+                {
+                    path: '/standard/productapproval',
+                    name: 'productApproval',
+                    component: () => import('@/views/standard/ProductApprovalPage.vue')
+                },
             ]
         },
         {
