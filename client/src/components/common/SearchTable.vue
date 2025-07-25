@@ -4,7 +4,7 @@ import BasicTable from '@/components/table/BasicTable.vue';
 import dateUtils from '@/utils/dateUtils';
 import { ref } from 'vue';
 
-const emit = defineEmits(['searchData']);
+const emit = defineEmits(['searchData', 'openSearchModal']);
 const props = defineProps({
   filters: {
     type: Array,
@@ -30,6 +30,6 @@ const openSearchModal = (filterName) => {
 
 </script>
 <template>
-  <SearchForm :filters="props.filters" @searchData="searchData" @openSearchModel="openSearchModal" ></SearchForm>
+  <SearchForm :filters="props.filters" @searchData="searchData" @openSearchModal="openSearchModal" ></SearchForm>
   <BasicTable :data="props.items" :header="props.header"></BasicTable>
 </template>
