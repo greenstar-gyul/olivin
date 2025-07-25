@@ -24,8 +24,12 @@ const searchData = (searchOptions) => {
   emit('searchData', searchOptions);
 };
 
+const openSearchModal = (filterName) => {
+  emit('openSearchModal', filterName);
+};
+
 </script>
 <template>
-  <SearchForm :filters="props.filters" @searchData="searchData" ></SearchForm>
+  <SearchForm :filters="props.filters" @searchData="searchData" @openSearchModel="openSearchModal" ></SearchForm>
   <BasicTable :data="props.items" :header="props.header"></BasicTable>
 </template>

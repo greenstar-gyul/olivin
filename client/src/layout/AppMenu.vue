@@ -45,9 +45,18 @@ const model = ref([
     },
     {   
         label: '매출 / 회계',
-        to: '/accounting',
+        to: '/account',
         items: [
-            { label: '거래처원장', icon: 'pi pi-fw pi-book', to: '/views/A_leder' },
+            { label: '거래처원장', icon: 'pi pi-fw pi-book', to: '/views/account' },
+        ]
+    },
+    {   
+        label: '컴포넌트 테스트',
+        to: '/test',
+        items: [
+            { label: '공통 조회 컴포넌트', icon: 'pi pi-fw pi-book', to: '/test' },
+            { label: '공통 입력 컴포넌트', icon: 'pi pi-fw pi-file-edit', to: '/test2' },
+            { label: '기준정보 컴포넌트', icon: 'pi pi-fw pi-pen-to-square', to: '/test3' },
         ]
     },
     {

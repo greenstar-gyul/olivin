@@ -9,10 +9,15 @@ const props = defineProps({
   }
 });
 
-const emit = defineEmits(['searchData']);
+const emit = defineEmits(['searchData', 'openSearchModal']);
 
 // 검색 조건을 담을 객체
 const searchOptions = ref({});
+
+// 모달 관련
+const openSearchModal = (filterName) => {
+  emit('openSearchModal', filterName);
+};
 
 // filters 기반으로 기본값 초기화, 각 필터의 name을 키로 사용.
 // 단, dateRange 타입의 필터는 fromValue와 toValue로 분리하여 처리
@@ -126,6 +131,17 @@ const groupedFilters = computed(() => {
         <!-- Number Input -->
         <InputNumber v-else-if="filter.type === 'number'" :id="'filter-' + rowIndex + '-' + filterIndex"
           v-model="searchOptions[filter.name]" :placeholder="filter.placeholder || 'Enter number...'" class="flex-1" />
+
+        <!-- Select Input -->
+        <Select v-else-if="filter.type === 'select'" :id="'filter-' + rowIndex + '-' + filterIndex"
+          v-model="searchOptions[filter.name]" :options="filter.options"
+          optionLabel="name" optionValue="value" :placeholder="filter.placeholder || 'Select option...'" class="flex-1" />
+
+        <!-- Item Search -->
+        <InputGroup v-else-if="filter.type === 'item-search'" class="flex-1">
+          <InputText v-model="searchOptions[filter.name]" :placeholder="filter.placeholder || 'Enter item name...'" />
+          <Button icon="pi pi-search" class="p-button-outlined" @click="openSearchModal(filter.name)" />
+        </InputGroup>
 
         <!-- Default fallback to text input -->
         <InputText v-else :id="'filter-' + rowIndex + '-' + filterIndex" type="text"
