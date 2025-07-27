@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 import InputMaster from '@/components/inputForm/InputMaster.vue';
 import InputTable from '@/components/table/InputTable.vue';
 
@@ -9,6 +9,10 @@ const props = defineProps({
   title: { 
     type: String,
     default: '폼 기본정보'
+  },
+  tableTitle: {
+    type: String,
+    default: '테이블 기본정보'
   },
   defaultForm: {
     type: Object,
@@ -25,6 +29,10 @@ const props = defineProps({
   columns: {
     type: Array,
     required: true
+  },
+  tableData: {
+    type: Array,
+    default: () => []
   },
   tableHeight: {
     type: String,
@@ -58,6 +66,14 @@ function defaultTable() {
 const formData = ref(defaultFormData());
 const tableData = ref(defaultTable());
 
+watch(
+  () => props.defaultForm,
+  (newVal) => {
+    formData.value = defaultFormData();
+  },
+  { immediate: true }
+);
+
 const resetFormHandler = () => {
   formData.value = defaultFormData();
   tableData.value = defaultTable();
@@ -85,10 +101,14 @@ const removeProductHandler = () => {
   tableData.value = tableData.value.filter((p, idx) => !selectedIds.includes(p.id));
   inputTableRef.value.clearSelection();
 };
+
+const formSearch = () => {
+  emit('formSearch');
+};
 </script>
 <template>
   <Fluid>
-    <InputMaster title="발주서정보" :formData="formData" :formSchema="props.formSchema">
+    <InputMaster title="발주서정보" :formData="formData" :formSchema="props.formSchema" @formSearch="formSearch">
       <template #btn>
         <Button label="초기화" class="min-w-fit whitespace-nowrap" severity="secondary" @click="resetFormHandler" />
         <Button label="저장" @click="saveFormHandler" />
@@ -97,7 +117,7 @@ const removeProductHandler = () => {
 
     <InputTable 
       :ref="'inputTableRef'"
-      title="상품 목록"
+      :title="props.tableTitle"
       :data="tableData"
       :columns="props.columns"
       :selected="true"
