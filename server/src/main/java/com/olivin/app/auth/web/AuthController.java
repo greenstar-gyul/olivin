@@ -15,9 +15,9 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequiredArgsConstructor
+@RequestMapping("/api/auth")
 @Slf4j
-@CrossOrigin(origins = "*", maxAge = 3600)
+@RequiredArgsConstructor
 public class AuthController {
     
     private final AuthService authService;
@@ -133,5 +133,13 @@ public class AuthController {
             log.error("토큰 검증 중 오류: {}", e.getMessage(), e);
             return ResponseEntity.ok(ApiResponseVO.success("토큰 검증 완료", false));
         }
+    }
+    
+    /**
+     * 테스트용 엔드포인트
+     */
+    @GetMapping("/test")
+    public ResponseEntity<String> test() {
+        return ResponseEntity.ok("서버가 정상 작동 중입니다");
     }
 }
