@@ -4,7 +4,6 @@ import { ref, onMounted } from 'vue';
 // 🔥 추가: 로그인 로직
 import { useAuthStore } from '@/stores/auth';
 import { useRouter } from 'vue-router';
-import axios from 'axios';
 
 // 기존 UI 상태 유지
 const employeeId = ref('');
@@ -39,8 +38,7 @@ const handleLogin = async () => {
         console.log('🚀 로그인 시도 중...');
         
         // 로그인 시도
-        // const result = await authStore.login(employeeId.value, password.value);
-        const result = await axios.post('/api/auth/login', { employeeId:employeeId.value, password:password.value });
+        const result = await authStore.login(employeeId.value, password.value);
         
         if (result.success) {
             console.log('✅ 로그인 성공!');

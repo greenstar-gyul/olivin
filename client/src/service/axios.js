@@ -13,7 +13,6 @@ const instance = axios.create({
 // 요청 인터셉터 - 모든 요청에 토큰 자동 추가
 instance.interceptors.request.use(
   (config) => {
-    console.log("config: ", config)
     // localStorage에서 토큰 가져와서 헤더에 자동 추가
     const token = localStorage.getItem('token')
     if (token) {

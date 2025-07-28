@@ -2,7 +2,15 @@
 package com.olivin.app.auth.service;
 
 import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,6 +28,9 @@ public class AuthService {
     private final JwtService jwtService;
 
     @Autowired
+    @Lazy
+    private AuthenticationManager authenticationManager;
+
     public AuthService(UserService userService, JwtService jwtService) {
         this.userService = userService;
         this.jwtService = jwtService;
@@ -29,16 +40,21 @@ public class AuthService {
         try {
             log.info("로그인 시도: {}", request.getEmployeeId());
             
+            // Spring Security 인증 처리
+            Authentication authentication = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(request.getEmployeeId(), request.getPassword())
+            );
+            
+            log.debug("Spring Security 인증 성공: {}", request.getEmployeeId());
+            
             // 사용자 정보 조회
             UserVO user = userService.findByEmployeeId(request.getEmployeeId());
             
-            // TODO: 비밀번호 검증 로직 추가 필요
-            // 예: if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            //     throw new RuntimeException("비밀번호가 올바르지 않습니다.");
-            // }
-            
             // 사용자 권한 조회
             List<PermissionVO> permissions = userService.getUserPermissions(user.getEmployeeId());
+            
+            // UserDetails 생성
+            UserDetails userDetails = userService.loadUserByUsername(request.getEmployeeId());
             
             // JWT 토큰 생성 (추가 정보 포함)
             Map<String, Object> extraClaims = new HashMap<>();
@@ -48,7 +64,7 @@ public class AuthService {
             extraClaims.put("departmentId", user.getDepartmentId());
             extraClaims.put("position", user.getPosition());
             
-            String token = jwtService.generateToken(user.getEmployeeId(), extraClaims);
+            String token = jwtService.generateToken(userDetails, extraClaims);
             
             // 응답 데이터 구성
             LoginResponseVO.UserInfoVO userDto = new LoginResponseVO.UserInfoVO(
@@ -80,6 +96,12 @@ public class AuthService {
             
             return response;
             
+        } catch (BadCredentialsException e) {
+            log.warn("로그인 실패 - 잘못된 인증 정보: {}", request.getEmployeeId());
+            throw new RuntimeException("사원번호 또는 비밀번호가 올바르지 않습니다.");
+        } catch (UsernameNotFoundException e) {
+            log.warn("로그인 실패 - 사용자 없음: {}", request.getEmployeeId());
+            throw new RuntimeException("사원번호 또는 비밀번호가 올바르지 않습니다.");
         } catch (Exception e) {
             log.error("로그인 처리 중 예외 발생: {} - {}", request.getEmployeeId(), e.getMessage(), e);
             throw new RuntimeException("로그인 처리 중 오류가 발생했습니다.");

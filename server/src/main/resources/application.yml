@@ -6,9 +6,9 @@ spring:
   # 데이터베이스 설정
   datasource:
     driver-class-name: oracle.jdbc.OracleDriver
-    url: jdbc:oracle:thin:@43.200.176.156:1521:XE
-    username: olivin
-    password: olivin
+    url: jdbc:oracle:thin:@43.200.176.156:1521:XE  # Oracle DB 연결 정보 (실제 정보로 변경)
+    username: olivin  # 실제 DB 사용자명으로 변경
+    password: olivin  # 실제 DB 비밀번호로 변경
     hikari:
       minimum-idle: 5
       maximum-pool-size: 20
@@ -16,8 +16,8 @@ spring:
       pool-name: SpringBootJPAHikariCP
       max-lifetime: 1800000
       connection-timeout: 30000
-
-# MyBatis 설정
+  
+  # MyBatis 설정
 mybatis:
   mapper-locations: classpath:mapper/*.xml
   type-aliases-package: com.olivin.app.auth.service
@@ -49,8 +49,7 @@ logging:
   level:
     com.olivin: DEBUG
     com.olivin.app.auth.mapper: DEBUG
-    org.springframework.security: INFO
-    org.springframework.web: DEBUG  # 웹 매핑 로그 추가
+    org.springframework.security: DEBUG
     root: INFO
   pattern:
     console: "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
@@ -64,3 +63,20 @@ server:
       charset: UTF-8
       enabled: true
       force: true
+
+---
+# 개발 환경 설정
+spring:
+  config:
+    activate:
+      on-profile: dev
+  
+  # 개발용 로깅 레벨
+logging:
+  level:
+    com.olivin: DEBUG
+    org.springframework.security: DEBUG
+
+# JWT 개발용 설정 (짧은 만료 시간)
+jwt:
+  expiration: 3600000  # 1시간

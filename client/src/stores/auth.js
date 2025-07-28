@@ -1,4 +1,4 @@
-// stores/auth.js - 수정된 버전
+// stores/auth.js - DB 기반 권한 시스템
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import axios from '@/service/axios'
@@ -13,12 +13,12 @@ export const useAuthStore = defineStore('auth', () => {
 
   // Computed - 기본 정보
   const isAuthenticated = computed(() => !!token.value)
-  const roleName = computed(() => userRole.value?.roleName || null)
-  const userId = computed(() => user.value?.employeeId || null)
+  const roleName = computed(() => userRole.value?.role_name || null)
+  const userId = computed(() => user.value?.id || null)
 
   // 📍 DB 기반 권한 체크 함수들
   const hasPermission = (permissionName) => {
-    return userPermissions.value.some(perm => perm.permName === permissionName)
+    return userPermissions.value.some(perm => perm.perm_name === permissionName)
   }
 
   const hasAnyPermission = (permissionNames) => {
@@ -34,42 +34,28 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   // Actions
-  const login = async (credentials) => {
+  const login = async (employeeId, password) => {
     loading.value = true
     try {
-      const res = await axios.post('/api/auth/login', credentials)
+      const res = await axios.post('/api/auth/login', { employeeId, password })
       
-      // ✅ 올바른 응답 구조 처리
-      if (res.data.success) {
-        const responseData = res.data.data
-        
-        // 기본 사용자 정보 저장
-        token.value = responseData.token
-        user.value = responseData.user
-        
-        // 📍 역할과 권한 정보 저장
-        userRole.value = responseData.role
-        userPermissions.value = responseData.permissions
-        
-        localStorage.setItem('token', responseData.token)
-        
-        // axios 기본 헤더에도 토큰 설정
-        axios.defaults.headers.common['Authorization'] = `Bearer ${responseData.token}`
-        
-        console.log('✅ 로그인 성공:', {
-          user: responseData.user.empName,
-          role: responseData.role.roleName,
-          permissions: responseData.permissions.map(p => p.permName)
-        })
-        
-        return { success: true, data: responseData }
-      } else {
-        // 서버에서 success: false인 경우
-        return { 
-          success: false, 
-          error: res.data.message || '로그인에 실패했습니다'
-        }
-      }
+      // 기본 사용자 정보 저장
+      token.value = res.data.token
+      user.value = res.data.user
+      
+      // 📍 역할과 권한 정보 저장
+      userRole.value = res.data.role // { role_id, role_name }
+      userPermissions.value = res.data.permissions // [{ perm_id, perm_name, perm_description }]
+      
+      localStorage.setItem('token', res.data.token)
+      
+      console.log('✅ 로그인 성공:', {
+        user: res.data.user.name,
+        role: res.data.role.role_name,
+        permissions: res.data.permissions.map(p => p.perm_name)
+      })
+      
+      return { success: true, data: res.data }
       
     } catch (err) {
       console.error('❌ 로그인 실패:', err.response?.data || err.message)
@@ -88,7 +74,6 @@ export const useAuthStore = defineStore('auth', () => {
     userRole.value = null
     userPermissions.value = []
     localStorage.removeItem('token')
-    delete axios.defaults.headers.common['Authorization']
     console.log('👋 로그아웃 완료')
   }
 
@@ -96,25 +81,19 @@ export const useAuthStore = defineStore('auth', () => {
   const initializeAuth = async () => {
     if (token.value) {
       try {
-        // axios 헤더에 토큰 설정
-        axios.defaults.headers.common['Authorization'] = `Bearer ${token.value}`
-        
         const res = await axios.get('/api/auth/me')
         
-        if (res.data.success) {
-          const responseData = res.data.data
-          user.value = responseData.user
-          userRole.value = responseData.role
-          userPermissions.value = responseData.permissions
-          
-          console.log('🔄 인증 상태 복구 완료:', {
-            user: responseData.user.empName,
-            role: responseData.role.roleName,
-            permissions: responseData.permissions.map(p => p.permName)
-          })
-          
-          return true
-        }
+        user.value = res.data.user
+        userRole.value = res.data.role
+        userPermissions.value = res.data.permissions
+        
+        console.log('🔄 인증 상태 복구 완료:', {
+          user: res.data.user.name,
+          role: res.data.role.role_name,
+          permissions: res.data.permissions.map(p => p.perm_name)
+        })
+        
+        return true
       } catch (err) {
         console.warn('⚠️ 토큰이 유효하지 않음, 로그아웃 처리')
         logout()
@@ -164,9 +143,11 @@ export const useAuthStore = defineStore('auth', () => {
   const getApiEndpoint = (baseEndpoint) => {
     // 역할 기반 엔드포인트 매핑 (기존 호환성)
     const roleEndpointMap = {
-      'ADMIN': `/admin${baseEndpoint}`,
-      'MANAGER': `/manager${baseEndpoint}`,
-      'USER': `/user${baseEndpoint}`
+      'headquarter_admin': `/admin${baseEndpoint}`,
+      'headquarter_sales': `/sales${baseEndpoint}`,
+      'branch_admin': `/branch/admin${baseEndpoint}`,
+      'branch_employee': `/branch${baseEndpoint}`,
+      'supplier': `/supplier${baseEndpoint}`
     }
     
     return roleEndpointMap[roleName.value] || baseEndpoint
