@@ -1,4 +1,4 @@
-package com.olivin.app.product.web;
+package com.olivin.app.standard.web;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -21,8 +21,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.olivin.app.product.service.ProductService;
-import com.olivin.app.product.service.ProductVO;
+// ✅ 수정된 import 경로
+import com.olivin.app.standard.service.ProductService;
+import com.olivin.app.standard.service.ProductVO;
 
 import lombok.RequiredArgsConstructor;
 
@@ -245,55 +246,118 @@ public class ProductController {
         return ResponseEntity.ok(result);
     }
     
+    // ✅ 승인 API - @RequestBody로 변경
     @PostMapping("/{productId}/approve")
     public ResponseEntity<Map<String, Object>> approveProduct(
             @PathVariable String productId,
-            @RequestParam(defaultValue = "SYSTEM") String approver,
-            @RequestParam(required = false) String reason) {
+            @RequestBody Map<String, Object> requestData) {
         
         Map<String, Object> result = new HashMap<>();
         
         try {
+            System.out.println("=== 제품 승인 요청 ===");
+            System.out.println("ProductId: " + productId);
+            System.out.println("RequestData: " + requestData);
+            
+            String approver = (String) requestData.getOrDefault("approver", "SYSTEM");
+            String reason = (String) requestData.get("reason");
+            
             int approveResult = productService.approveProduct(productId, approver);
             
             if (approveResult > 0) {
                 result.put("success", true);
                 result.put("message", "제품이 승인되었습니다. 이제 판매 가능합니다.");
+                System.out.println("✅ 승인 성공: " + productId);
             } else {
                 result.put("success", false);
                 result.put("message", "제품 승인에 실패했습니다.");
+                System.out.println("❌ 승인 실패: " + productId + " (DB 업데이트 결과: " + approveResult + ")");
             }
         } catch (Exception e) {
             result.put("success", false);
             result.put("message", "제품 승인 중 오류가 발생했습니다: " + e.getMessage());
+            System.err.println("❌ 승인 예외 발생: " + e.getMessage());
+            e.printStackTrace();
         }
         
         return ResponseEntity.ok(result);
     }
     
+    // ✅ 반려 API - @RequestBody로 변경
     @PostMapping("/{productId}/reject")
     public ResponseEntity<Map<String, Object>> rejectProduct(
             @PathVariable String productId,
-            @RequestParam(defaultValue = "SYSTEM") String approver,
-            @RequestParam(required = false) String reason) {
+            @RequestBody Map<String, Object> requestData) {
         
         Map<String, Object> result = new HashMap<>();
         
         try {
+            System.out.println("=== 제품 반려 요청 ===");
+            System.out.println("ProductId: " + productId);
+            System.out.println("RequestData: " + requestData);
+            
+            String approver = (String) requestData.getOrDefault("approver", "SYSTEM");
+            String reason = (String) requestData.get("reason");
+            
             int rejectResult = productService.rejectProduct(productId, approver, reason);
             
             if (rejectResult > 0) {
                 result.put("success", true);
                 result.put("message", "제품 승인이 거부되었습니다.");
+                System.out.println("✅ 반려 성공: " + productId);
             } else {
                 result.put("success", false);
                 result.put("message", "제품 승인 거부에 실패했습니다.");
+                System.out.println("❌ 반려 실패: " + productId + " (DB 업데이트 결과: " + rejectResult + ")");
             }
         } catch (Exception e) {
             result.put("success", false);
             result.put("message", "제품 승인 거부 중 오류가 발생했습니다: " + e.getMessage());
+            System.err.println("❌ 반려 예외 발생: " + e.getMessage());
+            e.printStackTrace();
         }
         
         return ResponseEntity.ok(result);
+    }
+    
+    // ✅ 테스트용 승인 API 추가
+    @GetMapping("/test-approve/{productId}")
+    public ResponseEntity<Map<String, Object>> testApprove(@PathVariable String productId) {
+        Map<String, Object> result = new HashMap<>();
+        
+        try {
+            System.out.println("=== 테스트 승인 ===");
+            
+            // 1. 제품 조회
+            ProductVO product = productService.getProduct(productId);
+            if (product == null) {
+                result.put("error", "제품을 찾을 수 없습니다: " + productId);
+                return ResponseEntity.ok(result);
+            }
+            
+            result.put("before_status", product.getStatus());
+            System.out.println("승인 전 상태: " + product.getStatus());
+            
+            // 2. 승인 처리
+            int approveResult = productService.approveProduct(productId, "TEST_USER");
+            result.put("approve_result", approveResult);
+            System.out.println("승인 결과: " + approveResult);
+            
+            // 3. 다시 조회해서 상태 확인
+            ProductVO updatedProduct = productService.getProduct(productId);
+            if (updatedProduct != null) {
+                result.put("after_status", updatedProduct.getStatus());
+                System.out.println("승인 후 상태: " + updatedProduct.getStatus());
+                
+                result.put("success", "040001".equals(updatedProduct.getStatus()));
+            }
+            
+            return ResponseEntity.ok(result);
+            
+        } catch (Exception e) {
+            result.put("error", e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.ok(result);
+        }
     }
 }
