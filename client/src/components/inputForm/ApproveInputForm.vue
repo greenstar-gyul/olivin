@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import DatePickerFromTo from './DatePickerFromTo.vue';
 
 const props = defineProps({
@@ -14,8 +14,7 @@ const emit = defineEmits(['saveData', 'approve', 'reject']);
 // 검색 조건을 담을 객체
 const inputDatas = ref({});
 
-// inputs 기반으로 기본값 초기화, 각 필터의 name을 키로 사용.
-// 단, dateRange 타입의 필터는 fromValue와 toValue로 분리하여 처리
+// inputs 기반으로 기본값 초기화, props.inputs의 value 값을 반영
 const initializeInputDatas = () => {
   const options = {};
   props.inputs.inputs.forEach(element => {
@@ -24,10 +23,32 @@ const initializeInputDatas = () => {
       options[element.name + 'To'] = '';
       return;
     }
-    options[element.name] = '';
+    // props에서 전달된 value 값을 사용, 없으면 빈 문자열
+    options[element.name] = element.value || '';
   });
   inputDatas.value = options;
+  console.log('📝 InputForm - inputDatas 초기화:', inputDatas.value);
 };
+
+//  props.inputs가 변경될 때마다 inputDatas 업데이트
+watch(() => props.inputs, (newInputs) => {
+  console.log('👀 InputForm - props.inputs 변경 감지:', newInputs);
+  
+  if (newInputs && newInputs.inputs) {
+    const options = {};
+    newInputs.inputs.forEach(element => {
+      if (element.type === 'dateRange') {
+        options[element.name + 'From'] = '';
+        options[element.name + 'To'] = '';
+        return;
+      }
+      //  새로운 value 값을 반영
+      options[element.name] = element.value || '';
+    });
+    inputDatas.value = options;
+    console.log('📝 InputForm - inputDatas 업데이트:', inputDatas.value);
+  }
+}, { deep: true, immediate: true });
 
 // 초기화
 initializeInputDatas();
@@ -41,10 +62,12 @@ const confirm = () => {
 }
 
 const approve = () => {
+  console.log(' InputForm - approve 이벤트, 데이터:', inputDatas.value);
   emit('approve', inputDatas.value);
 };
 
 const reject = () => {
+  console.log(' InputForm - reject 이벤트, 데이터:', inputDatas.value);
   emit('reject', inputDatas.value);
 };
 </script>
@@ -110,5 +133,6 @@ const reject = () => {
       <Button label="승인" severity="success" @click="approve" class="flex-1" />
       <Button label="반려" severity="danger" @click="reject" class="flex-1" />
     </div>
+
   </div>
 </template>
