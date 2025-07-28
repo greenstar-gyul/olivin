@@ -115,6 +115,9 @@ const searchData = (searchOptions) => {
 };
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> b80dd39 (총계정원장 조회 07.28)
 // 검색 모달을 열 때 호출되는 함수
 // case 문을 사용하여 모달 이름(item-search 타입의 name을 따름)에 따라 다른 모달을 열 수 있도록 구현
 const handleOpenModal = (filterName) => {
@@ -135,10 +138,14 @@ const handleOpenModal = (filterName) => {
 const getSampleData = async () => {
   const result = await axios.get('/api/test');
   const data = await result.data;
+<<<<<<< HEAD
   console.log('Loaded sample data:', data);
 
   // items에 데이터를 할당
   items.value = data;
+=======
+  console.log('Sample data:', data);
+>>>>>>> b80dd39 (총계정원장 조회 07.28)
 };
 
 // ======
@@ -203,6 +210,11 @@ function searchData(options) {
 </script>
 <template>
   <SearchTable ref="searchOptions" :filters="filters" :items="items" :header="header" @searchData="searchData" @open-search-modal="handleOpenModal"></SearchTable>
+<<<<<<< HEAD
   <DialogModal title="테스트 모달 1" :display="testModalVisible" :headers="modalHeaders" :items="modalItems" :selectionMode="'multiple'" @close="closeModal" @confirm="confirmModal" @search-modal="searchModal1"></DialogModal>
   <DialogModal title="테스트 모달 2" :display="testModalVisible2" :headers="modalHeaders2" :items="modalItems2" :selectionMode="'single'" @close="closeModal2" @confirm="confirmModal2" @search-modal="searchModal2"></DialogModal>
+=======
+  <DialogModal title="테스트 모달 1" :display="testModalVisible" :headers="modalHeaders" :items="modalItems" :selectionMode="'multiple'" @close="closeModal" @confirm="confirmModal"></DialogModal>
+  <DialogModal title="테스트 모달 2" :display="testModalVisible2" :headers="modalHeaders2" :items="modalItems2" :selectionMode="'single'" @close="closeModal2" @confirm="confirmModal2"></DialogModal>
+>>>>>>> b80dd39 (총계정원장 조회 07.28)
 </template>
