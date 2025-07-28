@@ -25,7 +25,7 @@ public class AuthController {
     /**
      * 로그인
      */
-    @PostMapping("/login")
+    @PostMapping("/auth/login")
     public ResponseEntity<ApiResponseVO<LoginResponseVO>> login(
             @Valid @RequestBody LoginRequestVO request,
             BindingResult bindingResult

@@ -3,7 +3,6 @@ import axios from 'axios'
 
 // 기본 axios 인스턴스 생성
 const instance = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3049/', // 환경변수 사용
   timeout: 15000, // 15초 타임아웃
   headers: {
     'Content-Type': 'application/json',
@@ -13,6 +12,7 @@ const instance = axios.create({
 // 요청 인터셉터 - 모든 요청에 토큰 자동 추가
 instance.interceptors.request.use(
   (config) => {
+    console.log("config: ", config)
     // localStorage에서 토큰 가져와서 헤더에 자동 추가
     const token = localStorage.getItem('token')
     if (token) {
