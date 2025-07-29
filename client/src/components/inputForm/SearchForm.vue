@@ -78,6 +78,11 @@ const groupedFilters = computed(() => {
   return rows;
 });
 
+// 외부에서 searchOptions에 접근할 수 있도록 노출
+defineExpose({
+  searchOptions
+});
+
 </script>
 <template>
   <div class="card flex flex-col gap-4">
