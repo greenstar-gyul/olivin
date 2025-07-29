@@ -142,11 +142,16 @@ const router = createRouter({
                     name: 'test5',
                     component: () => import('@/views/test/InputMultiTablePage.vue')
                 },
-                /* inventory */
+                /* inventory made by kms*/
                 {
-                    path: '/outbndMgmt',
-                    name: 'outbndMgmt',
-                    component: () => import('@/views/inventory/outbndMgmt.vue')
+                    path: '/hqOutbndMgmt',
+                    name: 'hqOutbndMgmt',
+                    component: () => import('@/views/inventory/hqOutbndMgmt.vue')
+                },
+                {
+                    path: '/hqInbndMgmt',
+                    name: 'hqInbndMgmt',
+                    component: () => import('@/views/inventory/hqInbndMgmt.vue')
                 },
                 /* end of inventory */
                 {

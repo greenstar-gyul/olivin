@@ -25,14 +25,20 @@ const model = ref([
             { label: '제품 승인 정보', icon: 'pi pi-fw pi-pen-to-square', to: '/standard/productapproval' },
         ]
     },
+    /* inventory */ 
     {   
         label: '재고 / 물류',
         to: '/inventory',
         items: [
+            // made by hdu
             { label: '재고 현황', icon: 'pi pi-fw pi-book', to: '/inventory/stock'},
-            { label: '출고관리', icon: 'pi pi-fw pi-book', to: '/outbndMgmt' },
+
+            // made by kms
+            { label: '본사출고관리', icon: 'pi pi-fw pi-book', to: '/hqOutbndMgmt' },
+            { label: '본사입고관리', icon: 'pi pi-fw pi-book', to: '/hqInbndMgmt' },
         ]
     },
+    /* end of inventory */
     {   
         label: '구매',
         to: '/purchase',
