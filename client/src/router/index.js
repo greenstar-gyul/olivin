@@ -156,6 +156,11 @@ const router = createRouter({
                     name: 'productApproval',
                     component: () => import('@/views/standard/ProductApprovalPage.vue')
                 },
+                {
+                    path: '/inventory/stock',
+                    name: 'stock',
+                    component: () => import('@/views/inventory/StockPage.vue')
+                }
             ]
         },
         {
