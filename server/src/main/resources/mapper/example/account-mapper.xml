@@ -1,13 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.olivin.app.example.mapper.ExampleMapper">
+<mapper namespace="com.olivin.app.example.mapper.AccountLederMapper">
     <!-- Interface의 메서드를 통해 실행할 쿼리 정의 -->
     <select id="selectAllList" resultType="AccountLederVO">
         SELECT account_leder_id
-             , debit
-             , credit
+             , increase
+             , decrease
              , balance
-             , description
+             , detail
+             , write_date
              , comp_id
              , product_id
              , account_id

@@ -1,6 +1,10 @@
 <script setup>
 import StandardInput from '@/components/common/StandardInput.vue';
+import FileUpload from 'primevue/fileupload';
+import Toast from 'primevue/toast';
+import Button from 'primevue/button';
 import { ref } from 'vue';
+import axios from 'axios';
 
 const filters = ref({
   title: '조회 조건',

@@ -13,7 +13,7 @@ import lombok.RequiredArgsConstructor;
 @RestController
 @RequiredArgsConstructor
 public class InventoryController {
-    private final InventoryService inventoryService;
+    //private final InventoryService inventoryService;
 
     // This is a sample endpoint to demonstrate how to use the InventoryService
     @GetMapping("/inventory")

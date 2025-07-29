@@ -52,6 +52,8 @@ build/
 ### VS Code ###
 .vscode/
 
+.metadata/
+
 ### STS ###
 .apt_generated
 .classpath

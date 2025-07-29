@@ -4,7 +4,7 @@ import { onMounted, ref } from 'vue';
 import SearchTable from '../../components/common/SearchTable.vue';
 import { StockService } from '@/service/StockService';
 import { Dialog } from 'primevue';
-import FrozenTable from '@/components/common/FrozenTable.vue';
+import AccountTable from './AccountTable.vue';
 import SearchForm from '@/components/inputForm/SearchForm.vue';
 import axios from 'axios';
 import DialogModal from '@/components/overray/DialogModal.vue';
@@ -108,7 +108,7 @@ const handleOpenModal = (filterName) => {
 
 // 필요한 함수 선언
 const getSampleData = async() => {
-  const result = await axios.get('/account');
+  const result = await axios.get('/api/account');
   const data = await result.data;
   console.log('Sample data:', data);
 
@@ -146,7 +146,7 @@ onMounted(() => {
 </script>
 <template>
   <SearchForm :filters="filters" :items="items" :header="header" @searchData="searchData" @open-search-modal="handleOpenModal"></SearchForm>
-  <FrozenTable :filters="filters" :items="items" :header="header" @searchData="searchData" @open-search-modal="handleOpenModal"></FrozenTable>
+  <AccountTable :filters="filters" :items="items" :header="header" @searchData="searchData" @open-search-modal="handleOpenModal"></AccountTable>
   <DialogModal title="테스트 모달 1" :display="testModalVisible" :headers="modalHeaders" :items="modalItems" :selectionMode="'multiple'" @close="closeModal" @confirm="confirmModal"></DialogModal>
   <DialogModal title="테스트 모달 2" :display="testModalVisible2" :headers="modalHeaders2" :items="modalItems2" :selectionMode="'single'" @close="closeModal2" @confirm="confirmModal2"></DialogModal>
 </template>
