@@ -16,7 +16,7 @@ public class UserVO {
     private String position;      // POSITION
     private Long roleId;          // ROLE_ID
     private String status;        // STATUS (활성/비활성 체크용)
-    private Long departmentId;    // DEPARTMENT_ID
+    private String departmentId;    // DEPARTMENT_ID
     
     // 조인으로 가져올 추가 정보 (로그인 응답용)
     private String roleName;      // roles.role_name

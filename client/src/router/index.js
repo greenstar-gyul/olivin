@@ -126,13 +126,11 @@ const router = createRouter({
                     path: '/test',
                     name: 'test',
                     component: () => import('@/views/test/TestPage.vue'),
-                    meta: { permissions: ['system.manage'] }
                 },
                 {
                     path: '/test2',
                     name: 'test2',
                     component: () => import('@/views/test/InputTestPage.vue'),
-                    meta: { permissions: ['system.manage'] }
                 },
                 {
                     path: '/test4',
@@ -154,22 +152,26 @@ const router = createRouter({
                 {
                     path: '/standard/supplier',
                     name: 'supplier',
-                    component: () => import('@/views/standard/SupplierStandardPage.vue')
+                    component: () => import('@/views/standard/SupplierStandardPage.vue'),
+                    meta: { roles: ['system_admin'] }
                 },
                 {
                     path: '/standard/branch',
                     name: 'branch',
-                    component: () => import('@/views/standard/BranchStandardPage.vue')
+                    component: () => import('@/views/standard/BranchStandardPage.vue'),
+                    meta: { roles: ['system_admin'] }
                 },
                 {
                     path: '/standard/product',
                     name: 'product',
-                    component: () => import('@/views/standard/ProductStandardPage.vue')
+                    component: () => import('@/views/standard/ProductStandardPage.vue'),
+                    meta: { roles: ['system_admin'] }
                 },
                 {
                     path: '/standard/productapproval',
                     name: 'productApproval',
-                    component: () => import('@/views/standard/ProductApprovalPage.vue')
+                    component: () => import('@/views/standard/ProductApprovalPage.vue'),
+                    meta: { roles: ['system_admin'] }
                 },
                 /* order */
                 {

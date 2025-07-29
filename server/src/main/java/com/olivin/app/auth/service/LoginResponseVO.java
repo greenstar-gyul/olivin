@@ -24,7 +24,7 @@ public class LoginResponseVO {
         private String empName;         // 사원명
         private String email;           // 이메일
         private String position;        // 직책
-        private Long departmentId;      // 부서ID
+        private String departmentId;      // 부서ID
         private String deptName;        // 부서명
     }
     

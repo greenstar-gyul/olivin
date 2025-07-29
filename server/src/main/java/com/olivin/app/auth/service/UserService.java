@@ -55,7 +55,7 @@ public class UserService implements UserDetailsService {
             .accountExpired(false)
             .accountLocked(false)
             .credentialsExpired(false)
-            .disabled(!"ACTIVE".equals(user.getStatus()))
+            .disabled(!"050001".equals(user.getStatus()))
             .build();
     }
     

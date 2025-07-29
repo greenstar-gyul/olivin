@@ -1,4 +1,3 @@
-<!-- UserMapper.xml -->
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
     "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
@@ -36,9 +35,9 @@
             d.DEPT_NAME
         FROM EMPLOYEES e
         LEFT JOIN ROLES r ON e.ROLE_ID = r.ROLE_ID
-        LEFT JOIN DEPARTMENTS d ON e.DEPARTMENT_ID = d.DEPT_ID
+        LEFT JOIN DEPARTMENTS d ON e.DEPARTMENT_ID = d.DEPARTMENT_ID
         WHERE e.EMPLOYEE_ID = #{employeeId}
-        AND e.STATUS = 'ACTIVE'
+        AND e.STATUS = '050001'
     </select>
 
     <!-- 사원번호로 사용자 조회 -->
@@ -53,11 +52,11 @@
             e.ROLE_ID,
             e.STATUS,
             e.DEPARTMENT_ID,
-            r.ROLE_NAME,
+            'ROLE_'||upper(r.ROLE_NAME) AS ROLE_NAME,
             d.DEPT_NAME
         FROM EMPLOYEES e
         LEFT JOIN ROLES r ON e.ROLE_ID = r.ROLE_ID
-        LEFT JOIN DEPARTMENTS d ON e.DEPARTMENT_ID = d.DEPT_ID
+        LEFT JOIN DEPARTMENTS d ON e.DEPARTMENT_ID = d.DEPARTMENT_ID
         WHERE e.EMPLOYEE_ID = #{employeeId}
     </select>
 
@@ -71,7 +70,7 @@
         INNER JOIN ROLE_PERMISSION rp ON p.PERM_ID = rp.PERM_ID
         INNER JOIN EMPLOYEES e ON rp.ROLE_ID = e.ROLE_ID
         WHERE e.EMPLOYEE_ID = #{employeeId}
-        AND e.STATUS = 'ACTIVE'
+        AND e.STATUS = '050001'
     </select>
 
     <!-- 사용자 정보 수정 -->

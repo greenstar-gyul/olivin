@@ -13,12 +13,12 @@ export const useAuthStore = defineStore('auth', () => {
 
   // Computed - 기본 정보
   const isAuthenticated = computed(() => !!token.value)
-  const roleName = computed(() => userRole.value?.role_name || null)
+  const roleName = computed(() => userRole.value?.roleName || null)
   const userId = computed(() => user.value?.id || null)
 
   // 📍 DB 기반 권한 체크 함수들
   const hasPermission = (permissionName) => {
-    return userPermissions.value.some(perm => perm.perm_name === permissionName)
+    return userPermissions.value.some(perm => perm.permName === permissionName)
   }
 
   const hasAnyPermission = (permissionNames) => {
@@ -40,19 +40,19 @@ export const useAuthStore = defineStore('auth', () => {
       const res = await axios.post('/api/auth/login', { employeeId, password })
       
       // 기본 사용자 정보 저장
-      token.value = res.data.token
-      user.value = res.data.user
+      token.value = res.data.data.token
+      user.value = res.data.data.user
       
       // 📍 역할과 권한 정보 저장
-      userRole.value = res.data.role // { role_id, role_name }
-      userPermissions.value = res.data.permissions // [{ perm_id, perm_name, perm_description }]
+      userRole.value = res.data.data.role // { role_id, role_name }
+      userPermissions.value = res.data.data.permissions // [{ perm_id, permName, perm_description }]
       
-      localStorage.setItem('token', res.data.token)
+      localStorage.setItem('token', res.data.data.token)
       
       console.log('✅ 로그인 성공:', {
-        user: res.data.user.name,
-        role: res.data.role.role_name,
-        permissions: res.data.permissions.map(p => p.perm_name)
+        user: res.data.data.user.empName,
+        role: res.data.data.role.roleName,
+        permissions: res.data.data.permissions.map(p => p.permName)
       })
       
       return { success: true, data: res.data }
@@ -83,14 +83,14 @@ export const useAuthStore = defineStore('auth', () => {
       try {
         const res = await axios.get('/api/auth/me')
         
-        user.value = res.data.user
-        userRole.value = res.data.role
-        userPermissions.value = res.data.permissions
+        user.value = res.data.data.user
+        userRole.value = res.data.data.role
+        userPermissions.value = res.data.data.permissions
         
         console.log('🔄 인증 상태 복구 완료:', {
-          user: res.data.user.name,
-          role: res.data.role.role_name,
-          permissions: res.data.permissions.map(p => p.perm_name)
+          user: res.data.data.user.empName,
+          role: res.data.data.role.roleName,
+          permissions: res.data.data.permissions.map(p => p.permName)
         })
         
         return true
@@ -107,7 +107,7 @@ export const useAuthStore = defineStore('auth', () => {
   const refreshPermissions = async () => {
     try {
       const res = await axios.get('/api/auth/permissions')
-      userPermissions.value = res.data.permissions
+      userPermissions.value = res.data.data.permissions
       console.log('🔄 권한 정보 업데이트 완료')
       return true
     } catch (err) {
@@ -129,7 +129,7 @@ export const useAuthStore = defineStore('auth', () => {
     
     // 자기 소속만 조회 권한이 있으면 필터링
     if (hasPermission(`${requiredPermission}.own`)) {
-      return data.filter(item => {
+      return data.data.filter(item => {
         return item.userId === userId.value || 
                item.branchId === user.value?.branchId ||
                item.supplierId === user.value?.supplierId

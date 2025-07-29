@@ -25,7 +25,7 @@ public class AuthController {
     /**
      * 로그인
      */
-    @PostMapping("/login")
+    @PostMapping("/api/auth/login")
     public ResponseEntity<ApiResponseVO<LoginResponseVO>> login(
             @Valid @RequestBody LoginRequestVO request,
             BindingResult bindingResult
@@ -63,8 +63,15 @@ public class AuthController {
     /**
      * 현재 사용자 정보 조회
      */
-    @GetMapping("/me")
+    @GetMapping("/api/auth/me")
     public ResponseEntity<ApiResponseVO<LoginResponseVO>> getCurrentUser() {
+
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        log.info("=== /standard/** 접근 ===");
+        log.info("현재 사용자: {}", auth.getName());
+        log.info("현재 사용자 권한: {}", auth.getAuthorities());
+        log.info("인증 상태: {}", auth.isAuthenticated());
+
         try {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             
@@ -93,7 +100,7 @@ public class AuthController {
     /**
      * 로그아웃 (클라이언트에서 토큰 삭제)
      */
-    @PostMapping("/logout")
+    @PostMapping("/api/auth/logout")
     public ResponseEntity<ApiResponseVO<Void>> logout() {
         try {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -115,7 +122,7 @@ public class AuthController {
     /**
      * 토큰 유효성 검사
      */
-    @PostMapping("/validate")
+    @PostMapping("/api/auth/validate")
     public ResponseEntity<ApiResponseVO<Boolean>> validateToken() {
         try {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();

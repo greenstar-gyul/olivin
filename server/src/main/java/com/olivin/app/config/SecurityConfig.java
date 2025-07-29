@@ -66,6 +66,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/public/**").permitAll()
                 .requestMatchers("/actuator/health").permitAll()
                 .requestMatchers("/error").permitAll()
+                .requestMatchers("/standard/**").hasAnyRole("SYSTEM_ADMIN", "GENERAL_MANAGER")
                 
                 // WebSocket 연결
                 .requestMatchers("/ws/**").permitAll()
