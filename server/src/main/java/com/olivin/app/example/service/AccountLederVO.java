@@ -24,6 +24,12 @@ public class AccountLederVO {
     private String productId;
     private String accountId;
 
+    // 회사명
+    private String compName;
+
+    // 제품명
+    private String productName;
+
     @DateTimeFormat(pattern = "yyyy-MM-dd")
     private Date regDate;
 

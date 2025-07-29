@@ -3,15 +3,19 @@
 <mapper namespace="com.olivin.app.example.mapper.AccountLederMapper">
     <!-- Interface의 메서드를 통해 실행할 쿼리 정의 -->
     <select id="selectAllList" resultType="AccountLederVO">
-        SELECT account_leder_id
-             , increase
-             , decrease
-             , balance
-             , detail
-             , write_date
-             , comp_id
-             , product_id
-             , account_id
-        FROM   account_leder
+        SELECT al.account_leder_id,
+       al.increase,
+       al.decrease,
+       al.balance,
+       al.detail,
+       al.write_date,
+       al.comp_id,
+       c.comp_name,
+       al.product_id,
+       p.product_name,
+       al.account_id
+       FROM   account_leder al
+       LEFT JOIN companys c ON al.comp_id = c.comp_id
+       LEFT JOIN products p ON al.product_id = p.product_id
     </select>
 </mapper>
