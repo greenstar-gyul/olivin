@@ -33,6 +33,15 @@
         ORDER BY PRODUCT_ID ASC
     </select>
 
+    <!-- ✅ 카테고리별 마지막 제품 ID 조회 -->
+    <select id="selectLastProductIdByCategory" parameterType="String" resultType="String">
+        SELECT PRODUCT_ID
+        FROM   PRODUCTS
+        WHERE  PRODUCT_ID LIKE #{prefix} || '%'
+        ORDER BY PRODUCT_ID DESC
+        FETCH FIRST 1 ROWS ONLY
+    </select>
+
     <select id="selectProductList" parameterType="com.olivin.app.standard.service.ProductVO" resultMap="ProductResultMap">
         SELECT PRODUCT_ID, COMP_ID, PRODUCT_NAME, CATEGORY_MAIN, CATEGORY_SUB,
                VENDOR_NAME, PRODUCT_SPEC, UNIT, PACK_QTY, SAFETY_STOCK,

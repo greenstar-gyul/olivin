@@ -89,6 +89,62 @@ public class ProductServiceImpl implements ProductService {
         return productMapper.checkProductId(productId) > 0;
     }
     
+    // ✅ 제품 ID 자동생성 메서드 구현
+    @Override
+    public String getNextProductId(String categoryMain) {
+        // 카테고리별 범위 맵핑 (명세서 기준)
+        Map<String, Map<String, Object>> categoryRanges = new HashMap<>();
+        categoryRanges.put("0001", Map.of("start", 100001, "end", 199999, "prefix", "PRD1")); // 스킨케어
+        categoryRanges.put("0002", Map.of("start", 200001, "end", 299999, "prefix", "PRD2")); // 메이크업
+        categoryRanges.put("0003", Map.of("start", 300001, "end", 399999, "prefix", "PRD3")); // 클렌징
+        categoryRanges.put("0004", Map.of("start", 400001, "end", 499999, "prefix", "PRD4")); // 헤어케어
+        categoryRanges.put("0005", Map.of("start", 500001, "end", 599999, "prefix", "PRD5")); // 구강용품
+        categoryRanges.put("0006", Map.of("start", 600001, "end", 699999, "prefix", "PRD6")); // 선케어
+        categoryRanges.put("0007", Map.of("start", 700001, "end", 799999, "prefix", "PRD7")); // 뷰티소품
+        categoryRanges.put("0008", Map.of("start", 800001, "end", 899999, "prefix", "PRD8")); // 건강/기능 식품
+        categoryRanges.put("0009", Map.of("start", 900001, "end", 999999, "prefix", "PRD9")); // 푸드
+        
+        Map<String, Object> range = categoryRanges.get(categoryMain);
+        if (range == null) {
+            return null; // 잘못된 카테고리
+        }
+        
+        String prefix = (String) range.get("prefix");
+        Integer startNum = (Integer) range.get("start");
+        
+        try {
+            // 해당 카테고리의 마지막 제품 ID 조회
+            String lastProductId = productMapper.selectLastProductIdByCategory(prefix);
+            
+            String nextSequence;
+            if (lastProductId != null && !lastProductId.isEmpty()) {
+                // 마지막 ID에서 숫자 부분 추출 후 +1
+                String numberPart = lastProductId.substring(4); // "PRD1" 제거
+                int lastNumber = Integer.parseInt(numberPart);
+                int nextNumber = lastNumber + 1;
+                
+                // 범위 체크
+                Integer endNum = (Integer) range.get("end");
+                if (nextNumber > endNum) {
+                    throw new RuntimeException("해당 카테고리의 제품 ID가 범위를 초과했습니다.");
+                }
+                
+                nextSequence = String.format("%05d", nextNumber % 100000); // 5자리로 포맷
+            } else {
+                // 첫 번째 제품인 경우
+                nextSequence = String.format("%05d", startNum % 100000); // 5자리로 포맷
+            }
+            
+            return prefix + nextSequence;
+            
+        } catch (Exception e) {
+            System.err.println("제품 ID 생성 중 오류: " + e.getMessage());
+            e.printStackTrace();
+            // 기본값 반환
+            return prefix + "00001";
+        }
+    }
+    
     private String generateProductId() {
         return "PROD" + String.format("%03d", (int)(System.currentTimeMillis() % 1000));
     }
