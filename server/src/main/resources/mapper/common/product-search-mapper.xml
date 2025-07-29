@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--
+상품 검색 모달 Mapper 구현체
+
+작성자 : 함동의
+작성일 : 2025.07.29
+-->
+<mapper namespace="com.olivin.app.common.mapper.ProductSearchMapper">
+    <!-- 상품 전체 조회 -->
+    <select id="selectAllProducts" resultType="ProductSearchVO">
+        SELECT product_id
+             , product_name
+             , category_main
+             , category_sub
+             , vendor_name
+             , product_spec
+        FROM   products
+        ORDER BY product_id
+    </select>
+
+    <!-- 조건에 맞는 상품 조회 -->
+    <select id="selectProductList" parameterType="String" resultType="ProductSearchVO">
+        SELECT product_id
+             , product_name
+             , category_main
+             , category_sub
+             , vendor_name
+             , product_spec
+        FROM   products
+        WHERE  1 = 1
+        <if test="searchValue != null and searchValue != ''">
+          AND (product_name LIKE '%' || #{searchValue} || '%'
+           OR product_id LIKE '%' || #{searchValue} || '%')
+        </if>
+        ORDER BY product_id
+    </select>
+</mapper>

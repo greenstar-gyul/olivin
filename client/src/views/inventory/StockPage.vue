@@ -57,11 +57,12 @@ filters.value.filters = [ // 검색 조건 필터 목록
 
 // 제품 모달창 헤더
 const productHeaders = ref([
-  { field: 'id', header: 'ID' },
-  { field: 'name', header: '제품명' },
-  { field: 'category', header: '제품분류' },
-  { field: 'publisher', header: '공급사' },
-  { field: 'size', header: '규격' },
+  { field: 'productId', header: '제품번호' },
+  { field: 'productName', header: '제품명' },
+  { field: 'categoryMain', header: '대분류' },
+  { field: 'categorySub', header: '소분류' },
+  { field: 'vendorName', header: '공급사' },
+  { field: 'productSpec', header: '규격' },
 ]);
 
 // 모달창의 데이터 아이템
@@ -123,6 +124,10 @@ const storeModalVisible = ref(false);
 const loadProductItems = async () => {
   try {
     // 제품 목록을 서버에서 가져오기
+    const response = await axios.get('/api/search/products/all');
+    productItems.value = await response.data; // 서버에서 받은 데이터를 productItems에 저장
+
+    console.log('Product items loaded:', productItems.value);
     
   } catch (error) {
     console.error('Error loading product items:', error);
@@ -219,7 +224,7 @@ const searchFormRef = ref(null);
 const updateFilterValue = (filterName, selectedItem) => {
   // SearchForm의 searchOptions를 직접 업데이트
   if (searchFormRef.value && searchFormRef.value.searchFormRef && selectedItem) {
-    const displayValue = selectedItem.name || selectedItem.compName || selectedItem.categoryMain || '';
+    const displayValue = selectedItem.productName || selectedItem.compName || selectedItem.categoryMain || '';
     // SearchForm의 searchOptions에 직접 값 설정
     if (searchFormRef.value.searchFormRef.searchOptions) {
       searchFormRef.value.searchFormRef.searchOptions[filterName] = displayValue;
@@ -259,6 +264,20 @@ const confirmStoreModal = (selectedItems) => {
   storeModalVisible.value = false;
 };
 
+const searchProducts = async (searchValue) => {
+  try {
+    console.log('Searching products with value:', searchValue);
+    const response = await axios.get('/api/search/products', {
+      params: {
+        searchValue: searchValue
+      }
+    });
+    productItems.value = await response.data; // 서버에서 받은 데이터를 items에 저장
+  } catch (error) {
+    console.error('Error searching products:', error);
+  }
+};
+
 onMounted(() => {
   getSampleData();
 });
@@ -267,7 +286,7 @@ onMounted(() => {
 <template>
   <SearchTable ref="searchFormRef" :filters="filters" :items="items" :header="header" @searchData="searchData" @open-search-modal="handleOpenModal"></SearchTable>
   <DialogModal v-model:display="productModalVisible" :items="productItems" :headers="productHeaders" title="제품 검색"
-    selectionMode="single" @close="closeProductModal" @confirm="confirmProductModal" />
+    selectionMode="single" @close="closeProductModal" @confirm="confirmProductModal" @search-modal="searchProducts" />
   <DialogModal v-model:display="typeModalVisible" :items="typeItems" :headers="typeHeaders" title="제품 분류 검색"
     selectionMode="single" @close="closeTypeModal" @confirm="confirmTypeModal" />
   <DialogModal v-model:display="publisherModalVisible" :items="publisherItems" :headers="publisherHeaders" title="공급사 검색"
