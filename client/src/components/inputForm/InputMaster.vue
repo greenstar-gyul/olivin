@@ -16,8 +16,8 @@ const props = defineProps({
 
 const emit = defineEmits(['formSearch']);
 
-const searchItem = () => {
-  emit('formSearch');
+const searchItem = (item, fieldName) => {
+  emit('formSearch', item, fieldName);
 };
 </script>
 <template>
@@ -42,7 +42,7 @@ const searchItem = () => {
 
               <InputGroup v-else-if="element.type === 'item-search'">
                 <InputText v-model="formData[element.id]" :placeholder="element.placeholder || 'Enter item name...'" />
-                <Button icon="pi pi-search" class="p-button-outlined" @click="searchItem" />
+                <Button icon="pi pi-search" class="p-button-outlined" @click="searchItem(formData, element.id)" />
               </InputGroup>
 
               <!-- Textarea Input -->

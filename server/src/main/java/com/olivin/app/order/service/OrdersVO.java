@@ -4,6 +4,8 @@ import java.util.Date;
 
 import org.springframework.format.annotation.DateTimeFormat;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -29,10 +31,15 @@ public class OrdersVO {
   
 	private String orderStatus;
 	private String approvalUser;
-	private String approvalDate;
+
+	@DateTimeFormat(pattern = "yyyy-MM-dd")
+  @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
+	private Date approvalDate;
+	
 	private Double totalAmount;
 
   @DateTimeFormat(pattern = "yyyy-MM-dd")
+  @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
 	private Date dueDate;
   
 	private String remark;
