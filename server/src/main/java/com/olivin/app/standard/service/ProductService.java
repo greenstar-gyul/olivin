@@ -1,4 +1,4 @@
-package com.olivin.app.product.service;
+package com.olivin.app.standard.service;
 
 import java.util.List;
 import java.util.Map;

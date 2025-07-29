@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.olivin.app.product.mapper.ProductMapper">
+<mapper namespace="com.olivin.app.standard.mapper.ProductMapper">
     
-    <resultMap id="ProductResultMap" type="com.olivin.app.product.service.ProductVO">
+    <resultMap id="ProductResultMap" type="com.olivin.app.standard.service.ProductVO">
         <id property="productId" column="PRODUCT_ID"/>
         <result property="compId" column="COMP_ID"/>
         <result property="productName" column="PRODUCT_NAME"/>
@@ -30,10 +30,10 @@
                PURCHASE_PRICE, SELL_PRICE, REG_USER, REG_DATE,
                UPDATE_USER, UPDATE_DATE, STATUS, PRODUCT_IMAGE, NOTE
         FROM   PRODUCTS
-        ORDER BY REG_DATE DESC
+        ORDER BY PRODUCT_ID ASC
     </select>
 
-    <select id="selectProductList" parameterType="com.olivin.app.product.service.ProductVO" resultMap="ProductResultMap">
+    <select id="selectProductList" parameterType="com.olivin.app.standard.service.ProductVO" resultMap="ProductResultMap">
         SELECT PRODUCT_ID, COMP_ID, PRODUCT_NAME, CATEGORY_MAIN, CATEGORY_SUB,
                VENDOR_NAME, PRODUCT_SPEC, UNIT, PACK_QTY, SAFETY_STOCK,
                PURCHASE_PRICE, SELL_PRICE, REG_USER, REG_DATE,
@@ -61,7 +61,7 @@
         <if test="status != null and status != ''">
             AND STATUS = #{status}
         </if>
-        ORDER BY REG_DATE DESC
+        ORDER BY PRODUCT_ID ASC
     </select>
 
     <select id="selectProduct" parameterType="String" resultMap="ProductResultMap">
@@ -118,10 +118,10 @@
         <if test="status != null and status != ''">
             AND STATUS = #{status}
         </if>
-        ORDER BY REG_DATE DESC
+        ORDER BY PRODUCT_ID ASC
     </select>
 
-    <insert id="insertProduct" parameterType="com.olivin.app.product.service.ProductVO">
+    <insert id="insertProduct" parameterType="com.olivin.app.standard.service.ProductVO">
         INSERT INTO PRODUCTS (
             PRODUCT_ID, COMP_ID, PRODUCT_NAME, CATEGORY_MAIN, CATEGORY_SUB,
             VENDOR_NAME, PRODUCT_SPEC, UNIT, PACK_QTY, SAFETY_STOCK,
@@ -135,26 +135,90 @@
         )
     </insert>
 
-    <update id="updateProduct" parameterType="com.olivin.app.product.service.ProductVO">
+    <!-- ✅ 기존 updateProduct 쿼리 완전 교체 (NULL 안전) -->
+    <update id="updateProduct" parameterType="com.olivin.app.standard.service.ProductVO">
         UPDATE PRODUCTS 
-        SET    COMP_ID = #{compId},
-               PRODUCT_NAME = #{productName},
-               CATEGORY_MAIN = #{categoryMain},
-               CATEGORY_SUB = #{categorySub},
-               VENDOR_NAME = #{vendorName},
-               PRODUCT_SPEC = #{productSpec},
-               UNIT = #{unit},
-               PACK_QTY = #{packQty},
-               SAFETY_STOCK = #{safetyStock},
-               PURCHASE_PRICE = #{purchasePrice},
-               SELL_PRICE = #{sellPrice},
-               UPDATE_USER = #{updateUser},
-               UPDATE_DATE = #{updateDate},
-               STATUS = #{status},
-               PRODUCT_IMAGE = #{productImage},
-               NOTE = #{note}
+        SET    
+               COMP_ID = NVL(#{compId}, COMP_ID),
+               PRODUCT_NAME = NVL(#{productName}, PRODUCT_NAME),
+               CATEGORY_MAIN = NVL(#{categoryMain}, CATEGORY_MAIN),
+               CATEGORY_SUB = NVL(#{categorySub}, CATEGORY_SUB),
+               VENDOR_NAME = NVL(#{vendorName}, VENDOR_NAME),
+               PRODUCT_SPEC = NVL(#{productSpec}, PRODUCT_SPEC),
+               UNIT = NVL(#{unit}, UNIT),
+               PACK_QTY = NVL(#{packQty}, PACK_QTY),
+               SAFETY_STOCK = NVL(#{safetyStock}, SAFETY_STOCK),
+               PURCHASE_PRICE = NVL(#{purchasePrice}, PURCHASE_PRICE),
+               SELL_PRICE = NVL(#{sellPrice}, SELL_PRICE),
+               UPDATE_USER = NVL(#{updateUser}, UPDATE_USER),
+               UPDATE_DATE = NVL(#{updateDate}, SYSDATE),
+               STATUS = NVL(#{status}, STATUS),
+               PRODUCT_IMAGE = NVL(#{productImage}, PRODUCT_IMAGE),
+               NOTE = NVL(#{note}, NOTE)
         WHERE  PRODUCT_ID = #{productId}
     </update>
+
+    <!-- ✅ 상태 전용 업데이트 메서드들 -->
+    <update id="updateProductStatus" parameterType="map">
+        UPDATE PRODUCTS 
+        SET STATUS = #{status},
+            UPDATE_USER = #{updateUser},
+            UPDATE_DATE = SYSDATE
+        WHERE PRODUCT_ID = #{productId}
+    </update>
+
+    <!-- ✅ 승인/반려 전용 업데이트 쿼리 (더 안전한 버전) -->
+    <update id="updateProductApprovalStatus" parameterType="map">
+        UPDATE PRODUCTS 
+        SET    STATUS = #{status},
+               UPDATE_USER = #{updateUser},
+               UPDATE_DATE = SYSDATE
+               <if test="note != null and note != ''">
+                   , NOTE = CASE 
+                       WHEN NOTE IS NULL OR LENGTH(TRIM(NOTE)) = 0 THEN #{note}
+                       ELSE NOTE || CHR(10) || #{note}
+                   END
+               </if>
+        WHERE  PRODUCT_ID = #{productId}
+          AND  STATUS = '040002'  <!-- 승인 대기 상태인 경우만 업데이트 -->
+    </update>
+
+    <!-- ✅ 가장 간단한 승인 전용 업데이트 -->
+    <update id="updateProductSimpleApproval" parameterType="map">
+        UPDATE PRODUCTS 
+        SET STATUS = #{status},
+            UPDATE_USER = #{updateUser},
+            UPDATE_DATE = SYSDATE
+        WHERE PRODUCT_ID = #{productId}
+          AND STATUS = '040002'
+    </update>
+
+    <!-- ✅ 디버깅용 상태 조회 쿼리 -->
+    <select id="selectProductStatus" parameterType="String" resultType="String">
+        SELECT STATUS 
+        FROM   PRODUCTS 
+        WHERE  PRODUCT_ID = #{productId}
+    </select>
+
+    <!-- ✅ 상태별 제품 개수 조회 (디버깅용) -->
+    <select id="selectProductCountByStatus" resultType="map">
+        SELECT STATUS, COUNT(*) as COUNT
+        FROM   PRODUCTS
+        GROUP BY STATUS
+        ORDER BY STATUS
+    </select>
+
+    <!-- ✅ 제품 상태 이력 조회 (감사/추적용) -->
+    <select id="selectProductStatusHistory" parameterType="String" resultType="map">
+        SELECT PRODUCT_ID,
+               STATUS,
+               UPDATE_USER,
+               UPDATE_DATE,
+               REG_USER,
+               REG_DATE
+        FROM   PRODUCTS
+        WHERE  PRODUCT_ID = #{productId}
+    </select>
 
     <delete id="deleteProduct" parameterType="String">
         DELETE FROM PRODUCTS 
@@ -165,6 +229,28 @@
         SELECT COUNT(*)
         FROM   PRODUCTS
         WHERE  PRODUCT_ID = #{productId}
+    </select>
+
+    <!-- ✅ 승인 대기 상태 제품만 조회 -->
+    <select id="selectPendingProducts" resultMap="ProductResultMap">
+        SELECT PRODUCT_ID, COMP_ID, PRODUCT_NAME, CATEGORY_MAIN, CATEGORY_SUB,
+               VENDOR_NAME, PRODUCT_SPEC, UNIT, PACK_QTY, SAFETY_STOCK,
+               PURCHASE_PRICE, SELL_PRICE, REG_USER, REG_DATE,
+               UPDATE_USER, UPDATE_DATE, STATUS, PRODUCT_IMAGE, NOTE
+        FROM   PRODUCTS
+        WHERE  STATUS = '040002'  <!-- 승인 대기 -->
+        ORDER BY PRODUCT_ID ASC
+    </select>
+
+    <!-- ✅ 승인 완료 상태 제품만 조회 -->
+    <select id="selectApprovedProducts" resultMap="ProductResultMap">
+        SELECT PRODUCT_ID, COMP_ID, PRODUCT_NAME, CATEGORY_MAIN, CATEGORY_SUB,
+               VENDOR_NAME, PRODUCT_SPEC, UNIT, PACK_QTY, SAFETY_STOCK,
+               PURCHASE_PRICE, SELL_PRICE, REG_USER, REG_DATE,
+               UPDATE_USER, UPDATE_DATE, STATUS, PRODUCT_IMAGE, NOTE
+        FROM   PRODUCTS
+        WHERE  STATUS = '040001'  <!-- 승인 완료 -->
+        ORDER BY PRODUCT_ID ASC
     </select>
 
 </mapper>

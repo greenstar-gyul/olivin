@@ -3,13 +3,18 @@ import StandardInput from '@/components/common/StandardInput.vue';
 import FileUpload from 'primevue/fileupload';
 import Toast from 'primevue/toast';
 import Button from 'primevue/button';
-import { ref, onMounted, nextTick } from 'vue';
+import { ref, onMounted, nextTick, computed } from 'vue';
 import { useToast } from 'primevue/usetoast';
 import axios from 'axios';
 
 const API_BASE_URL = '/api/products';
 const toast = useToast();
 const fileUploadRef = ref();
+
+// window.location.origin을 computed로 처리
+const baseUrl = computed(() => {
+  return typeof window !== 'undefined' ? window.location.origin : '';
+});
 
 const filters = ref({
   title: '조회 조건',
@@ -55,26 +60,56 @@ const header = ref({
   rightAligned: ['packQty', 'safetyStock', 'purchasePrice', 'sellPrice']
 });
 
+// 폼 데이터를 반응형으로 관리
+const formData = ref({
+  productId: '',
+  compId: '',
+  productName: '',
+  categoryMain: '',
+  categorySub: '',
+  vendorName: '',
+  productSpec: '',
+  unit: '',
+  packQty: '',
+  safetyStock: '',
+  purchasePrice: '',
+  sellPrice: '',
+  regUser: 'admin',
+  regDate: '',
+  updateUser: '',
+  updateDate: '',
+  note: ''
+});
+
+// ✅ 단위 옵션 추가
+const unitOptions = [
+  { name: '개', value: 'ea' },
+  { name: '박스', value: 'box' },
+  { name: '팩', value: 'pack' },
+  { name: 'g', value: 'g' },
+  { name: 'ml', value: 'ml' },
+];
+
 const inputs = ref({
   title: '제품 등록/수정',
   inputs: [
-    { type: 'text', label: '제품ID', value: '', placeholder: '자동생성 또는 입력', name: 'productId' },
-    { type: 'text', label: '매장코드', value: '', placeholder: 'OY001, OY002 등', name: 'compId', required: true },
-    { type: 'text', label: '제품명', value: '', placeholder: '제품명을 입력하세요', name: 'productName', required: true },
-    { type: 'text', label: '카테고리', value: '', placeholder: '화장품, 건강식품, 의류 등', name: 'categoryMain', required: true },
-    { type: 'text', label: '세부카테고리', value: '', placeholder: '스킨케어, 메이크업, 클렌징 등', name: 'categorySub' },
-    { type: 'text', label: '브랜드', value: '', placeholder: '브랜드명을 입력하세요', name: 'vendorName', required: true },
-    { type: 'text', label: '용량/규격', value: '', placeholder: '50ml, 30포, 7.5g 등', name: 'productSpec' },
-    { type: 'text', label: '단위', value: '', placeholder: '개, 박스, 세트 등', name: 'unit', required: true },
-    { type: 'number', label: '입수량', value: '', placeholder: '박스당 개수', name: 'packQty' },
-    { type: 'number', label: '안전재고', value: '', placeholder: '최소 재고량', name: 'safetyStock' },
-    { type: 'number', label: '구매가격', value: '', placeholder: '원가 (원)', name: 'purchasePrice' },
-    { type: 'number', label: '판매가격', value: '', placeholder: '소비자가격 (원)', name: 'sellPrice' },
-    { type: 'text', label: '등록자', value: 'admin', placeholder: '등록자 ID', name: 'regUser' },
-    { type: 'datetime-local', label: '등록일시', value: '', placeholder: '등록일시', name: 'regDate' },
-    { type: 'text', label: '수정자', value: '', placeholder: '수정자 ID (수정시에만)', name: 'updateUser' },
-    { type: 'datetime-local', label: '수정일시', value: '', placeholder: '수정일시 (수정시에만)', name: 'updateDate' },
-    { type: 'textarea', label: '비고', value: '', placeholder: '제품 설명, 특징, 주의사항 등을 상세히 입력하세요', name: 'note' }
+    { type: 'text', label: '제품ID', placeholder: '자동생성 또는 입력', name: 'productId' },
+    { type: 'text', label: '매장코드', placeholder: 'OY001, OY002 등', name: 'compId', required: true },
+    { type: 'text', label: '제품명', placeholder: '제품명을 입력하세요', name: 'productName', required: true },
+    { type: 'text', label: '카테고리', placeholder: '화장품, 건강식품, 의류 등', name: 'categoryMain', required: true },
+    { type: 'text', label: '세부카테고리', placeholder: '스킨케어, 메이크업, 클렌징 등', name: 'categorySub' },
+    { type: 'text', label: '브랜드', placeholder: '브랜드명을 입력하세요', name: 'vendorName', required: true },
+    { type: 'text', label: '용량/규격', placeholder: '50ml, 30포, 7.5g 등', name: 'productSpec' },
+    { type: 'select', label: '단위', placeholder: '단위를 선택하세요', name: 'unit', required: true, options: unitOptions },
+    { type: 'number', label: '입수량', placeholder: '박스당 개수', name: 'packQty' },
+    { type: 'number', label: '안전재고', placeholder: '최소 재고량', name: 'safetyStock' },
+    { type: 'number', label: '구매가격', placeholder: '원가 (원)', name: 'purchasePrice' },
+    { type: 'number', label: '판매가격', placeholder: '소비자가격 (원)', name: 'sellPrice' },
+    { type: 'text', label: '등록자', placeholder: '등록자 ID', name: 'regUser' },
+    { type: 'datetime-local', label: '등록일시', placeholder: '등록일시', name: 'regDate' },
+    { type: 'text', label: '수정자', placeholder: '수정자 ID (수정시에만)', name: 'updateUser' },
+    { type: 'datetime-local', label: '수정일시', placeholder: '수정일시 (수정시에만)', name: 'updateDate' },
+    { type: 'textarea', label: '비고', placeholder: '제품 설명, 특징, 주의사항 등을 상세히 입력하세요', name: 'note' }
   ]
 });
 
@@ -88,7 +123,7 @@ const onProductSelect = async (product) => {
   selectedProduct.value = product;
   selectedProductId.value = product.productId;
   
-  await updateFormInputs(product);
+  await updateFormData(product);
   
   if (product.productImage) {
     uploadedImageUrl.value = product.productImage;
@@ -97,28 +132,23 @@ const onProductSelect = async (product) => {
   }
 };
 
-const updateFormInputs = async (productData) => {
+// 폼 데이터 업데이트 함수 개선
+const updateFormData = async (productData) => {
   try {
-    inputs.value.inputs = inputs.value.inputs.map((input) => {
-      if (input.name in productData) {
-        const newValue = productData[input.name] || '';
+    // formData 객체를 직접 업데이트
+    Object.keys(formData.value).forEach(key => {
+      if (key in productData) {
+        let value = productData[key] || '';
         
-        let formattedValue;
-        if (input.type === 'datetime-local' && newValue) {
-          formattedValue = formatDateTimeForInput(newValue);
-        } else {
-          formattedValue = String(newValue);
+        // datetime-local 타입을 위한 포맷팅
+        if ((key === 'regDate' || key === 'updateDate') && value) {
+          value = formatDateTimeForInput(value);
         }
         
-        return {
-          ...input,
-          value: formattedValue
-        };
+        formData.value[key] = String(value);
       }
-      return { ...input };
     });
     
-    inputs.value = { ...inputs.value };
     await nextTick();
     
   } catch (error) {
@@ -148,25 +178,8 @@ const loadProducts = async () => {
     }));
   } catch (error) {
     console.error('제품 목록 조회 실패:', error);
-    
-    // 더미 데이터
-    items.value = [
-      { 
-        productId: 'PROD001', 
-        productName: '뉴트로지나 딥클린 폼클렌징', 
-        categoryMain: '화장품', 
-        categorySub: '클렌징',
-        vendorName: '뉴트로지나', 
-        compId: 'OY001', 
-        productSpec: '150ml', 
-        unit: '개',
-        packQty: 24,
-        safetyStock: 50, 
-        sellPrice: 8900,
-        status: 'APPROVED',
-        regDate: '2025-01-20'
-      }
-    ];
+    alert('제품 목록을 불러오는데 실패했습니다.');
+    items.value = [];
   }
 };
 
@@ -245,21 +258,20 @@ const clearForm = () => {
   selectedProduct.value = null;
   selectedProductId.value = '';
   
-  inputs.value.inputs.forEach(input => {
-    if (input.name === 'regUser') {
-      input.value = 'admin';
-    } else if (input.name === 'regDate') {
+  // formData 초기화
+  Object.keys(formData.value).forEach(key => {
+    if (key === 'regUser') {
+      formData.value[key] = 'admin';
+    } else if (key === 'regDate') {
       const now = new Date();
       const year = now.getFullYear();
       const month = String(now.getMonth() + 1).padStart(2, '0');
       const day = String(now.getDate()).padStart(2, '0');
       const hours = String(now.getHours()).padStart(2, '0');
       const minutes = String(now.getMinutes()).padStart(2, '0');
-      input.value = `${year}-${month}-${day}T${hours}:${minutes}`;
-    } else if (input.name === 'updateUser' || input.name === 'updateDate') {
-      input.value = '';
+      formData.value[key] = `${year}-${month}-${day}T${hours}:${minutes}`;
     } else {
-      input.value = '';
+      formData.value[key] = '';
     }
   });
   
@@ -322,7 +334,7 @@ const searchData = async (searchOptions) => {
   }
 };
 
-const saveData = async (inputData) => {
+const saveData = async () => {
   try {
     const requiredFields = [
       { field: 'productName', label: '제품명' },
@@ -333,7 +345,7 @@ const saveData = async (inputData) => {
     ];
     
     for (const req of requiredFields) {
-      if (!inputData[req.field] || inputData[req.field].trim() === '') {
+      if (!formData.value[req.field] || formData.value[req.field].trim() === '') {
         alert(`${req.label}은(는) 필수입력 항목입니다.`);
         return;
       }
@@ -355,12 +367,12 @@ const saveData = async (inputData) => {
     }
     
     const productData = {
-      ...inputData,
+      ...formData.value,
       productImage: imageUrl,
-      status: 'ST002'
+      status: '040002'
     };
     
-    if (inputData.productId && inputData.productId.trim() !== '') {
+    if (formData.value.productId && formData.value.productId.trim() !== '') {
       productData.updateUser = 'admin';
       
       const now = new Date();
@@ -371,10 +383,8 @@ const saveData = async (inputData) => {
       const minutes = String(now.getMinutes()).padStart(2, '0');
       productData.updateDate = `${year}-${month}-${day}T${hours}:${minutes}`;
       
-      const updateUserInput = inputs.value.inputs.find(input => input.name === 'updateUser');
-      const updateDateInput = inputs.value.inputs.find(input => input.name === 'updateDate');
-      if (updateUserInput) updateUserInput.value = 'admin';
-      if (updateDateInput) updateDateInput.value = productData.updateDate;
+      formData.value.updateUser = 'admin';
+      formData.value.updateDate = productData.updateDate;
     }
     
     if (productData.productId) {
@@ -458,22 +468,16 @@ const formatDateTimeForInput = (dateString) => {
 onMounted(() => {
   loadProducts();
   
-  const regUserInput = inputs.value.inputs.find(input => input.name === 'regUser');
-  const regDateInput = inputs.value.inputs.find(input => input.name === 'regDate');
+  // 초기 폼 데이터 설정
+  formData.value.regUser = 'admin';
   
-  if (regUserInput) {
-    regUserInput.value = 'admin';
-  }
-  
-  if (regDateInput) {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const day = String(now.getDate()).padStart(2, '0');
-    const hours = String(now.getHours()).padStart(2, '0');
-    const minutes = String(now.getMinutes()).padStart(2, '0');
-    regDateInput.value = `${year}-${month}-${day}T${hours}:${minutes}`;
-  }
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  const hours = String(now.getHours()).padStart(2, '0');
+  const minutes = String(now.getMinutes()).padStart(2, '0');
+  formData.value.regDate = `${year}-${month}-${day}T${hours}:${minutes}`;
 });
 
 </script>
@@ -615,9 +619,22 @@ onMounted(() => {
                 <span v-if="input.required" class="text-red-500">*</span>
               </label>
               
+              <!-- ✅ 단위 필드는 select로 렌더링 -->
+              <select
+                v-if="input.type === 'select'"
+                v-model="formData[input.name]"
+                class="p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">{{ input.placeholder }}</option>
+                <option v-for="option in input.options" :key="option.value" :value="option.value">
+                  {{ option.name }}
+                </option>
+              </select>
+              
+              <!-- 일반 입력 필드들 -->
               <input
-                v-if="input.type === 'text' || input.type === 'number' || input.type === 'datetime-local'"
-                v-model="input.value"
+                v-else-if="input.type === 'text' || input.type === 'number' || input.type === 'datetime-local'"
+                v-model="formData[input.name]"
                 :type="input.type"
                 :placeholder="input.placeholder"
                 class="p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -633,7 +650,7 @@ onMounted(() => {
             </label>
             
             <textarea
-              v-model="input.value"
+              v-model="formData[input.name]"
               :placeholder="input.placeholder"
               rows="4"
               class="p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none w-full"
@@ -688,7 +705,7 @@ onMounted(() => {
             <label class="block text-sm font-medium mb-2">미리보기</label>
             <div class="border rounded-lg p-4 bg-gray-50">
               <img 
-                :src="uploadedImageUrl.startsWith('http') ? uploadedImageUrl : `${window.location.origin}${uploadedImageUrl}`" 
+                :src="uploadedImageUrl.startsWith('http') ? uploadedImageUrl : `${baseUrl}${uploadedImageUrl}`" 
                 alt="제품 이미지 미리보기"
                 class="max-w-full max-h-48 object-contain rounded"
               />
@@ -714,13 +731,7 @@ onMounted(() => {
           />
           <Button 
             label="저장" 
-            @click="() => {
-              const inputData = {};
-              inputs.inputs.forEach(input => {
-                inputData[input.name] = input.value;
-              });
-              saveData(inputData);
-            }"
+            @click="saveData"
             severity="success"
             icon="pi pi-save"
             class="flex-1"
