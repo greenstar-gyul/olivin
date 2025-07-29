@@ -16,7 +16,7 @@ public class InbndController {
     private final InbndService inbndService;
 
     @GetMapping("/outbndMgmt")
-    public List<InbndVO> inbndList() {
+    public List<InbndVO> inbndList() { 
       return inbndService.getAllInbnd();
     }  // end of inbndList()
 } // end of class

@@ -1,9 +1,13 @@
 <script setup>
 import InputMultiTable from '@/components/common/InputMultiTable.vue';
-import { ref } from 'vue';
+import { onMounted, ref } from 'vue';
+import axios from 'axios';
+
+
+// 테스트 데이터
+const items = ref([]);
 
 /* Form Data */
-
 // 폼 기본값
 const formData = {
   data: 0.11,
@@ -26,20 +30,21 @@ const formSchema = [
 
 /* Input Table */
 
-const tableData = [
-  { id: 1, name: '상품1', price: 100, date: '2023-01-01', select: 1, text: '안녕하세요' },
-  { id: 2, name: '상품2', price: 200, date: '2023-01-02', select: 2, text: '안녕하세요' }
-];
+const tableData = ref([]);
+// const tableData = [
+//   { id: 1, name: '상품1', price: 100, date: '2023-01-01', select: 1, text: '안녕하세요' },
+//   { id: 2, name: '상품2', price: 200, date: '2023-01-02', select: 2, text: '안녕하세요' }
+// ];
 
 const tableHeader = {
   title: '제품 목록',
   header: {
-    id: 'ID',
-    name: '상품명',
-    date: '날짜',
-    select: '선택',
-    price: '가격',
-    text: '설명'
+    inbndNo: '입고번호',
+    outbndNo: '출고번호',
+    inbndStatus  : '입고상태',
+    outbndFrom: '출고지',
+    inbndTo: '입고지',
+    inbndDate: '입고일'
   },
   rightAligned: ['price']
 };
@@ -87,6 +92,36 @@ const importHandler = () => {
 const exportHandler = () => {
   console.log('출고 처리');
 };
+
+
+
+// 테스트 함수
+const getSampleData = async () => {
+  try {
+    const result = await axios.get('/api/outbndMgmt');
+    // const data = await result.data;
+    tableData.value = await result.data;
+    console.log('Loaded sample data:', tableData.value);
+    console.log('test data:', result.data);
+    // console.log('Loaded sample data:', data);
+    // console.log('test:', data[0].inbndNo);
+    // console.log('testGGG : ', tableData[0].name);
+  
+    // items에 데이터를 할당
+    // items.value = data;
+    // console.log('test items', items.value[0].inbndNo)
+    // tableData[0].name = data[0].inbndNo;
+  } catch (e) {
+    console.error('출고 데이터 불러오기 실패:', e)
+  }
+};
+
+
+onMounted(() => {  
+  getSampleData();
+});
+
+
 </script>
 <template>
   <InputMultiTable title="출고정보"
@@ -98,7 +133,7 @@ const exportHandler = () => {
     :detailColumns="columns" :detailCRUD="true"
     @onRowSelect="onRowSelect">
     <template #btn>
-      <Button label="불러오기" class="min-w-fit whitespace-nowrap" severity="info" @click="importHandler" outlined />
+      <Button label="발주정보불러오기" class="min-w-fit whitespace-nowrap" severity="info" @click="importHandler" outlined />
     </template>
     <template #detailBtn>
       <Button label="출고처리" class="min-w-fit whitespace-nowrap" severity="success" @click="exportHandler" outlined />

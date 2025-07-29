@@ -21,6 +21,6 @@ public class InbndVO {
     
     @DateTimeFormat(pattern = "yyyy-MM-dd")
     private Date inbndDate; // 입고일
-    private String inbndSattus; // 입고상태
+    private String inbndStatus; // 입고상태
 
 }
