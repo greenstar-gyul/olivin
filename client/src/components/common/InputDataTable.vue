@@ -3,7 +3,7 @@ import { ref, watch } from 'vue';
 import InputMaster from '@/components/inputForm/InputMaster.vue';
 import InputTable from '@/components/table/InputTable.vue';
 
-const emit = defineEmits(['submit']);
+const emit = defineEmits(['submit', 'formSearch', 'tableSearch']);
 
 const props = defineProps({
   title: { 
@@ -102,9 +102,15 @@ const removeProductHandler = () => {
   inputTableRef.value.clearSelection();
 };
 
-const formSearch = () => {
-  emit('formSearch');
+// 모달관련
+
+const formSearch = (item, fieldName) => {
+  emit('formSearch', item, fieldName);
 };
+
+const tableSearch = (item, fieldName) => {
+  emit('tableSearch', item, fieldName);
+}
 </script>
 <template>
   <Fluid>
@@ -122,6 +128,7 @@ const formSearch = () => {
       :columns="props.columns"
       :selected="true"
       :maxHeight="props.tableHeight"
+      @tableSearch="tableSearch"
     >
       <template #btn>
         <Button label="추가" @click="addProductHandler" />

@@ -21,25 +21,35 @@
             due_date,
             remark,
             order_to_id,
+            order_to,
             order_from
         FROM
             purchase_orders
         <where>
             <if test="orderId != null and orderId != ''">
-                AND order_id = #{orderId}
+                AND order_id LIKE '%'||#{orderId}||'%'
             </if>
             <if test="orderTitle != null and orderTitle != ''">
-                AND order_title LIKE CONCAT('%', #{orderTitle}, '%')
+                AND order_title LIKE '%'||#{orderTitle}||'%'
             </if>
             <if test="userId != null and userId != ''">
-                AND user_id = #{userId}
+                AND user_id LIKE '%'||#{userId}||'%'
             </if>
             <if test="orderType != null and orderType != ''">
                 AND order_type = #{orderType}
             </if>
             <if test="orderFromId != null and orderFromId != ''">
                 AND order_from_id = #{orderFromId}
-            </if>            
+            </if>
+            <if test="orderFrom != null and orderFrom != ''">
+                AND order_from LIKE '%'||#{orderFrom}||'%'
+            </if>
+            <if test="orderToId != null and orderToId != ''">
+                AND order_to_id = #{orderToId}
+            </if>
+            <if test="orderTo != null and orderTo != ''">
+                AND order_to LIKE '%'||#{orderTo}||'%'
+            </if>
             <if test="orderStatus != null and orderStatus != ''">
                 AND order_status = #{orderStatus}
             </if>
@@ -50,7 +60,7 @@
                 AND due_date &lt;= #{dueDate}
             </if>
         </where>
-        ORDER BY order_date DESC
+        ORDER BY order_id DESC
     </select>
 
     <select id="selectOneByOrderId" resultType="OrdersVO" parameterType="string">
@@ -138,7 +148,7 @@
             approval_date,
             total_amount,
             due_date,
-            remark,
+            remark
         ) VALUES (
             #{orderId},
             #{orderTitle},
@@ -147,7 +157,7 @@
             #{orderFromId},
             #{orderFrom},
             #{orderToId},
-            #{orderTo}
+            #{orderTo},
             #{reason},
             #{orderDate},
             #{orderStatus},
