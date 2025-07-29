@@ -1,4 +1,4 @@
-package com.olivin.app.product.service;
+package com.olivin.app.standard.service;
 
 import java.util.Date;
 import org.apache.ibatis.type.Alias;
