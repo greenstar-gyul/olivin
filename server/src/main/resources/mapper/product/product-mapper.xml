@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.olivin.app.product.mapper.ProductMapper">
+    
+    <resultMap id="ProductResultMap" type="com.olivin.app.product.service.ProductVO">
+        <id property="productId" column="PRODUCT_ID"/>
+        <result property="compId" column="COMP_ID"/>
+        <result property="productName" column="PRODUCT_NAME"/>
+        <result property="categoryMain" column="CATEGORY_MAIN"/>
+        <result property="categorySub" column="CATEGORY_SUB"/>
+        <result property="vendorName" column="VENDOR_NAME"/>
+        <result property="productSpec" column="PRODUCT_SPEC"/>
+        <result property="unit" column="UNIT"/>
+        <result property="packQty" column="PACK_QTY"/>
+        <result property="safetyStock" column="SAFETY_STOCK"/>
+        <result property="purchasePrice" column="PURCHASE_PRICE"/>
+        <result property="sellPrice" column="SELL_PRICE"/>
+        <result property="regUser" column="REG_USER"/>
+        <result property="regDate" column="REG_DATE"/>
+        <result property="updateUser" column="UPDATE_USER"/>
+        <result property="updateDate" column="UPDATE_DATE"/>
+        <result property="status" column="STATUS"/>
+        <result property="productImage" column="PRODUCT_IMAGE"/>
+        <result property="note" column="NOTE"/>
+    </resultMap>
+
+    <select id="selectAllList" resultMap="ProductResultMap">
+        SELECT PRODUCT_ID, COMP_ID, PRODUCT_NAME, CATEGORY_MAIN, CATEGORY_SUB,
+               VENDOR_NAME, PRODUCT_SPEC, UNIT, PACK_QTY, SAFETY_STOCK,
+               PURCHASE_PRICE, SELL_PRICE, REG_USER, REG_DATE,
+               UPDATE_USER, UPDATE_DATE, STATUS, PRODUCT_IMAGE, NOTE
+        FROM   PRODUCTS
+        ORDER BY REG_DATE DESC
+    </select>
+
+    <select id="selectProductList" parameterType="com.olivin.app.product.service.ProductVO" resultMap="ProductResultMap">
+        SELECT PRODUCT_ID, COMP_ID, PRODUCT_NAME, CATEGORY_MAIN, CATEGORY_SUB,
+               VENDOR_NAME, PRODUCT_SPEC, UNIT, PACK_QTY, SAFETY_STOCK,
+               PURCHASE_PRICE, SELL_PRICE, REG_USER, REG_DATE,
+               UPDATE_USER, UPDATE_DATE, STATUS, PRODUCT_IMAGE, NOTE
+        FROM   PRODUCTS
+        WHERE  1=1
+        <if test="productName != null and productName != ''">
+            AND PRODUCT_NAME LIKE '%' || #{productName} || '%'
+        </if>
+        <if test="categoryMain != null and categoryMain != ''">
+            AND CATEGORY_MAIN LIKE '%' || #{categoryMain} || '%'
+        </if>
+        <if test="categorySub != null and categorySub != ''">
+            AND CATEGORY_SUB LIKE '%' || #{categorySub} || '%'
+        </if>
+        <if test="vendorName != null and vendorName != ''">
+            AND VENDOR_NAME LIKE '%' || #{vendorName} || '%'
+        </if>
+        <if test="compId != null and compId != ''">
+            AND COMP_ID LIKE '%' || #{compId} || '%'
+        </if>
+        <if test="packQty != null">
+            AND PACK_QTY = #{packQty}
+        </if>
+        <if test="status != null and status != ''">
+            AND STATUS = #{status}
+        </if>
+        ORDER BY REG_DATE DESC
+    </select>
+
+    <select id="selectProduct" parameterType="String" resultMap="ProductResultMap">
+        SELECT PRODUCT_ID, COMP_ID, PRODUCT_NAME, CATEGORY_MAIN, CATEGORY_SUB,
+               VENDOR_NAME, PRODUCT_SPEC, UNIT, PACK_QTY, SAFETY_STOCK,
+               PURCHASE_PRICE, SELL_PRICE, REG_USER, REG_DATE,
+               UPDATE_USER, UPDATE_DATE, STATUS, PRODUCT_IMAGE, NOTE
+        FROM   PRODUCTS
+        WHERE  PRODUCT_ID = #{productId}
+    </select>
+
+    <select id="selectProductsByCondition" parameterType="Map" resultMap="ProductResultMap">
+        SELECT PRODUCT_ID, COMP_ID, PRODUCT_NAME, CATEGORY_MAIN, CATEGORY_SUB,
+               VENDOR_NAME, PRODUCT_SPEC, UNIT, PACK_QTY, SAFETY_STOCK,
+               PURCHASE_PRICE, SELL_PRICE, REG_USER, REG_DATE,
+               UPDATE_USER, UPDATE_DATE, STATUS, PRODUCT_IMAGE, NOTE
+        FROM   PRODUCTS
+        WHERE  1=1
+        <if test="productName != null and productName != ''">
+            AND PRODUCT_NAME LIKE '%' || #{productName} || '%'
+        </if>
+        <if test="categoryMain != null and categoryMain != ''">
+            AND CATEGORY_MAIN LIKE '%' || #{categoryMain} || '%'
+        </if>
+        <if test="categorySub != null and categorySub != ''">
+            AND CATEGORY_SUB LIKE '%' || #{categorySub} || '%'
+        </if>
+        <if test="vendorName != null and vendorName != ''">
+            AND VENDOR_NAME LIKE '%' || #{vendorName} || '%'
+        </if>
+        <if test="compId != null and compId != ''">
+            AND COMP_ID LIKE '%' || #{compId} || '%'
+        </if>
+        <if test="packQtyFrom != null and packQtyFrom != ''">
+            <![CDATA[
+                AND PACK_QTY >= #{packQtyFrom}
+            ]]>
+        </if>
+        <if test="packQtyTo != null and packQtyTo != ''">
+            <![CDATA[
+                AND PACK_QTY <= #{packQtyTo}
+            ]]>
+        </if>
+        <if test="regDateFrom != null and regDateFrom != ''">
+            <![CDATA[
+                AND REG_DATE >= TO_DATE(#{regDateFrom}, 'YYYY-MM-DD')
+            ]]>
+        </if>
+        <if test="regDateTo != null and regDateTo != ''">
+            <![CDATA[
+                AND REG_DATE <= TO_DATE(#{regDateTo}, 'YYYY-MM-DD') + INTERVAL '1' DAY - INTERVAL '1' SECOND
+            ]]>
+        </if>
+        <if test="status != null and status != ''">
+            AND STATUS = #{status}
+        </if>
+        ORDER BY REG_DATE DESC
+    </select>
+
+    <insert id="insertProduct" parameterType="com.olivin.app.product.service.ProductVO">
+        INSERT INTO PRODUCTS (
+            PRODUCT_ID, COMP_ID, PRODUCT_NAME, CATEGORY_MAIN, CATEGORY_SUB,
+            VENDOR_NAME, PRODUCT_SPEC, UNIT, PACK_QTY, SAFETY_STOCK,
+            PURCHASE_PRICE, SELL_PRICE, REG_USER, REG_DATE, STATUS, 
+            PRODUCT_IMAGE, NOTE
+        ) VALUES (
+            #{productId}, #{compId}, #{productName}, #{categoryMain}, #{categorySub},
+            #{vendorName}, #{productSpec}, #{unit}, #{packQty}, #{safetyStock},
+            #{purchasePrice}, #{sellPrice}, #{regUser}, #{regDate}, 
+            NVL(#{status}, 'PENDING'), #{productImage}, #{note}
+        )
+    </insert>
+
+    <update id="updateProduct" parameterType="com.olivin.app.product.service.ProductVO">
+        UPDATE PRODUCTS 
+        SET    COMP_ID = #{compId},
+               PRODUCT_NAME = #{productName},
+               CATEGORY_MAIN = #{categoryMain},
+               CATEGORY_SUB = #{categorySub},
+               VENDOR_NAME = #{vendorName},
+               PRODUCT_SPEC = #{productSpec},
+               UNIT = #{unit},
+               PACK_QTY = #{packQty},
+               SAFETY_STOCK = #{safetyStock},
+               PURCHASE_PRICE = #{purchasePrice},
+               SELL_PRICE = #{sellPrice},
+               UPDATE_USER = #{updateUser},
+               UPDATE_DATE = #{updateDate},
+               STATUS = #{status},
+               PRODUCT_IMAGE = #{productImage},
+               NOTE = #{note}
+        WHERE  PRODUCT_ID = #{productId}
+    </update>
+
+    <delete id="deleteProduct" parameterType="String">
+        DELETE FROM PRODUCTS 
+        WHERE  PRODUCT_ID = #{productId}
+    </delete>
+
+    <select id="checkProductId" parameterType="String" resultType="int">
+        SELECT COUNT(*)
+        FROM   PRODUCTS
+        WHERE  PRODUCT_ID = #{productId}
+    </select>
+
+</mapper>

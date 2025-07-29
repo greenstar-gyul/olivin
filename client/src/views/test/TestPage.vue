@@ -106,6 +106,9 @@ const modalItems2 = ref([
 const testModalVisible = ref(false);
 const testModalVisible2 = ref(false);
 
+// searchForm의 searchOptions를 참조하는 ref 변수
+const searchOptions = ref({});
+
 // 검색 폼에서 검색 버튼 클릭 시 호출되는 함수
 const searchData = (searchOptions) => {
   console.log('Searching with options:', searchOptions);
@@ -132,31 +135,45 @@ const getSampleData = async () => {
   const result = await axios.get('/api/test');
   const data = await result.data;
   console.log('Sample data:', data);
-}
+};
 
 // ======
 
 // 모달창 닫기 함수. 필요한 만큼 생성
 const closeModal = () => {
   testModalVisible.value = false;
-}
+};
+
+// 모달창에서 선택한 아이템을 처리하는 함수
+const updateFilterValue = (filterName, selectedItem) => {
+  // SearchForm의 searchOptions를 직접 업데이트
+  if (searchOptions.value && searchOptions.value.searchFormRef && selectedItem) {
+    const displayValue = selectedItem.name || selectedItem.compName || selectedItem.categoryMain || '';
+    // SearchForm의 searchOptions에 직접 값 설정
+    if (searchOptions.value.searchFormRef.searchOptions) {
+      searchOptions.value.searchFormRef.searchOptions[filterName] = displayValue;
+    }
+  }
+};
 
 // 모달창 확인 버튼 클릭 시 호출되는 함수
 // 필요한 로직 작성
 const confirmModal = (selectedItems) => {
   console.log('Selected items from modal:', selectedItems);
   // 필요한 로직 작성
-
-  
   testModalVisible2.value = false;
 };
 
 const closeModal2 = () => {
   testModalVisible2.value = false;
-}
+};
 
 const confirmModal2 = (selectedItems) => {
   console.log('Selected items from modal:', selectedItems);
+  // 선택한 값으로 searchOptions 업데이트
+  updateFilterValue('dialog2', selectedItems);
+
+
   testModalVisible2.value = false;
 };
 
@@ -166,7 +183,7 @@ onMounted(() => {
 
 </script>
 <template>
-  <SearchTable :filters="filters" :items="items" :header="header" @searchData="searchData" @open-search-modal="handleOpenModal"></SearchTable>
+  <SearchTable ref="searchOptions" :filters="filters" :items="items" :header="header" @searchData="searchData" @open-search-modal="handleOpenModal"></SearchTable>
   <DialogModal title="테스트 모달 1" :display="testModalVisible" :headers="modalHeaders" :items="modalItems" :selectionMode="'multiple'" @close="closeModal" @confirm="confirmModal"></DialogModal>
   <DialogModal title="테스트 모달 2" :display="testModalVisible2" :headers="modalHeaders2" :items="modalItems2" :selectionMode="'single'" @close="closeModal2" @confirm="confirmModal2"></DialogModal>
 </template>

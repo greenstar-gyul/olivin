@@ -188,6 +188,11 @@ const router = createRouter({
                     component: () => import('@/views/orderMgmt/SupplierOrdersView.vue')
                 }
                 /* end of order */
+                {
+                    path: '/inventory/stock',
+                    name: 'stock',
+                    component: () => import('@/views/inventory/StockPage.vue')
+                }
             ]
         },
         {
