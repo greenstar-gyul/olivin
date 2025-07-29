@@ -1,7 +1,8 @@
 <script setup>
+import { InputGroup, InputText } from 'primevue';
 import { onMounted, ref } from 'vue';
 
-const emit = defineEmits(['confirm', 'close']);
+const emit = defineEmits(['confirm', 'close', 'searchModal']);
 const props = defineProps({
   display: {
     type: Boolean,
@@ -22,10 +23,15 @@ const props = defineProps({
   title: {
     type: String,
     default: 'Dialog Modal'
+  },
+  placeholder: {
+    type: String,
+    default: 'Search...'
   }
 });
 
 const selectedItems = ref(null);
+const searchValue = ref('');
 
 const initializeSelectedProduct = () => {
   if (props.selectionMode === 'single') {
@@ -58,6 +64,10 @@ const onProductSelect = (event) => {
   }
 };
 
+const searchModal = (searchValue) => {
+  emit('searchModal', searchValue);
+};
+
 onMounted(() => {
   initializeSelectedProduct();
 });
@@ -67,6 +77,11 @@ onMounted(() => {
   <Dialog :header="props.title" v-model:visible="props.display" :breakpoints="{ '960px': '75vw' }"
     :style="{ width: '30vw' }" :modal="true" :closable="false">
     <div class="flex flex-col gap-4">
+        <!-- Item Search -->
+        <InputGroup class="flex-1">
+          <InputText :id="'filter-' + rowIndex + '-' + filterIndex" v-model="searchValue" :placeholder="placeholder || 'Enter item name...'" />
+          <Button icon="pi pi-search" class="p-button-outlined" @click="searchModal(searchValue)" />
+        </InputGroup>
 
       <DataTable v-model:selection="selectedItems" :value="props.items" :selectionMode="props.selectionMode"
         :paginator="false" :rows="5" @row-select="onProductSelect">

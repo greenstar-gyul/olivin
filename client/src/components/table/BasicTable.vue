@@ -51,7 +51,10 @@ watch(
   (newVal) => {
     if (props.columns.length > 0) return; // columns가 있을 경우 watch 종료하고 존재하는 컬럼 사용..
 
-    if (Array.isArray(newVal) && newVal.length > 0) {
+    // header에 정의된 필드들만 사용
+    if (props.header && props.header.header) {
+      items.value = Object.keys(props.header.header);
+    } else if (Array.isArray(newVal) && newVal.length > 0) {
       items.value = Object.keys(newVal[0]);
     } else {
       items.value = [];
@@ -66,8 +69,26 @@ watch(
   (newVal) => {
     if (newVal.length > 0) {
       items.value = newVal;
+    } else if (props.header && props.header.header) {
+      // header에 정의된 필드들만 사용
+      items.value = Object.keys(props.header.header);
     } else if (Array.isArray(props.data) && props.data.length > 0) {
       items.value = Object.keys(props.data[0]);
+    } else {
+      items.value = [];
+    }
+  },
+  { immediate: true }
+);
+
+// header가 변경될 때도 컬럼 업데이트
+watch(
+  () => props.header,
+  (newVal) => {
+    if (props.columns.length > 0) return; // columns가 있을 경우 무시
+    
+    if (newVal && newVal.header) {
+      items.value = Object.keys(newVal.header);
     } else {
       items.value = [];
     }
