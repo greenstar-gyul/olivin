@@ -19,8 +19,10 @@ spring:
   
   # MyBatis 설정
 mybatis:
-  mapper-locations: classpath:mapper/*.xml
-  type-aliases-package: com.olivin.app.auth.service
+  mapper-locations: 
+  - classpath:mapper/*.xml
+  - classpath:mapper/*-mapper.xml
+  type-aliases-package: com.olivin.app
   configuration:
     map-underscore-to-camel-case: true
     cache-enabled: false
