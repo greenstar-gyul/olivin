@@ -1,5 +1,5 @@
 // JwtAuthenticationEntryPoint.java
-package com.olivin.security;
+package com.olivin.app.security;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.olivin.app.auth.service.ApiResponseVO;

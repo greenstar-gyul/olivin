@@ -1,5 +1,5 @@
 // JwtAuthenticationFilter.java
-package com.olivin.security;
+package com.olivin.app.security;
 
 import com.olivin.app.auth.service.JwtService;
 import com.olivin.app.auth.service.UserService;

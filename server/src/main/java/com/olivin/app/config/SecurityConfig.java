@@ -1,9 +1,10 @@
 // SecurityConfig.java
-package com.olivin.config;
+package com.olivin.app.config;
 
-import com.olivin.security.JwtAuthenticationEntryPoint;
-import com.olivin.security.JwtAuthenticationFilter;
 import com.olivin.app.auth.service.UserService;
+import com.olivin.app.security.JwtAuthenticationEntryPoint;
+import com.olivin.app.security.JwtAuthenticationFilter;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

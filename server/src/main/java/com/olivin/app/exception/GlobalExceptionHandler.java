@@ -1,5 +1,5 @@
 // GlobalExceptionHandler.java
-package com.olivin.exception;
+package com.olivin.app.exception;
 
 import com.olivin.app.auth.service.ApiResponseVO;
 import lombok.extern.slf4j.Slf4j;
