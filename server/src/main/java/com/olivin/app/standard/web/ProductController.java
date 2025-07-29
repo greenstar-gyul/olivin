@@ -21,7 +21,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-// ✅ 수정된 import 경로
 import com.olivin.app.standard.service.ProductService;
 import com.olivin.app.standard.service.ProductVO;
 
@@ -50,6 +49,31 @@ public class ProductController {
     public ResponseEntity<List<ProductVO>> getApprovedProducts() {
         List<ProductVO> products = productService.getApprovedProducts();
         return ResponseEntity.ok(products);
+    }
+    
+    // ✅ 제품 ID 자동생성 API 추가
+    @GetMapping("/next-id/{categoryMain}")
+    public ResponseEntity<Map<String, Object>> getNextProductId(@PathVariable String categoryMain) {
+        Map<String, Object> result = new HashMap<>();
+        
+        try {
+            String nextProductId = productService.getNextProductId(categoryMain);
+            
+            if (nextProductId != null && !nextProductId.isEmpty()) {
+                result.put("success", true);
+                result.put("nextProductId", nextProductId);
+                result.put("message", "제품 ID 생성 성공");
+            } else {
+                result.put("success", false);
+                result.put("message", "유효하지 않은 카테고리입니다.");
+            }
+            
+        } catch (Exception e) {
+            result.put("success", false);
+            result.put("message", "제품 ID 생성 중 오류가 발생했습니다: " + e.getMessage());
+        }
+        
+        return ResponseEntity.ok(result);
     }
     
     @PostMapping("/search")
@@ -246,7 +270,7 @@ public class ProductController {
         return ResponseEntity.ok(result);
     }
     
-    // ✅ 승인 API - @RequestBody로 변경
+    // ✅ 승인 API
     @PostMapping("/{productId}/approve")
     public ResponseEntity<Map<String, Object>> approveProduct(
             @PathVariable String productId,
@@ -260,7 +284,6 @@ public class ProductController {
             System.out.println("RequestData: " + requestData);
             
             String approver = (String) requestData.getOrDefault("approver", "SYSTEM");
-            String reason = (String) requestData.get("reason");
             
             int approveResult = productService.approveProduct(productId, approver);
             
@@ -283,7 +306,7 @@ public class ProductController {
         return ResponseEntity.ok(result);
     }
     
-    // ✅ 반려 API - @RequestBody로 변경
+    // ✅ 반려 API
     @PostMapping("/{productId}/reject")
     public ResponseEntity<Map<String, Object>> rejectProduct(
             @PathVariable String productId,
@@ -320,7 +343,7 @@ public class ProductController {
         return ResponseEntity.ok(result);
     }
     
-    // ✅ 테스트용 승인 API 추가
+    // ✅ 테스트용 승인 API
     @GetMapping("/test-approve/{productId}")
     public ResponseEntity<Map<String, Object>> testApprove(@PathVariable String productId) {
         Map<String, Object> result = new HashMap<>();

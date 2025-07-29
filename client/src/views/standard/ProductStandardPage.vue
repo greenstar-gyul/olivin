@@ -16,13 +16,129 @@ const baseUrl = computed(() => {
   return typeof window !== 'undefined' ? window.location.origin : '';
 });
 
+// ✅ 카테고리 옵션 (명세서 기준)
+const categoryMainOptions = [
+  { name: '스킨케어', value: '0001', code: '11' },
+  { name: '메이크업', value: '0002', code: '11' },
+  { name: '클렌징', value: '0003', code: '11' },
+  { name: '헤어케어', value: '0004', code: '11' },
+  { name: '구강용품', value: '0005', code: '11' },
+  { name: '선케어', value: '0006', code: '11' },
+  { name: '뷰티소품', value: '0007', code: '11' },
+  { name: '건강/기능 식품', value: '0008', code: '11' },
+  { name: '푸드', value: '0009', code: '11' }
+];
+
+// ✅ 세부카테고리 옵션 (명세서 기준)
+const categorySubOptions = {
+  '0001': [ // 스킨케어
+    { name: '스킨/토너', value: '1001' },
+    { name: '에센스/세럼/앰플', value: '1002' },
+    { name: '크림', value: '1003' },
+    { name: '로션', value: '1004' },
+    { name: '미스트/오일', value: '1005' },
+    { name: '스킨케어 디바이스', value: '1006' }
+  ],
+  '0002': [ // 메이크업
+    { name: '베이스 메이크업', value: '2001' },
+    { name: '아이 메이크업', value: '2002' },
+    { name: '치크&컨투어', value: '2003' },
+    { name: '립 메이크업', value: '2004' },
+    { name: '피니시&픽서', value: '2005' },
+    { name: '네일 메이크업', value: '2006' }
+  ],
+  '0003': [ // 클렌징
+    { name: '클렌징폼/젤', value: '3001' },
+    { name: '오일/밤', value: '3002' },
+    { name: '워터/밀크', value: '3003' },
+    { name: '필링&스크럽', value: '3004' },
+    { name: '티슈/패드', value: '3005' },
+    { name: '립&아이리무버', value: '3006' },
+    { name: '클렌징 디바이스', value: '3007' }
+  ],
+  '0004': [ // 헤어케어
+    { name: '샴푸/린스', value: '4001' },
+    { name: '트리트먼트/팩', value: '4002' },
+    { name: '두피앰플/토닉', value: '4003' },
+    { name: '헤어에센스', value: '4004' },
+    { name: '염색약/펌', value: '4005' },
+    { name: '헤어기기/브러시', value: '4006' },
+    { name: '스타일링', value: '4007' }
+  ],
+  '0005': [ // 구강용품
+    { name: '칫솔', value: '5001' },
+    { name: '치약', value: '5002' },
+    { name: '애프터구강케어', value: '5003' },
+    { name: '구강가전', value: '5004' }
+  ],
+  '0006': [ // 선케어
+    { name: '선크림', value: '6001' },
+    { name: '선스틱', value: '6002' },
+    { name: '선쿠션', value: '6003' },
+    { name: '선스프레이/선패치', value: '6004' },
+    { name: '태닝/애프터선', value: '6005' }
+  ],
+  '0007': [ // 뷰티소품
+    { name: '메이크업소품', value: '7001' },
+    { name: '아이소품', value: '7002' },
+    { name: '스킨케어소품', value: '7003' },
+    { name: '헤어소품', value: '7004' },
+    { name: '네일/바디소품', value: '7005' },
+    { name: '뷰티잡화', value: '7006' }
+  ],
+  '0008': [ // 건강/기능 식품
+    { name: '비타민', value: '8001' },
+    { name: '영양제', value: '8002' },
+    { name: '유산균', value: '8003' },
+    { name: '슬리밍/이너뷰티', value: '8004' }
+  ],
+  '0009': [ // 푸드
+    { name: '식단관리/이너뷰티', value: '9001' },
+    { name: '과자/초콜릿/디저트', value: '9002' },
+    { name: '생수/음료/커피', value: '9003' },
+    { name: '간편식/요리', value: '9004' },
+    { name: '베이비푸드', value: '9005' }
+  ]
+};
+
+// ✅ 단위 옵션 (명세서 기준)
+const unitOptions = [
+  { name: 'ml', value: '0001' },
+  { name: 'g', value: '0002' },
+  { name: '개', value: '0003' },
+  { name: '박스', value: '0004' },
+  { name: '팩', value: '0005' }
+];
+
+// ✅ 제품 ID 생성 함수
+const generateProductId = (categoryMain) => {
+  const categoryMap = {
+    '0001': '1', // 스킨케어: 100001~199999
+    '0002': '2', // 메이크업: 200001~299999
+    '0003': '3', // 클렌징: 300001~399999
+    '0004': '4', // 헤어케어: 400001~499999
+    '0005': '5', // 구강용품: 500001~599999
+    '0006': '6', // 선케어: 600001~699999
+    '0007': '7', // 뷰티소품: 700001~799999
+    '0008': '8', // 건강/기능 식품: 800001~899999
+    '0009': '9'  // 푸드: 900001~999999
+  };
+  
+  const prefix = categoryMap[categoryMain];
+  if (!prefix) return '';
+  
+  // 임시로 000001부터 시작 (실제로는 DB에서 마지막 번호 조회 후 +1)
+  const sequence = '00001';
+  return `PRD${prefix}${sequence}`;
+};
+
 const filters = ref({
   title: '조회 조건',
   filters: [
     { type: 'text', label: '제품명', value: '', placeholder: '제품명을 입력하세요', name: 'productName' },
     { type: 'text', label: '브랜드', value: '', placeholder: '브랜드명을 입력하세요', name: 'vendorName' },
-    { type: 'text', label: '카테고리', value: '', placeholder: '카테고리를 입력하세요', name: 'categoryMain' },
-    { type: 'text', label: '세부카테고리', value: '', placeholder: '세부카테고리를 입력하세요', name: 'categorySub' },
+    { type: 'select', label: '카테고리', value: '', placeholder: '카테고리를 선택하세요', name: 'categoryMain', options: categoryMainOptions },
+    { type: 'select', label: '세부카테고리', value: '', placeholder: '세부카테고리를 선택하세요', name: 'categorySub', options: [] },
     { type: 'text', label: '매장코드', value: '', placeholder: 'OY001, OY002 등', name: 'compId' },
     { type: 'number', label: '입수량', value: '', placeholder: '입수량을 입력하세요', name: 'packQty' },
     { type: 'text', label: '등록자', value: '', placeholder: '등록자를 입력하세요', name: 'regUser' },
@@ -52,8 +168,6 @@ const header = ref({
     status: '상태',
     regUser: '등록자',
     regDate: '등록일',
-    updateUser: '수정자',
-    updateDate: '수정일',
     productImage: '제품이미지',
     note: '비고'
   },
@@ -76,28 +190,17 @@ const formData = ref({
   sellPrice: '',
   regUser: 'admin',
   regDate: '',
-  updateUser: '',
-  updateDate: '',
   note: ''
 });
-
-// ✅ 단위 옵션 추가
-const unitOptions = [
-  { name: '개', value: 'ea' },
-  { name: '박스', value: 'box' },
-  { name: '팩', value: 'pack' },
-  { name: 'g', value: 'g' },
-  { name: 'ml', value: 'ml' },
-];
 
 const inputs = ref({
   title: '제품 등록/수정',
   inputs: [
-    { type: 'text', label: '제품ID', placeholder: '자동생성 또는 입력', name: 'productId' },
+    { type: 'text', label: '제품ID', placeholder: '카테고리 선택 시 자동생성', name: 'productId', readonly: true },
     { type: 'text', label: '매장코드', placeholder: 'OY001, OY002 등', name: 'compId', required: true },
     { type: 'text', label: '제품명', placeholder: '제품명을 입력하세요', name: 'productName', required: true },
-    { type: 'text', label: '카테고리', placeholder: '화장품, 건강식품, 의류 등', name: 'categoryMain', required: true },
-    { type: 'text', label: '세부카테고리', placeholder: '스킨케어, 메이크업, 클렌징 등', name: 'categorySub' },
+    { type: 'select', label: '카테고리', placeholder: '카테고리를 선택하세요', name: 'categoryMain', required: true, options: categoryMainOptions },
+    { type: 'select', label: '세부카테고리', placeholder: '세부카테고리를 선택하세요', name: 'categorySub', options: [] },
     { type: 'text', label: '브랜드', placeholder: '브랜드명을 입력하세요', name: 'vendorName', required: true },
     { type: 'text', label: '용량/규격', placeholder: '50ml, 30포, 7.5g 등', name: 'productSpec' },
     { type: 'select', label: '단위', placeholder: '단위를 선택하세요', name: 'unit', required: true, options: unitOptions },
@@ -107,8 +210,6 @@ const inputs = ref({
     { type: 'number', label: '판매가격', placeholder: '소비자가격 (원)', name: 'sellPrice' },
     { type: 'text', label: '등록자', placeholder: '등록자 ID', name: 'regUser' },
     { type: 'datetime-local', label: '등록일시', placeholder: '등록일시', name: 'regDate' },
-    { type: 'text', label: '수정자', placeholder: '수정자 ID (수정시에만)', name: 'updateUser' },
-    { type: 'datetime-local', label: '수정일시', placeholder: '수정일시 (수정시에만)', name: 'updateDate' },
     { type: 'textarea', label: '비고', placeholder: '제품 설명, 특징, 주의사항 등을 상세히 입력하세요', name: 'note' }
   ]
 });
@@ -116,6 +217,57 @@ const inputs = ref({
 const selectedImageFile = ref(null);
 const selectedImageFiles = ref([]);
 const uploadedImageUrl = ref('');
+
+// ✅ 선택된 대분류에 따른 세부카테고리 옵션
+const filteredCategorySubOptions = computed(() => {
+  return categorySubOptions[formData.value.categoryMain] || [];
+});
+
+// ✅ 조회 조건의 카테고리에 따른 세부카테고리 옵션
+const filteredSearchCategorySubOptions = computed(() => {
+  const categoryMainFilter = filters.value.filters.find(f => f.name === 'categoryMain');
+  return categorySubOptions[categoryMainFilter?.value] || [];
+});
+
+// ✅ 카테고리 변경 시 제품 ID 자동생성 및 세부카테고리 초기화
+const onCategoryMainChange = () => {
+  // 세부카테고리 초기화
+  formData.value.categorySub = '';
+  
+  // 제품 ID 자동생성
+  if (formData.value.categoryMain) {
+    formData.value.productId = generateProductId(formData.value.categoryMain);
+  } else {
+    formData.value.productId = '';
+  }
+};
+
+// ✅ 조회 조건의 카테고리 변경 시 세부카테고리 초기화
+const onSearchCategoryMainChange = () => {
+  const categorySubFilter = filters.value.filters.find(f => f.name === 'categorySub');
+  if (categorySubFilter) {
+    categorySubFilter.value = '';
+  }
+};
+
+// ✅ 코드를 이름으로 변환하는 함수들
+const getCategoryMainName = (code) => {
+  const category = categoryMainOptions.find(opt => opt.value === code);
+  return category ? category.name : code;
+};
+
+const getCategorySubName = (code) => {
+  for (const mainCode in categorySubOptions) {
+    const subCategory = categorySubOptions[mainCode].find(opt => opt.value === code);
+    if (subCategory) return subCategory.name;
+  }
+  return code;
+};
+
+const getUnitName = (code) => {
+  const unit = unitOptions.find(opt => opt.value === code);
+  return unit ? unit.name : code;
+};
 
 const onProductSelect = async (product) => {
   if (!product) return;
@@ -369,25 +521,14 @@ const saveData = async () => {
     const productData = {
       ...formData.value,
       productImage: imageUrl,
-      status: '040002'
+      status: '040002' // 등록 대기 상태
     };
     
+    // 제품 ID가 있으면 수정 모드 (updateUser, updateDate는 백엔드에서 처리)
     if (formData.value.productId && formData.value.productId.trim() !== '') {
-      productData.updateUser = 'admin';
-      
-      const now = new Date();
-      const year = now.getFullYear();
-      const month = String(now.getMonth() + 1).padStart(2, '0');
-      const day = String(now.getDate()).padStart(2, '0');
-      const hours = String(now.getHours()).padStart(2, '0');
-      const minutes = String(now.getMinutes()).padStart(2, '0');
-      productData.updateDate = `${year}-${month}-${day}T${hours}:${minutes}`;
-      
-      formData.value.updateUser = 'admin';
-      formData.value.updateDate = productData.updateDate;
-    }
-    
-    if (productData.productId) {
+      // 수정 시에는 제품 ID를 유지
+    } else {
+      // 신규 등록 시에는 제품 ID 제거 (백엔드에서 생성)
       delete productData.productId;
     }
     
@@ -491,6 +632,7 @@ onMounted(() => {
         <div v-for="filter in filters.filters" :key="filter.name" class="flex flex-col">
           <label class="block text-sm font-medium mb-2">{{ filter.label }}</label>
           
+          <!-- 텍스트/숫자 입력 -->
           <input
             v-if="filter.type === 'text' || filter.type === 'number'"
             v-model="filter.value"
@@ -499,6 +641,24 @@ onMounted(() => {
             class="p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
           
+          <!-- 셀렉트 박스 -->
+          <select
+            v-else-if="filter.type === 'select'"
+            v-model="filter.value"
+            @change="filter.name === 'categoryMain' ? onSearchCategoryMainChange() : null"
+            class="p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="">{{ filter.placeholder }}</option>
+            <option 
+              v-for="option in filter.name === 'categorySub' ? filteredSearchCategorySubOptions : filter.options" 
+              :key="option.value" 
+              :value="option.value"
+            >
+              {{ option.name }}
+            </option>
+          </select>
+          
+          <!-- 날짜 범위 -->
           <div v-else-if="filter.type === 'dateRange'" class="flex gap-2">
             <input
               v-model="filter.value[0]"
@@ -585,14 +745,20 @@ onMounted(() => {
                           :title="item[key]">
                       {{ item[key] }}
                     </span>
+                    <span v-else-if="key === 'categoryMain'">
+                      {{ getCategoryMainName(item[key]) }}
+                    </span>
+                    <span v-else-if="key === 'categorySub'">
+                      {{ getCategorySubName(item[key]) }}
+                    </span>
+                    <span v-else-if="key === 'unit'">
+                      {{ getUnitName(item[key]) }}
+                    </span>
                     <span v-else-if="key === 'purchasePrice' || key === 'sellPrice'">
                       {{ item[key] ? item[key].toLocaleString() : '' }}원
                     </span>
-                    <span v-else-if="key === 'regDate' || key === 'updateDate'">
+                    <span v-else-if="key === 'regDate'">
                       {{ item[key] ? formatDateTime(item[key]) : '-' }}
-                    </span>
-                    <span v-else-if="key === 'updateUser'">
-                      {{ item[key] || '-' }}
                     </span>
                     <span v-else>
                       {{ item[key] || '' }}
@@ -607,7 +773,26 @@ onMounted(() => {
       
       <!-- 우측: 제품 등록/수정 폼 -->
       <div class="card p-6">
-        <div class="font-semibold text-xl mb-4">{{ inputs.title }}</div>
+        <!-- 제목과 버튼을 같은 라인에 배치 -->
+        <div class="flex justify-between items-center mb-4">
+          <div class="font-semibold text-xl">{{ inputs.title }}</div>
+          <div class="flex gap-3">
+            <Button 
+              label="초기화" 
+              @click="clearForm" 
+              severity="secondary"
+              icon="pi pi-refresh"
+              size="small"
+            />
+            <Button 
+              label="등록" 
+              @click="saveData"
+              severity="success"
+              icon="pi pi-save"
+              size="small"
+            />
+          </div>
+        </div>
         
         <!-- 기본 정보 입력 필드들 -->
         <div class="space-y-4 mb-6">
@@ -619,14 +804,20 @@ onMounted(() => {
                 <span v-if="input.required" class="text-red-500">*</span>
               </label>
               
-              <!-- ✅ 단위 필드는 select로 렌더링 -->
+              <!-- ✅ select 필드들 처리 -->
               <select
                 v-if="input.type === 'select'"
                 v-model="formData[input.name]"
+                @change="input.name === 'categoryMain' ? onCategoryMainChange() : null"
                 class="p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">{{ input.placeholder }}</option>
-                <option v-for="option in input.options" :key="option.value" :value="option.value">
+                <!-- 세부카테고리는 필터링된 옵션 사용 -->
+                <option 
+                  v-for="option in input.name === 'categorySub' ? filteredCategorySubOptions : input.options" 
+                  :key="option.value" 
+                  :value="option.value"
+                >
                   {{ option.name }}
                 </option>
               </select>
@@ -637,7 +828,9 @@ onMounted(() => {
                 v-model="formData[input.name]"
                 :type="input.type"
                 :placeholder="input.placeholder"
+                :readonly="input.readonly"
                 class="p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                :class="{ 'bg-gray-100': input.readonly }"
               />
             </div>
           </div>
@@ -718,24 +911,6 @@ onMounted(() => {
               </button>
             </div>
           </div>
-        </div>
-        
-        <!-- 저장 및 초기화 버튼 -->
-        <div class="flex gap-3 mt-6 pt-4 border-t">
-          <Button 
-            label="초기화" 
-            @click="clearForm" 
-            severity="secondary"
-            icon="pi pi-refresh"
-            class="flex-1"
-          />
-          <Button 
-            label="저장" 
-            @click="saveData"
-            severity="success"
-            icon="pi pi-save"
-            class="flex-1"
-          />
         </div>
       </div>
     </div>
