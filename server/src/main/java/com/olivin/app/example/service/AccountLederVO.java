@@ -15,10 +15,11 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class AccountLederVO {
     private String accountlederId;
-    private String debit;
-    private String credit;
+    private String increase;
+    private String decrease;
     private String balance;
-    private String description;
+    private String detail;
+    private String writeDate;
     private String compId;
     private String productId;
     private String accountId;
