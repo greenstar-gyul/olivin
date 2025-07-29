@@ -44,6 +44,10 @@ const openSearchModal = (inputName) => {
   emit('openSearchModal', inputName);
 };
 
+defineExpose({
+  inputDatas,
+});
+
 </script>
 <template>
   <div class="card flex flex-col gap-4 mt-6 h-full">

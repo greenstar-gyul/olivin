@@ -56,7 +56,8 @@ const inputs = ref({
       { name: '옵션 1', value: 'Option 1' },
       { name: '옵션 2', value: 'Option 2' },
       { name: '옵션 3', value: 'Option 3' }
-    ] }
+    ] },
+    { type: 'item-search', label: '제품 검색', value: '', placeholder: '검색3', name: 'dialog3' },
   ]
 })
 
@@ -97,6 +98,28 @@ const modalItems2 = ref([
   { id: 3, name: '회사 C', category: '업종 C', publisher: '대표자 C', store: '주소 C', size: '전화번호 C', quantity: '이메일 C', safe: '비고 C' }
 ]);
 
+const visible3 = ref(false);
+const modalHeaders3 = ref([
+  { field: 'id', header: 'ID' },
+  { field: 'name', header: '제품명' },
+  { field: 'category', header: '제품분류' },
+  { field: 'publisher', header: '공급사' },
+  { field: 'store', header: '지점' },
+  { field: 'size', header: '규격' },
+  { field: 'quantity', header: '현재 재고' },
+  { field: 'safe', header: '안전 재고' }
+]);
+
+const modalItems3 = ref([
+  { id: 1, name: '제품 D', category: '분류 4', publisher: '공급사 D', store: '지점 D', size: '규격 D', quantity: 400, safe: 200 },
+  { id: 2, name: '제품 E', category: '분류 5', publisher: '공급사 E', store: '지점 E', size: '규격 E', quantity: 500, safe: 250 },
+  { id: 3, name: '제품 F', category: '분류 6', publisher: '공급사 F', store: '지점 F', size: '규격 F', quantity: 600, safe: 300 }
+]);
+
+const formRef = ref({
+  searchFormRef: {},
+  inputFormRef: {}
+});
 
 const searchData = (searchOptions) => {
   console.log('Searching with options:', searchOptions);
@@ -111,7 +134,27 @@ const openSearchModal = (inputName) => {
     visible.value = true;
   } else if (inputName === 'dialog2') {
     visible2.value = true;
+  } else if (inputName === 'dialog3') {
+    visible3.value = true;
   }
+};
+
+const confirm1 = (selectedItems) => {
+  console.log('Confirming data from modal 1', selectedItems);
+  updateModalData('dialog', selectedItems.name);
+  visible.value = false;
+};
+
+const confirm2 = (selectedItems) => {
+  console.log('Confirming data from modal 2', selectedItems);
+  updateModalData('dialog2', selectedItems.name);
+  visible2.value = false;
+};
+
+const confirm3 = (selectedItems) => {
+  console.log('Confirming data from modal 3', selectedItems);
+  updateModalData('dialog3', selectedItems.name);
+  visible3.value = false;
 };
 
 const close1 = () => {
@@ -122,19 +165,25 @@ const close2 = () => {
   visible2.value = false;
 }
 
-const confirm1 = (selectedItems) => {
-  console.log('Confirming data from modal 1', selectedItems);
-  visible.value = false;
+const close3 = () => {
+  visible3.value = false;
 };
 
-const confirm2 = (selectedItems) => {
-  console.log('Confirming data from modal 2', selectedItems);
-  visible2.value = false;
+const updateModalData = (modalName, items) => {
+  if (modalName === 'dialog') {
+    formRef.value.searchFormRef.searchOptions[modalName] = items;
+  } else if (modalName === 'dialog2') {
+    formRef.value.searchFormRef.searchOptions[modalName] = items;
+  } else if (modalName === 'dialog3') {
+    formRef.value.inputFormRef.inputDatas[modalName] = items;
+  }
 };
+
 
 </script>
 <template>
-  <StandardInput :filters="filters" :items="items" :header="header" :inputs="inputs" @searchData="searchData" @saveData="saveData" @openSearchModal="openSearchModal"></StandardInput>
+  <StandardInput ref="formRef" :filters="filters" :items="items" :header="header" :inputs="inputs" @searchData="searchData" @saveData="saveData" @openSearchModal="openSearchModal"></StandardInput>
   <DialogModal :visible="visible" :headers="modalHeaders1" :items="modalItems1" @close="close1" @confirm="confirm1" title="제품 검색"></DialogModal>
   <DialogModal :visible="visible2" :headers="modalHeaders2" :items="modalItems2" @close="close2" @confirm="confirm2" title="제품 검색2"></DialogModal>
+  <DialogModal :visible="visible3" :headers="modalHeaders3" :items="modalItems3" @close="close3" @confirm="confirm3" title="제품 검색3"></DialogModal>
 </template>

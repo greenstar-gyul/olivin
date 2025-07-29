@@ -1,6 +1,6 @@
 <script setup>
 import { InputGroup, InputText } from 'primevue';
-import { onMounted, ref } from 'vue';
+import { onMounted, ref, watch } from 'vue';
 
 const emit = defineEmits(['confirm', 'close', 'searchModal']);
 const props = defineProps({
@@ -39,6 +39,8 @@ const initializeSelectedProduct = () => {
   } else {
     selectedItems.value = [];
   }
+  // 검색 텍스트박스도 초기화
+  searchValue.value = '';
 };
 
 const close = () => {
@@ -72,10 +74,17 @@ onMounted(() => {
   initializeSelectedProduct();
 });
 
+// 모달이 열릴 때마다 초기화
+watch(() => props.display, (newValue) => {
+  if (newValue) {
+    initializeSelectedProduct();
+  }
+});
+
 </script>
 <template>
   <Dialog :header="props.title" v-model:visible="props.display" :breakpoints="{ '960px': '75vw' }"
-    :style="{ width: '30vw' }" :modal="true" :closable="false">
+    :style="{ width: '45vw' }" :modal="true" :closable="false">
     <div class="flex flex-col gap-4">
         <!-- Item Search -->
         <InputGroup class="flex-1">
@@ -84,7 +93,7 @@ onMounted(() => {
         </InputGroup>
 
       <DataTable v-model:selection="selectedItems" :value="props.items" :selectionMode="props.selectionMode"
-        :paginator="false" :rows="5" @row-select="onProductSelect">
+        :paginator="false" :rows="5" @row-select="onProductSelect" scrollable="true" scrollHeight="400px">
         <Column v-for="col in props.headers" :key="col.field" :field="col.field" :header="col.header">
           <template #body="slotProps">
             {{ slotProps.data[col.field] }}
