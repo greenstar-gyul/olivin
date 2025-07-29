@@ -19,14 +19,18 @@ const model = ref([
         label: '기준정보',
         to: '/standard',
         items: [
-
+            { label: '공급업체 기준정보', icon: 'pi pi-fw pi-pen-to-square', to: '/standard/supplier' },
+            { label: '지점 기준정보', icon: 'pi pi-fw pi-pen-to-square', to: '/standard/branch' },
+            { label: '제품 기준정보', icon: 'pi pi-fw pi-pen-to-square', to: '/standard/product' },
+            { label: '제품 승인 정보', icon: 'pi pi-fw pi-pen-to-square', to: '/standard/productapproval' },
         ]
     },
     {   
         label: '재고 / 물류',
         to: '/inventory',
         items: [
-
+            { label: '재고 현황', icon: 'pi pi-fw pi-book', to: '/inventory/stock'},
+            { label: '출고관리', icon: 'pi pi-fw pi-book', to: '/outbndMgmt' },
         ]
     },
     {   

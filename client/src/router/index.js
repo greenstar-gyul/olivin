@@ -144,6 +144,70 @@ const router = createRouter({
                     name: 'test5',
                     component: () => import('@/views/test/InputMultiTablePage.vue')
                 },
+                /* inventory */
+                {
+                    path: '/outbndMgmt',
+                    name: 'outbndMgmt',
+                    component: () => import('@/views/inventory/outbndMgmt.vue')
+                },
+                /* end of inventory */
+                {
+                    path: '/standard/supplier',
+                    name: 'supplier',
+                    component: () => import('@/views/standard/SupplierStandardPage.vue')
+                },
+                {
+                    path: '/standard/branch',
+                    name: 'branch',
+                    component: () => import('@/views/standard/BranchStandardPage.vue')
+                },
+                {
+                    path: '/standard/product',
+                    name: 'product',
+                    component: () => import('@/views/standard/ProductStandardPage.vue')
+                },
+                {
+                    path: '/standard/productapproval',
+                    name: 'productApproval',
+                    component: () => import('@/views/standard/ProductApprovalPage.vue')
+                },
+                /* order */
+                {
+                    path: '/orders/head',
+                    name: 'HeadOrdersManage',
+                    component: () => import('@/views/orderMgmt/HeadOrdersManage.vue')
+                },
+                {
+                    path: '/orders/head/view',
+                    name: 'HeadOrdersView',
+                    component: () => import('@/views/orderMgmt/HeadOrdersView.vue')
+                },
+                {
+                    path: '/orders/branch',
+                    name: 'BranchOrdersManage',
+                    component: () => import('@/views/orderMgmt/BranchOrdersManage.vue')
+                },
+                {
+                    path: '/orders/branch/view',
+                    name: 'BranchOrdersView',
+                    component: () => import('@/views/orderMgmt/BranchOrdersView.vue')
+                },
+                {
+                    path: '/orders/supplier',
+                    name: 'SupplierOrdersManage',
+                    component: () => import('@/views/orderMgmt/SupplierOrdersManage.vue')
+                },
+                {
+                    path: '/orders/supplier/view',
+                    name: 'SupplierOrdersView',
+                    component: () => import('@/views/orderMgmt/SupplierOrdersView.vue')
+                },
+                /* end of order */
+                {
+                    path: '/inventory/stock',
+                    name: 'stock',
+                    component: () => import('@/views/inventory/StockPage.vue')
+                }
             ]
         },
         // 로그인 불필요 페이지들

@@ -78,6 +78,11 @@ const groupedFilters = computed(() => {
   return rows;
 });
 
+// 외부에서 searchOptions에 접근할 수 있도록 노출
+defineExpose({
+  searchOptions
+});
+
 </script>
 <template>
   <div class="card flex flex-col gap-4">
@@ -139,7 +144,7 @@ const groupedFilters = computed(() => {
 
         <!-- Item Search -->
         <InputGroup v-else-if="filter.type === 'item-search'" class="flex-1">
-          <InputText v-model="searchOptions[filter.name]" :placeholder="filter.placeholder || 'Enter item name...'" />
+          <InputText :id="'filter-' + rowIndex + '-' + filterIndex" v-model="searchOptions[filter.name]" :placeholder="filter.placeholder || 'Enter item name...'" />
           <Button icon="pi pi-search" class="p-button-outlined" @click="openSearchModal(filter.name)" />
         </InputGroup>
 
