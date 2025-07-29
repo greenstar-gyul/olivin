@@ -186,7 +186,7 @@ const router = createRouter({
                     path: '/orders/supplier/view',
                     name: 'SupplierOrdersView',
                     component: () => import('@/views/orderMgmt/SupplierOrdersView.vue')
-                }
+                },
                 /* end of order */
                 {
                     path: '/inventory/stock',

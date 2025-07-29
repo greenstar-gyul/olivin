@@ -11,16 +11,16 @@ import DialogModal from '@/components/overray/DialogModal.vue';
 const header = ref({
   title: '조회 테스트', // 조회 폼 제목
   header: { // 테이블의 헤더 정보
-    id: 'ID', 
-    name: '제품명', 
-    category: '제품분류', 
-    publisher: '공급사', 
-    store: '지점', 
-    size: '규격', 
-    quantity: '현재 재고', 
-    safe: '안전 재고', 
+    productId: 'ID', 
+    productName: '제품명', 
+    categoryMain: '제품 대분류', 
+    categorySub: '제품 소분류', 
+    vendorName: '공급사', 
+    productSpec: '규격', 
+    purchasePrice: '구매가',
+    sellPrice: '판매가',
   },
-  rightAligned: ['quantity', 'safe'] // 오른쪽 정렬할 컬럼 리스트
+  rightAligned: ['purchasePrice', 'sellPrice'] // 오른쪽 정렬할 컬럼 리스트
 });
 
 // 조회할 데이터
@@ -134,7 +134,10 @@ const handleOpenModal = (filterName) => {
 const getSampleData = async () => {
   const result = await axios.get('/api/test');
   const data = await result.data;
-  console.log('Sample data:', data);
+  console.log('Loaded sample data:', data);
+
+  // items에 데이터를 할당
+  items.value = data;
 };
 
 // ======
@@ -177,6 +180,16 @@ const confirmModal2 = (selectedItems) => {
   testModalVisible2.value = false;
 };
 
+const searchModal1 = (searchValue) => {
+  console.log('Search modal with value:', searchValue);
+  // 검색 로직 구현
+};
+
+const searchModal2 = (searchValue) => {
+  console.log('Search modal with value:', searchValue);
+  // 검색 로직 구현
+};
+
 onMounted(() => {
   getSampleData();
 });
@@ -184,6 +197,6 @@ onMounted(() => {
 </script>
 <template>
   <SearchTable ref="searchOptions" :filters="filters" :items="items" :header="header" @searchData="searchData" @open-search-modal="handleOpenModal"></SearchTable>
-  <DialogModal title="테스트 모달 1" :display="testModalVisible" :headers="modalHeaders" :items="modalItems" :selectionMode="'multiple'" @close="closeModal" @confirm="confirmModal"></DialogModal>
-  <DialogModal title="테스트 모달 2" :display="testModalVisible2" :headers="modalHeaders2" :items="modalItems2" :selectionMode="'single'" @close="closeModal2" @confirm="confirmModal2"></DialogModal>
+  <DialogModal title="테스트 모달 1" :display="testModalVisible" :headers="modalHeaders" :items="modalItems" :selectionMode="'multiple'" @close="closeModal" @confirm="confirmModal" @search-modal="searchModal1"></DialogModal>
+  <DialogModal title="테스트 모달 2" :display="testModalVisible2" :headers="modalHeaders2" :items="modalItems2" :selectionMode="'single'" @close="closeModal2" @confirm="confirmModal2" @search-modal="searchModal2"></DialogModal>
 </template>
