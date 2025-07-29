@@ -27,6 +27,9 @@ const props = defineProps({
 
 const selectedItems = ref(null);
 
+const searchFormRef = ref(null);
+const inputFormRef = ref(null);
+
 const searchData = (searchOptions) => {
   emit('searchData', searchOptions);
 };
@@ -58,16 +61,21 @@ const openSearchModal = (inputName) => {
   emit('openSearchModal', inputName);
 };
 
+defineExpose({
+  searchFormRef,
+  inputFormRef
+})
+
 </script>
 <template>
-  <SearchForm :filters="props.filters" @searchData="searchData" @openSearchModal="openSearchModal" />
+  <SearchForm ref="searchFormRef" :filters="props.filters" @searchData="searchData" @openSearchModal="openSearchModal" />
   <div class="grid grid-cols-7 gap-4 mb-4 items-stretch">
     <BasicTable :data="props.items" :header="props.header" :checked="true" @rowSelect="onRowSelect" @rowUnselect="onRowUnselect" class="col-span-4">
       <template #btn>
         <Button label="삭제" severity="danger" class="min-w-fit whitespace-nowrap" outlined></Button>
       </template>
     </BasicTable>
-    <InputForm :inputs="props.inputs" @saveData="saveData" @openSearchModal="openSearchModal" class="col-span-3"></InputForm>
+    <InputForm ref="inputFormRef" :inputs="props.inputs" @saveData="saveData" @openSearchModal="openSearchModal" class="col-span-3"></InputForm>
   </div>
 </template>
 <style scoped>
