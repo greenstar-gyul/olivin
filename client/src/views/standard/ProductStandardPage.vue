@@ -5,7 +5,7 @@ import Toast from 'primevue/toast';
 import Button from 'primevue/button';
 import { ref, onMounted, nextTick, computed } from 'vue';
 import { useToast } from 'primevue/usetoast';
-import axios from 'axios';
+import axios from '@/service/axios';
 
 const API_BASE_URL = '/api/products';
 const toast = useToast();
@@ -139,7 +139,7 @@ const filters = ref({
     { type: 'text', label: '브랜드', value: '', placeholder: '브랜드명을 입력하세요', name: 'vendorName' },
     { type: 'select', label: '카테고리', value: '', placeholder: '카테고리를 선택하세요', name: 'categoryMain', options: categoryMainOptions },
     { type: 'select', label: '세부카테고리', value: '', placeholder: '세부카테고리를 선택하세요', name: 'categorySub', options: [] },
-    { type: 'text', label: '매장코드', value: '', placeholder: 'OY001, OY002 등', name: 'compId' },
+    { type: 'text', label: '회사코드', value: '', placeholder: 'OY001, OY002 등', name: 'compId' },
     { type: 'number', label: '입수량', value: '', placeholder: '입수량을 입력하세요', name: 'packQty' },
     { type: 'text', label: '등록자', value: '', placeholder: '등록자를 입력하세요', name: 'regUser' },
     { type: 'dateRange', label: '등록일', value: ['', ''], placeholder: '등록일 범위를 선택하세요', name: 'regDateRange' }
@@ -154,7 +154,7 @@ const header = ref({
   title: '제품 기준정보 관리',
   header: {
     productId: '제품ID',
-    compId: '매장코드', 
+    compId: '회사코드', 
     productName: '제품명', 
     categoryMain: '카테고리', 
     categorySub: '세부카테고리',
@@ -197,7 +197,7 @@ const inputs = ref({
   title: '제품 등록/수정',
   inputs: [
     { type: 'text', label: '제품ID', placeholder: '카테고리 선택 시 자동생성', name: 'productId', readonly: true },
-    { type: 'text', label: '매장코드', placeholder: 'OY001, OY002 등', name: 'compId', required: true },
+    { type: 'text', label: '회사코드', placeholder: 'OY001, OY002 등', name: 'compId', required: true },
     { type: 'text', label: '제품명', placeholder: '제품명을 입력하세요', name: 'productName', required: true },
     { type: 'select', label: '카테고리', placeholder: '카테고리를 선택하세요', name: 'categoryMain', required: true, options: categoryMainOptions },
     { type: 'select', label: '세부카테고리', placeholder: '세부카테고리를 선택하세요', name: 'categorySub', options: [] },
@@ -490,7 +490,7 @@ const saveData = async () => {
   try {
     const requiredFields = [
       { field: 'productName', label: '제품명' },
-      { field: 'compId', label: '매장코드' },
+      { field: 'compId', label: '회사코드' },
       { field: 'categoryMain', label: '카테고리' },
       { field: 'vendorName', label: '브랜드' },
       { field: 'unit', label: '단위' }
