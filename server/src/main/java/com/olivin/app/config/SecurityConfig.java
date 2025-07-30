@@ -63,6 +63,9 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 // 인증 없이 접근 가능한 경로
                 .requestMatchers("/api/auth/**").permitAll()
+                .requestMatchers("/api/outbndMgmt/**").permitAll()
+                .requestMatchers("/outbndMgmt/**").permitAll()
+                .requestMatchers("/api/inbndMgmt/**").permitAll()
                 .requestMatchers("/api/public/**").permitAll()
                 .requestMatchers("/actuator/health").permitAll()
                 .requestMatchers("/error").permitAll()
