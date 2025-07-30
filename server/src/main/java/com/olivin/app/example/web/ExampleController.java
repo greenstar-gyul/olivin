@@ -3,6 +3,7 @@ package com.olivin.app.example.web;
 import java.util.List;
 
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.olivin.app.example.service.ExampleService;
@@ -23,6 +24,7 @@ import lombok.RequiredArgsConstructor;
 @RestController // REST API 컨트롤러임을 명시합니다. 꼭! 추가해야 합니다.
 // @RequestMapping("/example") // API 경로의 기본 경로를 설정합니다. 지정하면 모든 메소드에 적용됩니다.
 @RequiredArgsConstructor
+@RequestMapping("/api")
 public class ExampleController {
     private final ExampleService exampleService;
 

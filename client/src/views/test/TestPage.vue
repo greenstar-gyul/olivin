@@ -4,7 +4,7 @@ import { onMounted, ref } from 'vue';
 import SearchTable from '../../components/common/SearchTable.vue';
 import { StockService } from '@/service/StockService';
 import { Dialog } from 'primevue';
-import axios from 'axios';
+import axios from '@/service/axios';
 import DialogModal from '@/components/overray/DialogModal.vue';
 
 // 조회 폼의 헤더 정보 (조회 테이블 컬럼 이름)
