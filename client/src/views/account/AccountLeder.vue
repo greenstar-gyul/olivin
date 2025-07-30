@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue';
-import axios from 'axios';
+import axios from '@/service/axios';
 
 import SearchForm from '@/components/inputForm/SearchForm.vue';
 import AccountTable from './AccountTable.vue'; // 수정된 AccountTable 컴포넌트 임포트
@@ -51,11 +51,13 @@ const tableColumns = computed(() => [
   { field: 'accountlederId', header: '거래처원장ID', style: 'min-width: 150px', frozen: true, class: 'font-bold' },
   { field: 'compName', header: '회사명', style: 'min-width: 120px' },
   { field: 'accountId', header: '계정코드', style: 'min-width: 120px' },
+  { field: 'accountName', header: '계정명', style: 'min-width: 120px' },
   { field: 'increase', header: '차변', style: 'min-width: 150px' },
   { field: 'decrease', header: '대변', style: 'min-width: 150px' },
   { field: 'writeDate', header: '작성일', style: 'min-width: 150px' },
   { field: 'detail', header: '상세', style: 'min-width: 200px' },
   { field: 'productName', header: '제품명', style: 'min-width: 120px' },
+  { field: 'productId', header: '제품코드', style: 'min-width: 120px' },
   // balanceFrozen 값에 따라 `frozen` 속성이 동적으로 바뀝니다.
   { field: 'balance', header: '잔액', style: 'min-width: 150px', alignFrozen: 'right', frozen: balanceFrozen.value }
 ]);
