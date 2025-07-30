@@ -3,6 +3,7 @@ package com.olivin.app.inbnd.web;
 import java.util.List;
 
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.olivin.app.inbnd.service.InbndService;
@@ -12,10 +13,11 @@ import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequiredArgsConstructor
+@RequestMapping("/api")
 public class InbndController {
     private final InbndService inbndService;
 
-    @GetMapping("/outbndMgmt")
+    @GetMapping("/hqInbndMgmt")
     public List<InbndVO> inbndList() { 
       return inbndService.getAllInbnd();
     }  // end of inbndList()
