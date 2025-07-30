@@ -54,6 +54,8 @@ logging:
     root: INFO
   pattern:
     console: "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+  charset:
+    console: euc-kr
 
 # 서버 설정
 server:
@@ -71,12 +73,6 @@ spring:
   config:
     activate:
       on-profile: dev
-  
-  # 개발용 로깅 레벨
-logging:
-  level:
-    com.olivin: DEBUG
-    org.springframework.security: DEBUG
 
 # JWT 개발용 설정 (짧은 만료 시간)
 jwt:
