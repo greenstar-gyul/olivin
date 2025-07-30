@@ -2,9 +2,7 @@
 <script setup>
 import { onMounted, ref } from 'vue';
 import SearchTable from '../../components/common/SearchTable.vue';
-import { StockService } from '@/service/StockService';
-import { Dialog } from 'primevue';
-import axios from 'axios';
+import axios from '@/service/axios';
 import DialogModal from '@/components/overray/DialogModal.vue';
 
 // 조회 폼의 헤더 정보 (조회 테이블 컬럼 이름)
@@ -87,9 +85,7 @@ const typeItems = ref([
 ]);
 
 const publisherHeaders = ref([
-  { field: 'compId', header: 'ID' },
-  { field: 'compName', header: '회사명' },
-  { field: 'ceoName', header: '대표자' },
+  { field: 'vendorName', header: '업체명' },
   { field: 'phone', header: '전화번호' },
 ]);
 
@@ -137,6 +133,10 @@ const loadProductItems = async () => {
 const loadTypeItems = async () => {
   try {
     // 제품 분류 목록을 서버에서 가져오기
+    const response = await axios.get('/api/search/product-types/all');
+    typeItems.value = await response.data; // 서버에서 받은 데이터를 typeItems에 저장
+
+    console.log('Product type items loaded:', typeItems.value);
 
   } catch (error) {
     console.error('Error loading product type items:', error);
@@ -146,6 +146,10 @@ const loadTypeItems = async () => {
 const loadPublisherItems = async () => {
   try {
     // 공급사 목록을 서버에서 가져오기
+    const response = await axios.get('/api/search/vendors/all');
+    publisherItems.value = await response.data; // 서버에서 받은 데이터를 publisherItems에 저장
+
+    console.log('Publisher items loaded:', publisherItems.value);
 
   } catch (error) {
     console.error('Error loading publisher items:', error);
@@ -222,20 +226,16 @@ const closeStoreModal = () => {
 const searchFormRef = ref(null);
 
 const updateFilterValue = (filterName, selectedItem) => {
-  // SearchForm의 searchOptions를 직접 업데이트
-  if (searchFormRef.value && searchFormRef.value.searchFormRef && selectedItem) {
-    const displayValue = selectedItem.productName || selectedItem.compName || selectedItem.categoryMain || '';
-    // SearchForm의 searchOptions에 직접 값 설정
-    if (searchFormRef.value.searchFormRef.searchOptions) {
-      searchFormRef.value.searchFormRef.searchOptions[filterName] = displayValue;
-    }
+  // SearchForm의 searchOptions에 직접 값 설정
+  if (searchFormRef.value.searchFormRef.searchOptions) {
+    searchFormRef.value.searchFormRef.searchOptions[filterName] = selectedItem;
   }
 };
 
 const confirmProductModal = (selectedItems) => {
   console.log('Selected items from product modal:', selectedItems);
   if (selectedItems) {
-    updateFilterValue('productModal', selectedItems);
+    updateFilterValue('productModal', selectedItems.productName);
   }
   productModalVisible.value = false;
 };
@@ -251,7 +251,7 @@ const confirmTypeModal = (selectedItems) => {
 const confirmPublisherModal = (selectedItems) => {
   console.log('Selected items from publisher modal:', selectedItems);
   if (selectedItems) {
-    updateFilterValue('publisher', selectedItems);
+    updateFilterValue('publisher', selectedItems.vendorName);
   }
   publisherModalVisible.value = false;
 };
@@ -278,6 +278,34 @@ const searchProducts = async (searchValue) => {
   }
 };
 
+const searchProductTypes = async (searchValue) => {
+  try {
+    console.log('Searching product types with value:', searchValue);
+    const response = await axios.get('/api/search/product-types', {
+      params: {
+        searchValue: searchValue
+      }
+    });
+    typeItems.value = await response.data; // 서버에서 받은 데이터를 items에 저장
+  } catch (error) {
+    console.error('Error searching product types:', error);
+  }
+};
+
+const searchPublishers = async (searchValue) => {
+  try {
+    console.log('Searching vendors with value:', searchValue);
+    const response = await axios.get('/api/search/vendors', {
+      params: {
+        searchValue: searchValue
+      }
+    });
+    publisherItems.value = await response.data; // 서버에서 받은 데이터를 items에 저장
+  } catch (error) {
+    console.error('Error searching vendors:', error);
+  }
+};
+
 onMounted(() => {
   getSampleData();
 });
@@ -288,9 +316,9 @@ onMounted(() => {
   <DialogModal v-model:display="productModalVisible" :items="productItems" :headers="productHeaders" title="제품 검색"
     selectionMode="single" @close="closeProductModal" @confirm="confirmProductModal" @search-modal="searchProducts" />
   <DialogModal v-model:display="typeModalVisible" :items="typeItems" :headers="typeHeaders" title="제품 분류 검색"
-    selectionMode="single" @close="closeTypeModal" @confirm="confirmTypeModal" />
+    selectionMode="single" @close="closeTypeModal" @confirm="confirmTypeModal" @search-modal="searchProductTypes" />
   <DialogModal v-model:display="publisherModalVisible" :items="publisherItems" :headers="publisherHeaders" title="공급사 검색"
-    selectionMode="single" @close="closePublisherModal" @confirm="confirmPublisherModal" />
+    selectionMode="single" @close="closePublisherModal" @confirm="confirmPublisherModal" @search-modal="searchPublishers"/>
   <DialogModal v-model:display="storeModalVisible" :items="storeItems" :headers="storeHeaders" title="지점 검색"
     selectionMode="single" @close="closeStoreModal" @confirm="confirmStoreModal" />
 </template>

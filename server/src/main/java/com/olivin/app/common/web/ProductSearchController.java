@@ -3,6 +3,7 @@ package com.olivin.app.common.web;
 import java.util.List;
 
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -19,9 +20,11 @@ import lombok.RequiredArgsConstructor;
  * 작성일: 2025.07.29
  * 수정이력:
  * - 2025.07.29 : 최초 작성
+ * - 2025.07.30 : api 경로 매핑 추가
  */
 @RequiredArgsConstructor
 @RestController
+@RequestMapping("/api")
 public class ProductSearchController {
     private final ProductSearchService productSearchService;
 
