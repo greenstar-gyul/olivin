@@ -1,7 +1,7 @@
 <script setup>
 import InputMultiTable from '@/components/common/InputMultiTable.vue';
 import { onMounted, ref } from 'vue';
-import axios from 'axios';
+import axios from '@/service/axios';
 
 
 // 테스트 데이터
@@ -15,36 +15,30 @@ const formData = {
 
 // 폼 스키마
 const formSchema = [
-  { type: 'item-search', label: '상품명', id: 'itemName' },
-  { type: 'text', label: '상품설명', id: 'description' },
-  { type: 'date', label: '날짜', id: 'date' },
-  { type: 'number-float', label: '가격', id: 'price' },
-  { type: 'select', label: '콤보박스', id: 'select', 
-    options: [
-      { name: '옵션1', value: 1 },
-      { name: '옵션2', value: 2 }
-    ]
+  { type: 'text', label: '출고번호', id: 'outbndNo' },
+  { type: 'text', label: '발주명', id: 'orderId' },
+  { type: 'text', label: '출고지', id: 'outbndFrom' },
+  { type: 'text', label: '입고지', id: 'inbndTo' },
+  { type: 'date', label: '출고일', id: 'outbndDate'}, 
+  { type: 'text', label: '출고상태', id: 'outbndStatus', 
+    // options: [
+    //   { name: '옵션1', value: 1 },
+    //   { name: '옵션2', value: 2 }
+    // ]
   },
-  { type: 'data', label: '데이터', id: 'data', data: 'number' },
 ];
 
 /* Input Table */
-
 const tableData = ref([]);
-// const tableData = [
-//   { id: 1, name: '상품1', price: 100, date: '2023-01-01', select: 1, text: '안녕하세요' },
-//   { id: 2, name: '상품2', price: 200, date: '2023-01-02', select: 2, text: '안녕하세요' }
-// ];
 
 const tableHeader = {
   title: '제품 목록',
   header: {
-    inbndNo: '입고번호',
-    outbndNo: '출고번호',
-    inbndStatus  : '입고상태',
-    outbndFrom: '출고지',
-    inbndTo: '입고지',
-    inbndDate: '입고일'
+    productName: '제품명',
+    orderQuantity: '발주수량',
+    totalOutbndQuantity  : '출고수량',
+    unit: '단위',
+    outbndStatus: '출고상태',
   },
   rightAligned: ['price']
 };
@@ -54,9 +48,10 @@ const detailData = ref([]);
 
 // 테이블 컬럼 정의
 const columns = [
-  { inputType: 'text', header: 'LOT', field: 'lot' },
-  { inputType: 'number', header: '출고수량', field: 'quantity' },
-  { inputType: 'text', header: '출고상태', field: 'status' },
+  { inputType: 'text', header: 'LOT', field: 'lotNo' },
+  { inputType: 'number', header: '출고수량', field: 'outbndQuantity' },
+  { inputType: 'text', header: '단위', field: 'unit' },
+  { inputType: 'text', header: '출고상태', field: 'outbnStatus' },
 ];
 /* Submit */
 
@@ -98,7 +93,7 @@ const exportHandler = () => {
 // 테스트 함수
 const getSampleData = async () => {
   try {
-    const result = await axios.get('/api/outbndMgmt');
+    const result = await axios.get('/api/hqOutbndMgmt');
     // const data = await result.data;
     tableData.value = await result.data;
     console.log('Loaded sample data:', tableData.value);

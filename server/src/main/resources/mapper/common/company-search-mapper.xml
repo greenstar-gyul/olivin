@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--
+회사 검색 모달 Mapper 구현체
+
+작성자 : 이창현
+작성일 : 2025.07.30
+-->
+<mapper namespace="com.olivin.app.common.mapper.CompanySearchMapper">
+    <!-- 회사 전체 조회 -->
+    <select id="selectAllCompanys" resultType="CompanySearchVO">
+        SELECT
+			comp_id,
+			comp_type,
+		    comp_name,
+		    ceo_name,
+		    phone,
+		    address,
+		    settle_mgr,
+		    note
+		FROM
+		    companys
+		ORDER BY comp_id
+    </select>
+
+    <!-- 회사 종류별 조회 -->
+    <select id="selectTypeCompanys" parameterType="String" resultType="CompanySearchVO">
+		SELECT
+			comp_id,
+			comp_type,
+		    comp_name,
+		    ceo_name,
+		    phone,
+		    address,
+		    settle_mgr,
+		    note
+		FROM
+		    companys
+        <where>
+          <if test="compType != null and compType != ''">
+			AND comp_type = GET_DATACODE_VALUE(#{compType})
+          </if>
+        </where>
+		ORDER BY comp_id
+    </select>
+    
+    <!-- 조건에 맞는 회사 조회 -->
+    <select id="selectCompanyList" resultType="CompanySearchVO">
+		SELECT
+			comp_id,
+			comp_type,
+		    comp_name,
+		    ceo_name,
+		    phone,
+		    address,
+		    settle_mgr,
+		    note
+		FROM
+		    companys
+        <where>
+          <if test="compType != null and compType != ''">
+			AND comp_type = GET_DATACODE_VALUE(#{compType})
+          </if>
+          <if test="searchValue != null and searchValue != ''">
+			AND ( comp_name LIKE '%' || #{searchValue} || '%'
+			OR ceo_name LIKE '%' || #{searchValue} || '%'
+			OR phone LIKE '%' || #{searchValue} || '%'
+			OR address  LIKE '%' || #{searchValue} || '%'
+			OR settle_mgr  LIKE '%' || #{searchValue} || '%' )
+          </if>
+        </where>
+		ORDER BY comp_id
+    </select>
+</mapper>

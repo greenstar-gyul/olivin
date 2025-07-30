@@ -4,6 +4,21 @@
     <sql id="orderIdPrefix">
     'POR'
     </sql>
+    <!--  -->
+    <select id="selectBranchInfo" resultType="BranchVO" parameterType="string">
+		SELECT
+			e.employee_id,
+			e.comp_id,
+			e.emp_name,
+			c.comp_name,
+			c.comp_type,
+			c.note
+		FROM
+			employees e
+				LEFT JOIN companys c ON e.comp_id = c.comp_id
+		WHERE employee_id = #{empId}
+		AND comp_type = GET_DATACODE_VALUE('지점')
+    </select>
 	<!-- select -->
     <select id="selectAllList" resultType="OrdersVO" parameterType="OrdersVO">
         SELECT

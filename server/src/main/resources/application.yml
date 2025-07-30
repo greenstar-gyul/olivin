@@ -16,8 +16,47 @@ spring:
       pool-name: SpringBootJPAHikariCP
       max-lifetime: 1800000
       connection-timeout: 30000
-  
-  # MyBatis 설정
+
+# JWT 설정
+jwt:
+  secret: olivin-jwt-secret-key-2024-very-long-secret-key-for-security-please-change-in-production-environment
+  expiration: 86400000  # 24시간 (밀리초)
+
+# 로깅 설정
+logging:
+  level:
+    com.olivin: DEBUG
+    com.olivin.app.auth.mapper: DEBUG
+    org.springframework.security: DEBUG
+    root: INFO
+  pattern:
+    console: "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+  charset:
+    console: euc-kr
+
+# 서버 설정
+server:
+  port: 3049
+  servlet:
+    context-path: /
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
+
+---
+# 개발 환경 설정
+spring:
+  config:
+    activate:
+      on-profile: dev
+
+# JWT 개발용 설정 (짧은 만료 시간)
+jwt:
+  expiration: 3600000  # 1시간
+
+
+# MyBatis 설정
 mybatis:
   mapper-locations: 
   - classpath:mapper/**/*.xml
@@ -39,45 +78,3 @@ mybatis:
     jdbc-type-for-null: other
     lazy-load-trigger-methods: equals,clone,hashCode,toString
     log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
-
-# JWT 설정
-jwt:
-  secret: olivin-jwt-secret-key-2024-very-long-secret-key-for-security-please-change-in-production-environment
-  expiration: 86400000  # 24시간 (밀리초)
-
-# 로깅 설정
-logging:
-  level:
-    com.olivin: DEBUG
-    com.olivin.app.auth.mapper: DEBUG
-    org.springframework.security: DEBUG
-    root: INFO
-  pattern:
-    console: "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
-
-# 서버 설정
-server:
-  port: 3049
-  servlet:
-    context-path: /
-    encoding:
-      charset: UTF-8
-      enabled: true
-      force: true
-
----
-# 개발 환경 설정
-spring:
-  config:
-    activate:
-      on-profile: dev
-  
-  # 개발용 로깅 레벨
-logging:
-  level:
-    com.olivin: DEBUG
-    org.springframework.security: DEBUG
-
-# JWT 개발용 설정 (짧은 만료 시간)
-jwt:
-  expiration: 3600000  # 1시간

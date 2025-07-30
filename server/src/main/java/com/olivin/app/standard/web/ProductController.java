@@ -27,7 +27,7 @@ import com.olivin.app.standard.service.ProductVO;
 import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping("/products")  
+@RequestMapping("/api/products")  
 @RequiredArgsConstructor
 public class ProductController {
     
