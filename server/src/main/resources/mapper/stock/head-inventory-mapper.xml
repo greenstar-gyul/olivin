@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--
+본사 재고 관리 Mapper 구현체
+작성자 : 함동의
+작성일 : 2025.07.30
+수정이력 :
+- 2025.07.30 : 최초 작성
+-->
+<mapper namespace="com.olivin.app.inventory.mapper.HeadInventoryMapper">
+    <!-- 본사 재고 전체 조회 -->
+    <select id="selectAllHeadInventory" resultType="HeadInventoryVO">
+        SELECT p.product_id,
+            p.product_name,
+            get_datacode_name(p.category_main) as category_main,
+            get_datacode_name(p.category_sub) as category_sub,
+            p.vendor_name,
+            p.product_spec,
+            NVL((
+                SELECT SUM(inp.total_inbnd_quantity * prd.pack_qty)
+                FROM   inbnd_product inp JOIN inbnd ib ON ib.inbnd_no = inp.inbnd_no
+                                        JOIN products prd ON prd.product_id = inp.product_id
+                WHERE  ib.inbnd_to = 'COM10001'
+                AND  inp.inbnd_status = '000001'
+                AND  inp.product_id = p.product_id
+            ), 0) 
+            -
+            NVL((
+                SELECT SUM(outp.total_outbnd_quantity)
+                FROM   outbnd_product outp JOIN outbnd ob ON ob.outbnd_no = outp.outbnd_no
+                WHERE  ob.outbnd_from = 'COM10001'
+                AND  outp.outbnd_status = '010003'
+                AND  outp.product_id = p.product_id
+            ), 0) AS stock_quantity,
+
+            p.safety_stock
+        FROM products p
+        ORDER BY p.product_id
+    </select>
+</mapper>

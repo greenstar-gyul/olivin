@@ -1,0 +1,22 @@
+package com.olivin.app.inventory.mapper;
+
+import java.util.List;
+
+import com.olivin.app.inventory.service.HeadInventoryVO;
+
+/**
+ * HeadInventoryMapper 인터페이스 <br>
+ * 본사 재고 매퍼 인터페이스입니다. <br>
+ * 
+ * 작성자: 함동의 <br>
+ * 작성일: 2025.07.30 <br>
+ * 수정이력: <br>
+ * - 2025.07.30 : 최초 작성 <br>
+ */
+public interface HeadInventoryMapper {
+    // 본사 재고 관련 SQL 매핑 메소드를 정의합니다.
+    public List<HeadInventoryVO> selectAllHeadInventory();
+
+    // 조건에 맞는 본사 재고를 조회하는 메소드입니다.
+    
+}
