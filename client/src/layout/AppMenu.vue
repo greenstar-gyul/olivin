@@ -31,7 +31,7 @@ const model = ref([
         to: '/inventory',
         items: [
             // made by hdu
-            { label: '재고 현황', icon: 'pi pi-fw pi-book', to: '/inventory/stock'},
+            { label: '재고 현황', icon: 'pi pi-fw pi-book', to: '/inventory/stock/head'},
 
             // made by kms
             { label: '본사출고관리', icon: 'pi pi-fw pi-book', to: '/hqOutbndMgmt' },
