@@ -4,9 +4,9 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 
-import com.olivin.app.common.mapper.CompanySearchMapper;
-import com.olivin.app.common.service.CompanySearchService;
-import com.olivin.app.common.service.CompanySearchVO;
+import com.olivin.app.common.mapper.BranchCompanySearchMapper;
+import com.olivin.app.common.service.BranchCompanySearchService;
+import com.olivin.app.common.service.BranchCompanySearchVO;
 
 import lombok.RequiredArgsConstructor;
 
@@ -21,16 +21,16 @@ import lombok.RequiredArgsConstructor;
  */
 @Service
 @RequiredArgsConstructor
-public class CompanySearchServiceImpl implements CompanySearchService {
-    private final CompanySearchMapper companySearchMapper;
+public class BranchCompanySearchServiceImpl implements BranchCompanySearchService {
+    private final BranchCompanySearchMapper companySearchMapper;
 
     @Override
-    public List<CompanySearchVO> getAllCompanies() {
+    public List<BranchCompanySearchVO> getAllCompanies() {
         return companySearchMapper.selectAllCompanies();
     }
 
     @Override
-    public List<CompanySearchVO> getCompanyList(String searchValue) {
+    public List<BranchCompanySearchVO> getCompanyList(String searchValue) {
         return companySearchMapper.selectCompanyList(searchValue);
     }
 }

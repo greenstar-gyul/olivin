@@ -17,7 +17,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class CompanySearchVO {
+public class BranchCompanySearchVO {
     private String compId;      // 회사 ID
     private String compName;    // 회사명
     private String phone;      // 전화번호

@@ -7,8 +7,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.olivin.app.common.service.CompanySearchService;
-import com.olivin.app.common.service.CompanySearchVO;
+import com.olivin.app.common.service.BranchCompanySearchService;
+import com.olivin.app.common.service.BranchCompanySearchVO;
 
 import lombok.RequiredArgsConstructor;
 
@@ -24,16 +24,16 @@ import lombok.RequiredArgsConstructor;
 @RestController
 @RequestMapping("/api")
 @RequiredArgsConstructor
-public class CompanySearchController {
-    private final CompanySearchService companySearchService;
+public class BranchCompanySearchController {
+    private final BranchCompanySearchService companySearchService;
 
-    @GetMapping("/search/companies/all")
-    public List<CompanySearchVO> getAllCompanies() {
+    @GetMapping("/search/branches/all")
+    public List<BranchCompanySearchVO> getAllCompanies() {
         return companySearchService.getAllCompanies();
     }
 
-    @GetMapping("/search/companies")
-    public List<CompanySearchVO> getCompanyList(@RequestParam String searchValue) {
+    @GetMapping("/search/branches")
+    public List<BranchCompanySearchVO> getCompanyList(@RequestParam String searchValue) {
         return companySearchService.getCompanyList(searchValue);
     }
 }

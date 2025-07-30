@@ -141,7 +141,7 @@ const loadPublisherItems = async () => {
 const loadStoreItems = async () => {
   try {
     // 지점 목록을 서버에서 가져오기
-    const response = await axios.get('/api/search/stores/all');
+    const response = await axios.get('/api/search/branches/all');
     storeItems.value = await response.data; // 서버에서 받은 데이터를 storeItems에 저장
 
     console.log('Store items loaded:', storeItems.value);

@@ -11,10 +11,10 @@ import java.util.List;
  * 수정이력:
  * 2025.07.30 : 최초 작성
  */
-public interface CompanySearchService {
+public interface BranchCompanySearchService {
     // 전체 회사 목록을 조회합니다.
-    List<CompanySearchVO> getAllCompanies();
+    List<BranchCompanySearchVO> getAllCompanies();
 
     // 조건에 맞는 회사 목록을 조회합니다.
-    List<CompanySearchVO> getCompanyList(String searchValue);
+    List<BranchCompanySearchVO> getCompanyList(String searchValue);
 }

@@ -2,7 +2,7 @@ package com.olivin.app.common.mapper;
 
 import java.util.List;
 
-import com.olivin.app.common.service.CompanySearchVO;
+import com.olivin.app.common.service.BranchCompanySearchVO;
 
 /**
  * Company Search Mapper 인터페이스 <br>
@@ -13,10 +13,10 @@ import com.olivin.app.common.service.CompanySearchVO;
  * 수정이력:
  * 2025.07.30 : 최초 작성
  */
-public interface CompanySearchMapper {
+public interface BranchCompanySearchMapper {
     // 회사 목록을 조회하는 메서드
-    List<CompanySearchVO> selectAllCompanies();
+    List<BranchCompanySearchVO> selectAllCompanies();
 
     // 조건에 맞는 회사 목록을 조회하는 메서드
-    List<CompanySearchVO> selectCompanyList(String searchValue);
+    List<BranchCompanySearchVO> selectCompanyList(String searchValue);
 }
