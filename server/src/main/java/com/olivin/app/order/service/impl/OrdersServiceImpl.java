@@ -1,5 +1,6 @@
 package com.olivin.app.order.service.impl;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -37,6 +38,8 @@ public class OrdersServiceImpl implements OrdersService {
 	@Transactional
 	public void createOrders(OrdersVO ordersVO, List<OrdersDetailVO> detailVOList) {
 		// 1. 메인 주문 정보 등록
+		ordersVO.setOrderDate(new Date()); //SYSDATE
+		ordersVO.setOrderStatus("03001");
     ordersMapper.insertOne(ordersVO);
     // 2. 상세 주문 정보 리스트 등록
     if (detailVOList != null && !detailVOList.isEmpty()) {

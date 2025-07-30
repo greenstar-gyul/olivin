@@ -17,4 +17,7 @@ public interface ProductService {
     
     int approveProduct(String productId, String approver);
     int rejectProduct(String productId, String approver, String reason);
+    
+    // ✅ 제품 ID 자동생성 메서드 추가
+    String getNextProductId(String categoryMain);
 }

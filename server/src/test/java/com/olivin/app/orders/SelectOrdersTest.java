@@ -99,7 +99,7 @@ class SelectOrdersTest {
 		
 		List<OrdersDetailVO> detail = new ArrayList<>();
 		detail.add(OrdersDetailVO.builder()
-				.productId("PRD24012")
+				.productId("PRD24001")
 				.productName("화장품1")
 				.quantity(100)
 				.unit("U001")
@@ -110,7 +110,7 @@ class SelectOrdersTest {
 				.vendorName("네이처코스메틱")
 				.build());
 		detail.add(OrdersDetailVO.builder()
-				.productId("PRD24013")
+				.productId("PRD24002")
 				.productName("화장품2")
 				.quantity(50)
 				.unit("U001")

@@ -1,46 +1,104 @@
 package com.olivin.app.order.web;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.olivin.app.order.service.OrdersDTO;
+import com.olivin.app.order.service.OrdersDetailVO;
 import com.olivin.app.order.service.OrdersService;
 import com.olivin.app.order.service.OrdersVO;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @RestController
 @RequiredArgsConstructor
 public class OrdersController {
 	private final OrdersService ordersService;
 	
 	@GetMapping("/orders")
-	public List<OrdersVO> ordersList() {
-		return ordersService.getAllOrders(null);
+	public List<OrdersVO> ordersList(@ModelAttribute OrdersVO search) {
+		log.debug("order = {}", search);
+		return ordersService.getAllOrders(search);
+	}
+	
+	@GetMapping("/orders/{orderId}")
+	public Map<String, Object> getOrderInfo(@PathVariable String orderId) {
+		Map<String, Object> result = new HashMap<>();
+		OrdersVO orders = ordersService.getOneOrders(orderId);
+		List<OrdersDetailVO> detailList = ordersService.getDetailOrders(orderId);
+		if (orders != null) {
+			//데이터 정보
+			result.put("order", orders);
+			result.put("detail", detailList);
+		} else {
+			result.put("result", "no data");
+		}
+		return result;
 	}
 	
 	@GetMapping("/orders/head")
-	public List<OrdersVO> orderHeadList() {
-		OrdersVO ordersVO = OrdersVO.builder()
-				.orderType("150001")
-				.build();
-		return ordersService.getAllOrders(ordersVO);
+	public List<OrdersVO> orderHeadList(@ModelAttribute OrdersVO search) {
+		search.setOrderType("150001");
+		return ordersService.getAllOrders(search);
 	}
-	
+
 	@GetMapping("/orders/branch")
-	public List<OrdersVO> orderBranchList() {
-		OrdersVO ordersVO = OrdersVO.builder()
-				.orderType("150002")
-				.build();
-		return ordersService.getAllOrders(ordersVO);
+	public List<OrdersVO> orderBranchList(@ModelAttribute OrdersVO search) {
+		search.setOrderType("150002");
+		return ordersService.getAllOrders(search);
 	}
 	
 	@GetMapping("/orders/supplier")
-	public List<OrdersVO> orderSupplierList() {
-		OrdersVO ordersVO = OrdersVO.builder()
-				.orderType("150003")
-				.build();
-		return ordersService.getAllOrders(ordersVO);
+	public List<OrdersVO> orderSupplierList(@ModelAttribute OrdersVO search) {
+		search.setOrderType("150003");
+		return ordersService.getAllOrders(search);
+	}
+	
+	@PostMapping("/orders")
+	public Map<String, Object> setOrdersList(@RequestBody OrdersDTO orderDTO) {
+// @RequestBody Map<String, Object> orderMap 으로 전달 할때
+//		OrdersVO ordersVO = objectMapper.convertValue(orderMap.get("order"), OrdersVO.class);
+//    List<OrdersDetailVO> detailList = objectMapper.convertValue(orderMap.get("ordersDetail"),
+//            new TypeReference<List<OrdersDetailVO>>() {});
+		Map<String, Object> result = new HashMap<>();
+    
+    log.debug("ORDER : {}", orderDTO.getOrders());
+    log.debug("DETAIL : {}", orderDTO.getOrdersDetail());
+    if (orderDTO.getOrders() != null) {
+    	ordersService.createOrders(orderDTO.getOrders(), orderDTO.getOrdersDetail());
+    	result.put("result", "SUCCESS");
+			result.put("message", "성공");
+    } else {
+			result.put("result", "FAIL");
+			result.put("message", "실패");
+    }
+    
+    return result;
+	}
+	
+	@DeleteMapping("/orders/{orderId}")
+	public Map<String, Object> deleteOrders(@PathVariable String orderId) {
+		Map<String, Object> result = new HashMap<>();
+		int r = ordersService.deleteOrder(orderId);
+		if (r == 1) {
+			result.put("result", "SUCCESS");
+			result.put("message", "성공");
+    } else {
+			result.put("result", "FAIL");
+			result.put("message", "실패");
+    }
+    
+    return result;
 	}
 }

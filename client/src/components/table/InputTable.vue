@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { ref } from 'vue';
 import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
 import InputText from 'primevue/inputtext';
@@ -37,6 +37,8 @@ const props = defineProps({
   }
 });
 
+const emit = defineEmits(['tableSearch']);
+
 const selectedProducts = ref([]);
 
 const getSelection = () => {
@@ -46,6 +48,10 @@ const getSelection = () => {
 const clearSelection = () => {
   selectedProducts.value = [];
 };
+
+const searchItem = (item, fieldName) => {
+  emit('tableSearch', item, fieldName);
+}
 
 defineExpose({
   getSelection,
@@ -80,7 +86,7 @@ defineExpose({
           <!-- Item Search -->
           <InputGroup v-else-if="col.inputType === 'item-search'">
             <InputText v-model="slotProps.data[col.field]" :placeholder="col.placeholder || 'Enter item name...'" />
-            <Button icon="pi pi-search" class="p-button-outlined" />
+            <Button icon="pi pi-search" class="p-button-outlined" @click="searchItem(slotProps.data, col.field)"/>
           </InputGroup>
 
           <!-- DatePicker -->
