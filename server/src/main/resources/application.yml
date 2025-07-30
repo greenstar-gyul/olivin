@@ -17,6 +17,29 @@ spring:
       max-lifetime: 1800000
       connection-timeout: 30000
 
+# MyBatis 설정
+mybatis:
+  mapper-locations: 
+  - classpath:mapper/**/*.xml
+  type-aliases-package: com.olivin.app
+  configuration:
+    map-underscore-to-camel-case: true
+    cache-enabled: false
+    lazy-loading-enabled: false
+    multiple-result-sets-enabled: true
+    use-column-label: true
+    use-generated-keys: false
+    auto-mapping-behavior: partial
+    auto-mapping-unknown-column-behavior: warning
+    default-executor-type: simple
+    default-statement-timeout: 25
+    default-fetch-size: 100
+    safe-row-bounds-enabled: false
+    local-cache-scope: session
+    jdbc-type-for-null: other
+    lazy-load-trigger-methods: equals,clone,hashCode,toString
+    log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
+
 # JWT 설정
 jwt:
   secret: olivin-jwt-secret-key-2024-very-long-secret-key-for-security-please-change-in-production-environment
@@ -45,36 +68,12 @@ server:
       force: true
 
 ---
-# 개발 환경 설정
-spring:
-  config:
-    activate:
-      on-profile: dev
+# # 개발 환경 설정
+# spring:
+#   config:
+#     activate:
+#       on-profile: dev
 
-# JWT 개발용 설정 (짧은 만료 시간)
-jwt:
-  expiration: 3600000  # 1시간
-
-
-# MyBatis 설정
-mybatis:
-  mapper-locations: 
-  - classpath:mapper/**/*.xml
-  type-aliases-package: com.olivin.app
-  configuration:
-    map-underscore-to-camel-case: true
-    cache-enabled: false
-    lazy-loading-enabled: false
-    multiple-result-sets-enabled: true
-    use-column-label: true
-    use-generated-keys: false
-    auto-mapping-behavior: partial
-    auto-mapping-unknown-column-behavior: warning
-    default-executor-type: simple
-    default-statement-timeout: 25
-    default-fetch-size: 100
-    safe-row-bounds-enabled: false
-    local-cache-scope: session
-    jdbc-type-for-null: other
-    lazy-load-trigger-methods: equals,clone,hashCode,toString
-    log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
+# # JWT 개발용 설정 (짧은 만료 시간)
+# jwt:
+#   expiration: 3600000  # 1시간

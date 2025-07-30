@@ -1,6 +1,6 @@
 <script setup>
 import { InputGroup, InputText } from 'primevue';
-import { onMounted, ref, watch } from 'vue';
+import { onMounted, ref, watch, computed } from 'vue';
 
 const emit = defineEmits(['confirm', 'close', 'searchModal']);
 const props = defineProps({
@@ -70,6 +70,24 @@ const searchModal = (searchValue) => {
   emit('searchModal', searchValue);
 };
 
+// Dialog 크기를 동적으로 계산
+const dialogWidth = computed(() => {
+  const headerCount = props.headers.length;
+  const itemCount = props.items.length;
+  
+  // 컬럼 수와 데이터 수에 따라 크기 조절
+  let width = 30; // 최소 30vw
+  
+  // 컬럼이 많을수록 크기 증가
+  if (headerCount >= 6) {
+    width = 60; // 최대 60vw
+  } else if (headerCount >= 3) {
+    width = 45; // 중간 크기
+  }
+  
+  return `${width}vw`;
+});
+
 onMounted(() => {
   initializeSelectedProduct();
 });
@@ -84,7 +102,7 @@ watch(() => props.display, (newValue) => {
 </script>
 <template>
   <Dialog :header="props.title" v-model:visible="props.display" :breakpoints="{ '960px': '75vw' }"
-    :style="{ width: '45vw' }" :modal="true" :closable="false">
+    :style="{ width: dialogWidth }" :modal="true" :closable="false">
     <div class="flex flex-col gap-4">
         <!-- Item Search -->
         <InputGroup class="flex-1">

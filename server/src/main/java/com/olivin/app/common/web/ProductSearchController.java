@@ -20,6 +20,7 @@ import lombok.RequiredArgsConstructor;
  * 작성일: 2025.07.29
  * 수정이력:
  * - 2025.07.29 : 최초 작성
+ * - 2025.07.30 : api 경로 매핑 추가
  */
 @RequiredArgsConstructor
 @RestController

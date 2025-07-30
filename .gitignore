@@ -64,6 +64,9 @@ build/
 .sts4-cache
 *.properties
 
+*.yml
+*.yaml
+
 ### vue ###
 .env
 

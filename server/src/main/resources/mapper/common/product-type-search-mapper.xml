@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--
+상품 유형 검색 모달 Mapper 구현체
+
+작성자 : 함동의
+작성일 : 2025.07.30
+수정이력 :
+- 2025.07.30 : 최초 작성
+- 2025.07.30 : 오타 수정
+-->
+<mapper namespace="com.olivin.app.common.mapper.ProductTypeSearchMapper">
+    <!-- 상품 전체 조회 -->
+    <select id="selectAllProductTypes" resultType="ProductTypeSearchVO">
+        SELECT dc_main.code_value as categoryMain,
+               dc_main.code_name as categoryMainName,
+               dc_sub.code_value as categorySub,
+               dc_sub.code_name as categorySubName
+        FROM   data_codes dc_main
+        LEFT JOIN data_codes dc_sub ON SUBSTR(dc_main.code_value, 6, 1) = SUBSTR(dc_sub.code_value, 3, 1)
+        WHERE  dc_main.code_group = '11'  -- 대분류
+        AND    dc_sub.code_group = '12'   -- 소분류
+        ORDER BY dc_main.code_value, dc_sub.code_value
+    </select>
+
+    <!-- 조건에 맞는 상품 분류 조회 -->
+    <select id="selectProductTypeList" parameterType="String" resultType="ProductTypeSearchVO">
+        SELECT dc_main.code_value as categoryMain,
+               dc_main.code_name as categoryMainName,
+               dc_sub.code_value as categorySub,
+               dc_sub.code_name as categorySubName
+        FROM   data_codes dc_main
+        LEFT JOIN data_codes dc_sub ON SUBSTR(dc_main.code_value, 6, 1) = SUBSTR(dc_sub.code_value, 3, 1)
+        WHERE  dc_main.code_group = '11'  -- 대분류
+        AND    dc_sub.code_group = '12'   -- 소분류
+        <if test="searchValue != null and searchValue != ''">
+          AND (dc_main.code_name LIKE '%' || #{searchValue} || '%'
+           OR dc_sub.code_name LIKE '%' || #{searchValue} || '%')
+        </if>
+        ORDER BY dc_main.code_value, dc_sub.code_value
+    </select>
+</mapper>

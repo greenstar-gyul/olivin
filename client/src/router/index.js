@@ -231,9 +231,9 @@ const router = createRouter({
                 },
                 /* end of order */
                 {
-                    path: '/inventory/stock',
+                    path: '/inventory/stock/head',
                     name: 'stock',
-                    component: () => import('@/views/inventory/StockPage.vue')
+                    component: () => import('@/views/inventory/HeadStockPage.vue')
                 }
             ]
         },
