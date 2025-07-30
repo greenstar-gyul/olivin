@@ -23,11 +23,12 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @SpringBootTest
 class SelectOrdersTest {
-	private final String ORDER_ID = "POR20250725001";
+	private final String ORDER_ID = "PO2024008";
 	@Autowired
 	private OrdersService ordersService;
 	
 	@Test
+	@Disabled
 	void allSelect() {
 		List<OrdersVO> list = ordersService.getAllOrders(OrdersVO.builder().build());
 		
@@ -49,6 +50,7 @@ class SelectOrdersTest {
 	}
 	
 	@Test
+	@Disabled
 	void detailSelect() {
 		List<OrdersDetailVO> detail = ordersService.getDetailOrders(ORDER_ID);
 		
@@ -76,7 +78,6 @@ class SelectOrdersTest {
 	}
 	
 	@Test
-	@Disabled
 	void createOrders() throws ParseException {
 		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
 		

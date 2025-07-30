@@ -2,7 +2,7 @@
 import { onMounted, ref } from 'vue';
 import { convertDate } from '@/utils/dateUtils';
 import SearchTable from '../../components/common/SearchTable.vue';
-import axios from '@/service/axios';
+import axios from 'axios';
 
 const header = ref({
   title: '발주서 조회',
