@@ -20,14 +20,15 @@ public class AccountLederVO {
     private String balance;
     private String detail;
     private String writeDate;
-    private String compId;
-    private String productId;
+    //계정명
     private String accountId;
-
+    private String accountName;
     // 회사명
+    private String compId;
     private String compName;
-
+    
     // 제품명
+    private String productId;
     private String productName;
 
     @DateTimeFormat(pattern = "yyyy-MM-dd")
