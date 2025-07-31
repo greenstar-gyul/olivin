@@ -63,6 +63,7 @@ public class AuthService {
             extraClaims.put("role", user.getRoleName());
             extraClaims.put("departmentId", user.getDepartmentId());
             extraClaims.put("position", user.getPosition());
+            extraClaims.put("compId", user.getCompId());
             
             String token = jwtService.generateToken(userDetails, extraClaims);
             

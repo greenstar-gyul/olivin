@@ -1,4 +1,4 @@
-// stores/auth.js - DB 기반 권한 시스템
+// stores/auth.js - DB 기반 권한 시스템 (Persistence 추가)
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import axios from '@/service/axios'
@@ -6,7 +6,7 @@ import axios from '@/service/axios'
 export const useAuthStore = defineStore('auth', () => {
   // State
   const user = ref(null)
-  const token = ref(localStorage.getItem('token') || null)
+  const token = ref(null) // localStorage에서 직접 읽지 않고 persistence로 관리
   const userRole = ref(null) // role 정보
   const userPermissions = ref([]) // permissions 배열
   const loading = ref(false)
@@ -47,7 +47,7 @@ export const useAuthStore = defineStore('auth', () => {
       userRole.value = res.data.data.role // { role_id, role_name }
       userPermissions.value = res.data.data.permissions // [{ perm_id, permName, perm_description }]
       
-      localStorage.setItem('token', res.data.data.token)
+      // localStorage 수동 저장 제거 (persistence가 자동 처리)
       
       console.log('✅ 로그인 성공:', {
         user: res.data.data.user.empName,
@@ -73,7 +73,7 @@ export const useAuthStore = defineStore('auth', () => {
     token.value = null
     userRole.value = null
     userPermissions.value = []
-    localStorage.removeItem('token')
+    // localStorage 수동 제거 불필요 (persistence가 자동 처리)
     console.log('👋 로그아웃 완료')
   }
 
@@ -181,5 +181,11 @@ export const useAuthStore = defineStore('auth', () => {
     // 헬퍼 함수들
     filterDataByPermission,
     getApiEndpoint
+  }
+}, {
+  // 🔥 Persistence 설정 추가
+  persist: {
+    storage: localStorage,
+    paths: ['token', 'user', 'userRole', 'userPermissions'] // 새로고침 시 유지할 상태들
   }
 })

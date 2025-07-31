@@ -2,6 +2,7 @@ import { createApp } from 'vue';
 import App from './App.vue';
 import router from './router';
 import { createPinia } from 'pinia';
+import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
 
 import { useAuthStore } from '@/stores/auth';
 import Aura from '@primeuix/themes/aura';
@@ -14,6 +15,7 @@ import '@/assets/styles.scss';
 
 const app = createApp(App);
 const pinia = createPinia();
+pinia.use(piniaPluginPersistedstate);
 app.use(pinia);
 app.use(PrimeVue, {
     theme: {
