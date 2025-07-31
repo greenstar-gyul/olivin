@@ -64,6 +64,12 @@ jobs:
           # echo -e로 이스케이프 시퀀스를 실제 줄바꿈으로 변환
           FORMATTED_MESSAGE=$(echo -e "$MESSAGE")
 
+          # Discord 2000자 제한 처리
+          if [[ ${#FORMATTED_MESSAGE} -gt 2000 ]]; then
+            # 1900자까지 자르고 "... (생략)" 추가
+            FORMATTED_MESSAGE="${FORMATTED_MESSAGE:0:1900}...\n\n📝 자세한 내용은 링크 참조"
+          fi
+
           # JSON 페이로드 생성 및 전송
           jq -n --arg content "$FORMATTED_MESSAGE" '{content: $content}' | \
           curl -H "Content-Type: application/json" \
