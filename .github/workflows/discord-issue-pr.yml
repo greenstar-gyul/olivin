@@ -64,6 +64,8 @@ jobs:
           echo "📄 메시지 내용:"
           echo "$CONTENT"
 
+          jq -n --arg content "$CONTENT" '{content: $content}' > payload.json
+
           curl -H "Content-Type: application/json" \
                -X POST \
                -d @payload.json \
