@@ -12,11 +12,12 @@ import com.olivin.app.inventory.service.HeadInventoryVO;
  * 작성일: 2025.07.30 <br>
  * 수정이력: <br>
  * - 2025.07.30 : 최초 작성 <br>
+ * - 2025.07.31 : 재고 검색 기능 추가 <br>
  */
 public interface HeadInventoryMapper {
     // 본사 재고 관련 SQL 매핑 메소드를 정의합니다.
     public List<HeadInventoryVO> selectAllHeadInventory();
 
     // 조건에 맞는 본사 재고를 조회하는 메소드입니다.
-    
+    public List<HeadInventoryVO> selectHeadInventoryList(HeadInventoryVO headInventoryVO);
 }

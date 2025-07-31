@@ -3,13 +3,13 @@
 <!--
 본사 재고 관리 Mapper 구현체
 작성자 : 함동의
-작성일 : 2025.07.30
+작성일 : 2025.07.31
 수정이력 :
-- 2025.07.30 : 최초 작성
+- 2025.07.31 : 최초 작성
 -->
-<mapper namespace="com.olivin.app.inventory.mapper.HeadInventoryMapper">
-    <!-- 본사 재고 전체 조회 -->
-    <select id="selectAllHeadInventory" resultType="HeadInventoryVO">
+<mapper namespace="com.olivin.app.inventory.mapper.BranchInventoryMapper">
+    <!-- 지점 재고 전체 조회 -->
+    <select id="selectAllBranchInventory" resultType="BranchInventoryVO">
         SELECT p.product_id,
             p.product_name,
             get_datacode_name(p.category_main) as category_main,
@@ -37,8 +37,8 @@
         FROM products p
         ORDER BY p.product_id
     </select>
-    <!-- 조건에 맞는 본사 재고 조회 -->
-    <select id="selectHeadInventoryList" parameterType="HeadInventoryVO" resultType="HeadInventoryVO">
+    <!-- 조건에 맞는 지점 재고 조회 -->
+    <select id="selectBranchInventoryList" parameterType="BranchInventoryVO" resultType="BranchInventoryVO">
         SELECT p.product_id,
             p.product_name,
             get_datacode_name(p.category_main) as category_main,

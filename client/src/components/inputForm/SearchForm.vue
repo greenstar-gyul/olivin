@@ -9,7 +9,7 @@ const props = defineProps({
   }
 });
 
-const emit = defineEmits(['searchData', 'openSearchModal']);
+const emit = defineEmits(['searchData', 'openSearchModal', 'resetSearchOptions']);
 
 // 검색 조건을 담을 객체
 const searchOptions = ref({});
@@ -39,6 +39,7 @@ initializeSearchOptions();
 
 const resetSearchOptions = () => {
   initializeSearchOptions();
+  emit('resetSearchOptions');
 };
 
 const confirm = () => {
