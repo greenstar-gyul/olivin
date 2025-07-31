@@ -66,5 +66,5 @@ jobs:
 
           curl -H "Content-Type: application/json" \
                -X POST \
-               -d "{\"content\": \"$CONTENT\"}" \
+               -d @payload.json \
                "$WEBHOOK"
