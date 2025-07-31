@@ -7,11 +7,59 @@ import axios from '@/service/axios';
 // 테스트 데이터
 const items = ref([]);
 
+// 모달의 visible 상태를 관리하는 ref 변수
+const testModalVisible = ref(false);
+const testModalVisible2 = ref(false);
+
+// 모달창의 테이블 헤더 정보
+// field: 테이블의 각 컬럼에 해당하는 데이터의 키
+// header: 테이블의 각 컬럼에 해당하는 헤더 이름
+const modalHeaders = ref([
+  { field: 'orderTitle', header: '발주명' },
+  { field: 'userId', header: '등록자' },
+  { field: 'orderType', header: '발주유형' },
+  { field: 'orderFrom', header: '입고지' },
+  { field: 'orderTo', header: '출고지' },
+  { field: 'reason', header: '발주사유' },
+  { field: 'orderDate', header: '발주일' },
+  { field: 'orderStatus', header: '발주상태' },
+  { field: 'dueDate', header: '납기예정일' }
+]);
+
+// 모달창의 데이터 아이템
+const modalItems = ref([
+  { orderTitle: '발주1', name: '제품 A', category: '분류 1', publisher: '공급사 A', store: '지점 A', size: '규격 A', quantity: 100, safe: 50 },
+  { orderTitle: '발주2', name: '제품 B', category: '분류 2', publisher: '공급사 B', store: '지점 B', size: '규격 B', quantity: 200, safe: 100 },
+  { orderTitle: '발주3', name: '제품 C', category: '분류 3', publisher: '공급사 C', store: '지점 C', size: '규격 C', quantity: 300, safe: 150 }
+]);
+
+// 모달창 닫기 함수. 필요한 만큼 생성 -> 어떤건지 테스트 필요
+const closeModal = () => {
+  testModalVisible.value = false;
+};
+
+// 모달창 확인 버튼 클릭 시 호출되는 함수
+// 필요한 로직 작성
+const confirmModal = (selectedItems) => {
+  console.log('Selected items from modal:', selectedItems);
+  // 필요한 로직 작성
+  testModalVisible.value = false;
+};
+
+// 검색 모달을 열 때 호출되는 함수
+// case 문을 사용하여 모달 이름(item-search 타입의 name을 따름)에 따라 다른 모달을 열 수 있도록 구현
+const loadPurchaseOnClick = () => {
+  testModalVisible.value = true;
+};
+
+const searchModal1 = (searchValue) => {
+  console.log('Search modal with value:', searchValue);
+  // 검색 로직 구현
+};
+
 /* Form Data */
 // 폼 기본값
-const formData = {
-  data: 0.11,
-};
+const formData = {};
 
 // 폼 스키마
 const formSchema = [
@@ -126,12 +174,14 @@ onMounted(() => {
     :tableHeader="tableHeader"
     :detailData="detailData"
     :detailColumns="columns" :detailCRUD="true"
-    @onRowSelect="onRowSelect">
+    @onRowSelect="onRowSelect"
+    >
     <template #btn>
-      <Button label="발주정보불러오기" class="min-w-fit whitespace-nowrap" severity="info" @click="importHandler" outlined />
+      <Button label="발주정보불러오기" class="min-w-fit whitespace-nowrap" severity="info" @click="loadPurchaseOnClick" outlined />
     </template>
     <template #detailBtn>
       <Button label="출고처리" class="min-w-fit whitespace-nowrap" severity="success" @click="exportHandler" outlined />
     </template>
   </InputMultiTable>
+  <DialogModal title="테스트 모달" :display="testModalVisible" :headers="modalHeaders" :items="modalItems" :selectionMode="'multiple'" @close="closeModal" @confirm="confirmModal" @search-modal="searchModal1"></DialogModal>
 </template>

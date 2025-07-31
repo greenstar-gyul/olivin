@@ -43,11 +43,13 @@ const initializeSelectedProduct = () => {
   searchValue.value = '';
 };
 
+// 취소 버튼 누를 경우 선택 초기화
 const close = () => {
   emit('close');
   initializeSelectedProduct();
 }
 
+// 확인 버튼 눌렀을 때 선택한 값 넘겨주는 부분
 const confirm = () => {
   emit('confirm', selectedItems.value);
   initializeSelectedProduct();
