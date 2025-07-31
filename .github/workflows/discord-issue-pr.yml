@@ -1,4 +1,4 @@
-name: 📣 디스코드 알림봇
+name: 디스코드 알림봇
 
 on:
   issues:
@@ -14,7 +14,7 @@ jobs:
   notify:
     runs-on: ubuntu-latest
     steps:
-      - name: 📤 디스코드로 알림 보내기
+      - name: 디스코드로 알림 보내기
         run: |
           EVENT_NAME="${{ github.event_name }}"
           REPO="${{ github.repository }}"
@@ -27,10 +27,16 @@ jobs:
             URL="https://github.com/${REPO}/issues/${NUMBER}"
             WEBHOOK="${{ secrets.DISCORD_ISSUE_WEBHOOK_URL }}"
 
-            CONTENT="📢 **[이슈 생성]** #${NUMBER} - ${TITLE}
-            🧑 작성자: @${USER}
-            📎 링크: ${URL}
-            📝 내용: ${BODY}"
+            CONTENT=$(cat <<EOF
+[이슈 생성] #${NUMBER} - ${TITLE}
+──────────────────────────────
+작성자 : @${USER}
+링크   : ${URL}
+
+내용:
+${BODY}
+EOF
+)
 
           elif [[ "$EVENT_NAME" == "pull_request" ]]; then
             TITLE="${{ github.event.pull_request.title }}"
@@ -40,10 +46,16 @@ jobs:
             URL="https://github.com/${REPO}/pull/${NUMBER}"
             WEBHOOK="${{ secrets.DISCORD_PR_WEBHOOK_URL }}"
 
-            CONTENT="📢 **[PR 생성]** #${NUMBER} - ${TITLE}
-            🧑 작성자: @${USER}
-            📎 링크: ${URL}
-            📝 내용: ${BODY}"
+            CONTENT=$(cat <<EOF
+[PR 생성] #${NUMBER} - ${TITLE}
+──────────────────────────────
+작성자 : @${USER}
+링크   : ${URL}
+
+내용:
+${BODY}
+EOF
+)
 
           elif [[ "$EVENT_NAME" == "issue_comment" ]]; then
             NUMBER="${{ github.event.issue.number }}"
@@ -52,9 +64,16 @@ jobs:
             COMMENT_URL="${{ github.event.comment.html_url }}"
             WEBHOOK="${{ secrets.DISCORD_ISSUE_WEBHOOK_URL }}"
 
-            CONTENT="💬 **[댓글 등록]** ${USER} 님이 이슈 #${NUMBER}에 댓글을 남겼어요!
-            💬 \"${COMMENT_BODY}\"
-            📎 ${COMMENT_URL}"
+            CONTENT=$(cat <<EOF
+[이슈 댓글] #${NUMBER}
+──────────────────────────────
+작성자 : @${USER}
+링크   : ${COMMENT_URL}
+
+댓글:
+${COMMENT_BODY}
+EOF
+)
 
           elif [[ "$EVENT_NAME" == "pull_request_review_comment" ]]; then
             PR_NUMBER="${{ github.event.pull_request.number }}"
@@ -63,20 +82,24 @@ jobs:
             COMMENT_URL="${{ github.event.comment.html_url }}"
             WEBHOOK="${{ secrets.DISCORD_PR_WEBHOOK_URL }}"
 
-            CONTENT="💬 **[PR 댓글 등록]** ${USER} 님이 PR #${PR_NUMBER}에 댓글을 남겼어요!
-            💬 \"${COMMENT_BODY}\"
-            📎 ${COMMENT_URL}"
+            CONTENT=$(cat <<EOF
+[PR 댓글] #${PR_NUMBER}
+──────────────────────────────
+작성자 : @${USER}
+링크   : ${COMMENT_URL}
+
+댓글:
+${COMMENT_BODY}
+EOF
+)
+
           else
-            CONTENT="⚠️ 알 수 없는 이벤트가 발생했어요: ${EVENT_NAME}"
+            CONTENT="⚠️ 알 수 없는 이벤트입니다: ${EVENT_NAME}"
             WEBHOOK="${{ secrets.DISCORD_ISSUE_WEBHOOK_URL }}"
           fi
 
-          echo "📄 메시지 내용:"
-          echo "$CONTENT"
-
-          jq -n --arg content "$CONTENT" '{content: $content}' > payload.json
-
+          jq -n --arg content "$CONTENT" '{content: $content}' |
           curl -H "Content-Type: application/json" \
                -X POST \
-               -d @payload.json \
+               -d @- \
                "$WEBHOOK"
