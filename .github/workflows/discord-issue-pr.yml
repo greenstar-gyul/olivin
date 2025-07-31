@@ -25,6 +25,7 @@ jobs:
             USER="${{ github.event.issue.user.login }}"
             BODY="${{ github.event.issue.body }}"
             URL="https://github.com/${REPO}/issues/${NUMBER}"
+            WEBHOOK="${{ secrets.DISCORD_ISSUE_WEBHOOK_URL }}"
 
             CONTENT="📢 **[이슈 생성]** #${NUMBER} - ${TITLE}\n🧑 작성자: @${USER}\n📎 링크: ${URL}\n📝 내용: ${BODY}"
 
@@ -34,6 +35,7 @@ jobs:
             USER="${{ github.event.pull_request.user.login }}"
             BODY="${{ github.event.pull_request.body }}"
             URL="https://github.com/${REPO}/pull/${NUMBER}"
+            WEBHOOK="${{ secrets.DISCORD_PR_WEBHOOK_URL }}"
 
             CONTENT="📢 **[PR 생성]** #${NUMBER} - ${TITLE}\n🧑 작성자: @${USER}\n📎 링크: ${URL}\n📝 내용: ${BODY}"
 
@@ -42,6 +44,7 @@ jobs:
             USER="${{ github.event.comment.user.login }}"
             COMMENT_BODY="${{ github.event.comment.body }}"
             COMMENT_URL="${{ github.event.comment.html_url }}"
+            WEBHOOK="${{ secrets.DISCORD_ISSUE_WEBHOOK_URL }}"
 
             CONTENT="💬 **[댓글 등록]** ${USER} 님이 이슈 #${NUMBER}에 댓글을 남겼어요!\n💬 \"${COMMENT_BODY}\"\n📎 ${COMMENT_URL}"
 
@@ -50,10 +53,12 @@ jobs:
             USER="${{ github.event.comment.user.login }}"
             COMMENT_BODY="${{ github.event.comment.body }}"
             COMMENT_URL="${{ github.event.comment.html_url }}"
+            WEBHOOK="${{ secrets.DISCORD_PR_WEBHOOK_URL }}"
 
             CONTENT="💬 **[PR 댓글 등록]** ${USER} 님이 PR #${PR_NUMBER}에 댓글을 남겼어요!\n💬 \"${COMMENT_BODY}\"\n📎 ${COMMENT_URL}"
           else
             CONTENT="⚠️ 알 수 없는 이벤트가 발생했어요: ${EVENT_NAME}"
+            WEBHOOK="${{ secrets.DISCORD_ISSUE_WEBHOOK_URL }}"
           fi
 
           echo "📄 메시지 내용:"
@@ -62,4 +67,4 @@ jobs:
           curl -H "Content-Type: application/json" \
                -X POST \
                -d "{\"content\": \"$CONTENT\"}" \
-               ${{ secrets.DISCORD_WEBHOOK_URL }}
+               "$WEBHOOK"
