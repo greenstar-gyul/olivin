@@ -158,8 +158,8 @@ const itemSearchModal = async (searchValue) => {
 // 모달이벤트
 
 const formSearch = async (item, fieldName) => {
-  console.log('form search', item);
-  console.log('data', fieldName);
+  // console.log('form search', item);
+  // console.log('data', fieldName);
   supModalReturn.value = { item, fieldName };
 
   supModalItems.value = await getSupModalItems("");
@@ -167,8 +167,14 @@ const formSearch = async (item, fieldName) => {
 }
 
 const tableSearch = async (item, fieldName) => {
-  console.log('table search', item);
-  console.log('data', fieldName);
+  // console.log('table search', item);
+  // console.log('data', fieldName);
+  if (!supModalReturn.value?.item) {
+    // TODO : 다른 alert() 함수를 사용하면 변경
+    alert("공급업체를 입력하세요.");
+    return;
+  }
+
   itemModalReturn.value = { item, fieldName };
 
   // 공급업체 먼저 입력

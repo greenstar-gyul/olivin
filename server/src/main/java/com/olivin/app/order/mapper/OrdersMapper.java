@@ -2,9 +2,9 @@ package com.olivin.app.order.mapper;
 
 import java.util.List;
 
-import com.olivin.app.order.service.BranchVO;
 import com.olivin.app.order.service.OrdersDetailVO;
 import com.olivin.app.order.service.OrdersVO;
+import com.olivin.app.order.service.UserCompanyVO;
 
 /**
  * 발주서에 관련된 mapper를 저장되는 인터페이스<br>
@@ -16,8 +16,8 @@ import com.olivin.app.order.service.OrdersVO;
  * - 2025.07.30 : 지점정보 조회 추가<br>
  */
 public interface OrdersMapper {
-	// 지점정보 조회
-	public BranchVO selectBranchInfo(String empId);
+	// 회사정보 조회
+	public UserCompanyVO selectCompInfo(String empId);
 	//1. 전체조회 : (조건조회)
 	public List<OrdersVO> selectAllList(OrdersVO ordersVO);
 	//2. 단건조회

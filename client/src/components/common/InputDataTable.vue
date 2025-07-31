@@ -117,7 +117,7 @@ const formSearch = (item, fieldName) => {
 };
 
 const tableSearch = (item, fieldName) => {
-  emit('tableSearch', item, fieldName);
+  emit('tableSearch', item, fieldName, tableData);
 }
 
 defineExpose({
