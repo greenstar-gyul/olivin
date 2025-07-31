@@ -1,7 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.olivin.app.mapper.DeptMapper">
+<mapper namespace="com.olivin.app.example.mapper.DeptMapper">
+
     <!-- Interface의 메서드를 통해 실행할 쿼리 정의 -->
-    <select id="selectAllList" resultType="AccountLederVO">
+    <select id="selectAllList" resultType="DeptVO">
+        SELECT department_id,
+                dept_name
+        FROM departments
     </select>
 </mapper>

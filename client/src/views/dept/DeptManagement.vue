@@ -1,6 +1,20 @@
 <script setup>
 import DeptInput from './DeptInput.vue';
-import { ref } from 'vue';
+import FileUpload from 'primevue/fileupload';
+import Toast from 'primevue/toast';
+import Button from 'primevue/button';
+import { ref, onMounted, nextTick, computed } from 'vue';
+import { useToast } from 'primevue/usetoast';
+import axios from '@/service/axios';
+
+const API_BASE_URL = '/api/depts';
+const toast = useToast();
+const fileUploadRef = ref();
+
+// windos.location.origin을 computed로 처리
+const baseUrl = computed(() => {
+  return typeof window !== 'undefined' ? window.location.origin : '';
+});
 
 const filters = ref({
   title: '조회 조건',
@@ -17,6 +31,8 @@ const items = ref([
   { id: 2, name: '제품 B', category: '카테고리 2', publisher: '공급사 B', store: '지점 B', size: '규격 B', quantity: 200, safe: 100 },
   { id: 3, name: '제품 C', category: '카테고리 3', publisher: '공급사 C', store: '지점 C', size: '규격 C', quantity: 300, safe: 150 }
 ]);
+const selectedDept = ref(null);
+const selectDeptId = ref('');
 
 const header = ref({
   title: '조회 결과',
@@ -67,8 +83,59 @@ const inputs = ref({
   ]
 });
 
-const searchData = (searchOptions) => {
-  console.log('Searching with options:', searchOptions);
+const selectedImageFile = ref(null);
+const selectedImageFiles = ref([]);
+const uploadedImageUrl = ref('');
+
+const searchData = async (searchOptions) => {
+  try {
+    const params = {};
+    
+    if (searchOptions.productName && searchOptions.productName.trim() !== '') {
+      params.productName = searchOptions.productName.trim();
+    }
+    
+    if (searchOptions.vendorName && searchOptions.vendorName.trim() !== '') {
+      params.vendorName = searchOptions.vendorName.trim();
+    }
+    
+    if (searchOptions.categoryMain && searchOptions.categoryMain.trim() !== '') {
+      params.categoryMain = searchOptions.categoryMain.trim();
+    }
+    
+    if (searchOptions.categorySub && searchOptions.categorySub.trim() !== '') {
+      params.categorySub = searchOptions.categorySub.trim();
+    }
+
+    if (searchOptions.compId && searchOptions.compId.trim() !== '') {
+      params.compId = searchOptions.compId.trim();
+    }
+    
+    if (searchOptions.packQty && searchOptions.packQty !== '') {
+      params.packQty = searchOptions.packQty;
+    }
+    
+    if (searchOptions.regUser && searchOptions.regUser.trim() !== '') {
+      params.regUser = searchOptions.regUser.trim();
+    }
+    
+    if (searchOptions.regDateRange && searchOptions.regDateRange.length === 2) {
+      params.regDateFrom = searchOptions.regDateRange[0];
+      params.regDateTo = searchOptions.regDateRange[1];
+    }
+    
+    const response = await axios.get(`${API_BASE_URL}/search`, { params });
+    
+    items.value = response.data.map(product => ({
+      ...product,
+      regDate: product.regDate ? product.regDate : '',
+      updateDate: product.updateDate ? product.updateDate : null
+    }));
+    
+  } catch (error) {
+    console.error('검색 실패:', error);
+    alert('검색에 실패했습니다.');
+  }
 };
 
 const saveData = (inputData) => {

@@ -10,6 +10,10 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class DeptVO {
-  private String departmentId; // 회사 ID
-  private String departmentName; // 회사명
+  private String compId;// 회사 ID
+  private String compName;// 회사명
+  private String departmentId; // 부서 ID
+  private String deptName; // 부서명
+  private String position; // 직급
+  private String phone; // 연락처
 }
