@@ -217,12 +217,12 @@ const router = createRouter({
                 /* end of order */
                 {
                     path: '/inventory/stock/head',
-                    name: 'stock',
+                    name: 'headStock',
                     component: () => import('@/views/inventory/HeadStockPage.vue')
                 },
                 {
                     path: '/inventory/stock/branch',
-                    name: 'stock',
+                    name: 'branchStock',
                     component: () => import('@/views/inventory/BranchStockPage.vue')
                 },
             ]

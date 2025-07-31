@@ -83,7 +83,7 @@ const storeItems = ref([]);
 const loadStockData = async () => {
   try {
     // 서버에서 재고 데이터를 가져오기
-    const response = await axios.get('/api/inventory/headStock/all');
+    const response = await axios.get('/api/inventory/branchStock/all');
     items.value = await response.data; // 서버에서 받은 데이터를 items에 저장
 
     console.log('Stock data loaded:', items.value);
@@ -239,7 +239,7 @@ const confirmPublisherModal = (selectedItems) => {
 const confirmStoreModal = (selectedItems) => {
   console.log('Selected items from store modal:', selectedItems);
   if (selectedItems) {
-    updateFilterValue('store', selectedItems);
+    updateFilterValue('store', selectedItems.compName);
   }
   storeModalVisible.value = false;
 };
@@ -320,6 +320,6 @@ onMounted(() => {
     selectionMode="single" @close="closeTypeModal" @confirm="confirmTypeModal" @search-modal="searchProductTypes" />
   <DialogModal v-model:display="publisherModalVisible" :items="publisherItems" :headers="publisherHeaders" title="공급사 검색"
     selectionMode="single" @close="closePublisherModal" @confirm="confirmPublisherModal" @search-modal="searchPublishers"/>
-  <!-- <DialogModal v-model:display="storeModalVisible" :items="storeItems" :headers="storeHeaders" title="지점 검색"
-    selectionMode="single" @close="closeStoreModal" @confirm="confirmStoreModal" /> -->
+  <DialogModal v-model:display="storeModalVisible" :items="storeItems" :headers="storeHeaders" title="지점 검색"
+    selectionMode="single" @close="closeStoreModal" @confirm="confirmStoreModal" />
 </template>
