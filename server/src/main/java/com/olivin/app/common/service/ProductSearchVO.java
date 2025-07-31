@@ -25,4 +25,7 @@ public class ProductSearchVO {
     private String categorySub;     // 소분류 카테고리
     private String vendorName;      // 공급사명
     private String productSpec;     // 상품 규격
+    private Integer purchasePrice;  // 구매단가
+    private Integer sellPrice;      // 판매단가
+    private String note;            // 비고
 }
