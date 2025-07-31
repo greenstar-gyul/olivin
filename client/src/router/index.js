@@ -219,7 +219,12 @@ const router = createRouter({
                     path: '/inventory/stock/head',
                     name: 'stock',
                     component: () => import('@/views/inventory/HeadStockPage.vue')
-                }
+                },
+                {
+                    path: '/inventory/stock/branch',
+                    name: 'stock',
+                    component: () => import('@/views/inventory/BranchStockPage.vue')
+                },
             ]
         },
         // 로그인 불필요 페이지들

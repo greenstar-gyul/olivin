@@ -13,6 +13,7 @@ const header = ref({
     productName: '제품명', 
     categoryMain: '대분류', 
     categorySub: '소분류', 
+    compName: '지점명', 
     vendorName: '공급사', 
     productSpec: '규격', 
     stockQuantity: '재고수량', 
@@ -31,7 +32,7 @@ filters.value.filters = [ // 검색 조건 필터 목록
   { type: 'item-search', label: '제품명', value: '', placeholder: '제품번호 / 제품명 검색', name: 'productModal' },
   { type: 'item-search', label: '제품분류', value: '', placeholder: '제품분류 선택', name: 'productType' },
   { type: 'item-search', label: '공급사', value: '', placeholder: '공급사 검색', name: 'publisher' },
-  // { type: 'item-search', label: '지점', value: '', placeholder: '지점명 검색', name: 'store' },
+  { type: 'item-search', label: '지점', value: '', placeholder: '지점명 검색', name: 'store' },
 ];
 
 // 모달창의 테이블 헤더 정보
