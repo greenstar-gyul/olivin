@@ -2,16 +2,15 @@ package com.olivin.app.order.service.impl;
 
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.olivin.app.order.mapper.OrdersMapper;
-import com.olivin.app.order.service.BranchVO;
 import com.olivin.app.order.service.OrdersDetailVO;
 import com.olivin.app.order.service.OrdersService;
 import com.olivin.app.order.service.OrdersVO;
+import com.olivin.app.order.service.UserCompanyVO;
 
 import lombok.RequiredArgsConstructor;
 
@@ -32,8 +31,8 @@ public class OrdersServiceImpl implements OrdersService {
 	private final OrdersMapper ordersMapper;
 	
 	@Override
-	public BranchVO getBranchInfo(String empId) {
-		return ordersMapper.selectBranchInfo(empId);
+	public UserCompanyVO getCompInfo(String empId) {
+		return ordersMapper.selectCompInfo(empId);
 	}
 	
 	@Override

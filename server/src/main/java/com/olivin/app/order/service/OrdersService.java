@@ -12,8 +12,8 @@ import java.util.List;
  * - 2025.07.30 : 지점정보 조회 추가<br>
  */
 public interface OrdersService {
-	// 지점정보 조회
-	BranchVO getBranchInfo(String empId);
+	// 회사정보 조회
+	UserCompanyVO getCompInfo(String empId);
 	//1. 전체조회
 	List<OrdersVO> getAllOrders(OrdersVO ordersVO);
 	//2. 단건조회
