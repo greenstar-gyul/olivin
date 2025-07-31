@@ -295,40 +295,33 @@ router.beforeEach(async (to, from, next) => {
             return;
         }
         
-        // 사용자 정보 복구
-        if (!authStore.user && authStore.token) {
-            try {
-                await authStore.initializeAuth();
-            } catch (error) {
-                console.error('❌ 인증 상태 복구 실패:', error);
-                next('/auth/login');
-                return;
+        // ✅ 사용자 정보 복구는 App.vue에서 처리하므로 여기서는 제거
+        // 권한 체크는 사용자 정보가 있을 때만 수행
+        if (authStore.user) {
+            // 📍 권한 기반 접근 제어
+            if (to.meta?.permissions && to.meta.permissions.length > 0) {
+                const hasRequiredPermission = authStore.hasAnyPermission(to.meta.permissions);
+                
+                if (!hasRequiredPermission) {
+                    console.warn(`🚫 접근 권한이 없습니다. 필요 권한: [${to.meta.permissions.join(', ')}]`);
+                    next('/auth/access');
+                    return;
+                }
             }
-        }
-        
-        // 📍 권한 기반 접근 제어
-        if (to.meta?.permissions && to.meta.permissions.length > 0) {
-            const hasRequiredPermission = authStore.hasAnyPermission(to.meta.permissions);
             
-            if (!hasRequiredPermission) {
-                console.warn(`🚫 접근 권한이 없습니다. 필요 권한: [${to.meta.permissions.join(', ')}]`);
-                next('/auth/access');
-                return;
+            // 📍 역할 기반 접근 제어 (하위 호환성)
+            if (to.meta?.roles && to.meta.roles.length > 0) {
+                const hasRequiredRole = to.meta.roles.includes(authStore.roleName);
+                
+                if (!hasRequiredRole) {
+                    console.warn(`🚫 접근 권한이 없습니다. 필요 역할: [${to.meta.roles.join(', ')}]`);
+                    next('/auth/access');
+                    return;
+                }
             }
-        }
-        
-        // 📍 역할 기반 접근 제어 (하위 호환성)
-        if (to.meta?.roles && to.meta.roles.length > 0) {
-            const hasRequiredRole = to.meta.roles.includes(authStore.roleName);
             
-            if (!hasRequiredRole) {
-                console.warn(`🚫 접근 권한이 없습니다. 필요 역할: [${to.meta.roles.join(', ')}]`);
-                next('/auth/access');
-                return;
-            }
+            console.log(`✅ 페이지 접근 허용: ${to.path} (역할: ${authStore.roleName})`);
         }
-        
-        console.log(`✅ 페이지 접근 허용: ${to.path} (역할: ${authStore.roleName})`);
     }
     
     // 로그인된 사용자가 로그인 페이지 접근 시
