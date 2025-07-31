@@ -1,7 +1,7 @@
 <script setup>
 import StandardApproval from '@/components/common/StandardApproval.vue';
 import { ref, onMounted, computed } from 'vue';
-import axios from 'axios';
+import axios from '@/service/axios';
 
 const API_BASE_URL = '/api/products';
 

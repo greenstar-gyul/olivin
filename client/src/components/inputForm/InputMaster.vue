@@ -36,6 +36,14 @@ const searchItem = (item, fieldName) => {
             <div class="col-span-12 sm:col-span-9">
               <!-- 입력 : text, combobox, number(float), data, searchInput(공급) -->
               
+              <!--
+              선택옵션
+               text
+               item-search
+               date
+               select
+               number-float
+               -->
               <!-- Text Input -->
               <InputText v-if="element.type === 'text'" :id="'form-' + element.id" type="text"
                 v-model="formData[element.id]" :placeholder="element.placeholder || 'Enter text...'" />

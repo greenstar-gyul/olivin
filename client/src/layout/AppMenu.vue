@@ -31,7 +31,7 @@ const model = ref([
         to: '/inventory',
         items: [
             // made by hdu
-            { label: '재고 현황', icon: 'pi pi-fw pi-book', to: '/inventory/stock'},
+            { label: '재고 현황', icon: 'pi pi-fw pi-book', to: '/inventory/stock/head'},
 
             // made by kms
             { label: '본사출고관리', icon: 'pi pi-fw pi-book', to: '/hqOutbndMgmt' },
@@ -43,7 +43,13 @@ const model = ref([
         label: '구매',
         to: '/purchase',
         items: [
-
+            // made by lch
+            { label: '본사발주서관리', icon: 'pi pi-fw pi-book', to: '/orders/head'},
+            { label: '본사발주서조회', icon: 'pi pi-fw pi-book', to: '/orders/head/view'},
+            { label: '지점발주서관리', icon: 'pi pi-fw pi-book', to: '/orders/branch'},
+            { label: '지점발주서조회', icon: 'pi pi-fw pi-book', to: '/orders/branch/view'},
+            { label: '발주제안관리', icon: 'pi pi-fw pi-book', to: '/orders/supplier'},
+            { label: '발주제안조회', icon: 'pi pi-fw pi-book', to: '/orders/supplier/view'},
         ]
     },
     {   

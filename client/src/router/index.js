@@ -133,6 +133,11 @@ const router = createRouter({
                     component: () => import('@/views/test/InputTestPage.vue'),
                 },
                 {
+                    path: '/test3',
+                    name: 'test3',
+                    component: () => import('@/views/test/StandardInputTestPage.vue'),
+                },
+                {
                     path: '/test4',
                     name: 'test4',
                     component: () => import('@/views/test/ViewTestPage.vue')
@@ -211,9 +216,9 @@ const router = createRouter({
                 },
                 /* end of order */
                 {
-                    path: '/inventory/stock',
+                    path: '/inventory/stock/head',
                     name: 'stock',
-                    component: () => import('@/views/inventory/StockPage.vue')
+                    component: () => import('@/views/inventory/HeadStockPage.vue')
                 }
             ]
         },
