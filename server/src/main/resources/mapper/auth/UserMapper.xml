@@ -7,6 +7,7 @@
     <!-- Result Map -->
     <resultMap id="UserResultMap" type="com.olivin.app.auth.service.UserVO">
         <id property="employeeId" column="EMPLOYEE_ID"/>
+        <result property="compId" column="COMP_ID"/>
         <result property="empName" column="EMP_NAME"/>
         <result property="password" column="PASSWORD"/>
         <result property="email" column="EMAIL"/>
@@ -23,6 +24,7 @@
     <select id="findByEmployeeIdAndStatusActive" parameterType="string" resultMap="UserResultMap">
         SELECT 
             e.EMPLOYEE_ID,
+            e.COMP_ID,
             e.EMP_NAME,
             e.PASSWORD,
             e.EMAIL,
@@ -44,6 +46,7 @@
     <select id="findByEmployeeId" parameterType="string" resultMap="UserResultMap">
         SELECT 
             e.EMPLOYEE_ID,
+            e.COMP_ID,
             e.EMP_NAME,
             e.PASSWORD,
             e.EMAIL,

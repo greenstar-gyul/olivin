@@ -9,6 +9,7 @@ import java.util.List;
 public class UserVO {
     // EMPLOYEES 테이블 - 로그인에 필요한 필드들만
     private String employeeId;    // EMPLOYEE_ID (로그인 ID)
+    private String compId;        // COMP_ID (지점 구분)
     private String empName;       // EMP_NAME (사용자 이름)
     private String password;      // PASSWORD
     private String email;         // EMAIL
