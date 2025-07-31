@@ -1,0 +1,65 @@
+name: 📣 디스코드 알림봇
+
+on:
+  issues:
+    types: [opened]
+  issue_comment:
+    types: [created]
+  pull_request:
+    types: [opened]
+  pull_request_review_comment:
+    types: [created]
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📤 디스코드로 알림 보내기
+        run: |
+          EVENT_NAME="${{ github.event_name }}"
+          REPO="${{ github.repository }}"
+
+          if [[ "$EVENT_NAME" == "issues" ]]; then
+            TITLE="${{ github.event.issue.title }}"
+            NUMBER="${{ github.event.issue.number }}"
+            USER="${{ github.event.issue.user.login }}"
+            BODY="${{ github.event.issue.body }}"
+            URL="https://github.com/${REPO}/issues/${NUMBER}"
+
+            CONTENT="📢 **[이슈 생성]** #${NUMBER} - ${TITLE}\n🧑 작성자: @${USER}\n📎 링크: ${URL}\n📝 내용: ${BODY}"
+
+          elif [[ "$EVENT_NAME" == "pull_request" ]]; then
+            TITLE="${{ github.event.pull_request.title }}"
+            NUMBER="${{ github.event.pull_request.number }}"
+            USER="${{ github.event.pull_request.user.login }}"
+            BODY="${{ github.event.pull_request.body }}"
+            URL="https://github.com/${REPO}/pull/${NUMBER}"
+
+            CONTENT="📢 **[PR 생성]** #${NUMBER} - ${TITLE}\n🧑 작성자: @${USER}\n📎 링크: ${URL}\n📝 내용: ${BODY}"
+
+          elif [[ "$EVENT_NAME" == "issue_comment" ]]; then
+            NUMBER="${{ github.event.issue.number }}"
+            USER="${{ github.event.comment.user.login }}"
+            COMMENT_BODY="${{ github.event.comment.body }}"
+            COMMENT_URL="${{ github.event.comment.html_url }}"
+
+            CONTENT="💬 **[댓글 등록]** ${USER} 님이 이슈 #${NUMBER}에 댓글을 남겼어요!\n💬 \"${COMMENT_BODY}\"\n📎 ${COMMENT_URL}"
+
+          elif [[ "$EVENT_NAME" == "pull_request_review_comment" ]]; then
+            PR_NUMBER="${{ github.event.pull_request.number }}"
+            USER="${{ github.event.comment.user.login }}"
+            COMMENT_BODY="${{ github.event.comment.body }}"
+            COMMENT_URL="${{ github.event.comment.html_url }}"
+
+            CONTENT="💬 **[PR 댓글 등록]** ${USER} 님이 PR #${PR_NUMBER}에 댓글을 남겼어요!\n💬 \"${COMMENT_BODY}\"\n📎 ${COMMENT_URL}"
+          else
+            CONTENT="⚠️ 알 수 없는 이벤트가 발생했어요: ${EVENT_NAME}"
+          fi
+
+          echo "📄 메시지 내용:"
+          echo "$CONTENT"
+
+          curl -H "Content-Type: application/json" \
+               -X POST \
+               -d "{\"content\": \"$CONTENT\"}" \
+               ${{ secrets.DISCORD_WEBHOOK_URL }}
