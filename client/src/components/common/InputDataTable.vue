@@ -71,13 +71,21 @@ watch(
   (newVal) => {
     formData.value = defaultFormData();
   },
-  { immediate: true }
+  { deep: true }
 );
 
 const resetFormHandler = () => {
   formData.value = defaultFormData();
-  tableData.value = defaultTable();
 };
+
+const resetTableHandler = () => {
+  tableData.value = defaultTable();
+}
+
+const resetInputFormHandler = () => {
+  resetFormHandler();
+  resetTableHandler();
+}
 
 const saveFormHandler = () => {
   emit('submit', formData.value, tableData.value.map(({id, ...rest}) => rest));
@@ -111,12 +119,17 @@ const formSearch = (item, fieldName) => {
 const tableSearch = (item, fieldName) => {
   emit('tableSearch', item, fieldName);
 }
+
+defineExpose({
+  resetFormHandler,
+  resetTableHandler
+})
 </script>
 <template>
   <Fluid>
     <InputMaster title="발주서정보" :formData="formData" :formSchema="props.formSchema" @formSearch="formSearch">
       <template #btn>
-        <Button label="초기화" class="min-w-fit whitespace-nowrap" severity="secondary" @click="resetFormHandler" />
+        <Button label="초기화" class="min-w-fit whitespace-nowrap" severity="secondary" @click="resetInputFormHandler" />
         <Button label="저장" @click="saveFormHandler" />
       </template>
     </InputMaster>

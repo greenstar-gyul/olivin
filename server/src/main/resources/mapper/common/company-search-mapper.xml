@@ -3,37 +3,72 @@
 <!--
 회사 검색 모달 Mapper 구현체
 
-작성자 : 함동의
+작성자 : 이창현
 작성일 : 2025.07.30
-수정이력 :
-- 2025.07.30 : 최초 작성
 -->
 <mapper namespace="com.olivin.app.common.mapper.CompanySearchMapper">
-    <!-- 상품 전체 조회 -->
-    <select id="selectAllCompanies" resultType="CompanySearchVO">
-        SELECT comp_id
-             , comp_name
-             , phone
-             , note
-        FROM   companys
-        WHERE  comp_type = '100001'  -- 본사
-           OR  comp_type = '100002'  -- 지점
-        ORDER BY comp_id
+    <!-- 회사 전체 조회 -->
+    <select id="selectAllCompanys" resultType="CompanySearchVO">
+        SELECT
+			comp_id,
+			comp_type,
+		    comp_name,
+		    ceo_name,
+		    phone,
+		    address,
+		    settle_mgr,
+		    note
+		FROM
+		    companys
+		ORDER BY comp_id
     </select>
 
-    <!-- 조건에 맞는 상품 분류 조회 -->
-    <select id="selectCompanyList" parameterType="String" resultType="CompanySearchVO">
-        SELECT comp_id
-             , comp_name
-             , phone
-             , note
-        FROM   companys
-        WHERE  (comp_type = '100001'  -- 본사
-           OR  comp_type = '100002'  -- 지점)
-        <if test="searchValue != null and searchValue != ''">
-          AND (comp_name LIKE '%' || #{searchValue} || '%'
-           OR comp_id LIKE '%' || #{searchValue} || '%')
-        </if>
-        ORDER BY comp_id
+    <!-- 회사 종류별 조회 -->
+    <select id="selectTypeCompanys" parameterType="String" resultType="CompanySearchVO">
+		SELECT
+			comp_id,
+			comp_type,
+		    comp_name,
+		    ceo_name,
+		    phone,
+		    address,
+		    settle_mgr,
+		    note
+		FROM
+		    companys
+        <where>
+          <if test="compType != null and compType != ''">
+			AND comp_type = GET_DATACODE_VALUE(#{compType})
+          </if>
+        </where>
+		ORDER BY comp_id
+    </select>
+    
+    <!-- 조건에 맞는 회사 조회 -->
+    <select id="selectCompanyList" resultType="CompanySearchVO">
+		SELECT
+			comp_id,
+			comp_type,
+		    comp_name,
+		    ceo_name,
+		    phone,
+		    address,
+		    settle_mgr,
+		    note
+		FROM
+		    companys
+        <where>
+          <if test="compType != null and compType != ''">
+			AND comp_type = GET_DATACODE_VALUE(#{compType})
+          </if>
+          <if test="searchValue != null and searchValue != ''">
+			AND ( comp_name LIKE '%' || #{searchValue} || '%'
+			OR ceo_name LIKE '%' || #{searchValue} || '%'
+			OR phone LIKE '%' || #{searchValue} || '%'
+			OR address  LIKE '%' || #{searchValue} || '%'
+			OR settle_mgr  LIKE '%' || #{searchValue} || '%' )
+          </if>
+        </where>
+		ORDER BY comp_id
     </select>
 </mapper>
