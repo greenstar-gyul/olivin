@@ -2,6 +2,7 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.olivin.app.standard.mapper.ProductMapper">
     
+    <!-- ResultMap 정의 -->
     <resultMap id="ProductResultMap" type="com.olivin.app.standard.service.ProductVO">
         <id property="productId" column="PRODUCT_ID"/>
         <result property="compId" column="COMP_ID"/>
@@ -24,6 +25,7 @@
         <result property="note" column="NOTE"/>
     </resultMap>
 
+    <!-- 모든 제품 목록 조회 -->
     <select id="selectAllList" resultMap="ProductResultMap">
         SELECT PRODUCT_ID, COMP_ID, PRODUCT_NAME, CATEGORY_MAIN, CATEGORY_SUB,
                VENDOR_NAME, PRODUCT_SPEC, UNIT, PACK_QTY, SAFETY_STOCK,
@@ -33,7 +35,7 @@
         ORDER BY PRODUCT_ID ASC
     </select>
 
-    <!-- ✅ 카테고리별 마지막 제품 ID 조회 -->
+    <!-- 카테고리별 마지막 제품 ID 조회 (제품 ID 자동생성용) -->
     <select id="selectLastProductIdByCategory" parameterType="String" resultType="String">
         SELECT PRODUCT_ID
         FROM   PRODUCTS
@@ -42,6 +44,7 @@
         FETCH FIRST 1 ROWS ONLY
     </select>
 
+    <!-- 조건별 제품 목록 조회 -->
     <select id="selectProductList" parameterType="com.olivin.app.standard.service.ProductVO" resultMap="ProductResultMap">
         SELECT PRODUCT_ID, COMP_ID, PRODUCT_NAME, CATEGORY_MAIN, CATEGORY_SUB,
                VENDOR_NAME, PRODUCT_SPEC, UNIT, PACK_QTY, SAFETY_STOCK,
@@ -73,6 +76,7 @@
         ORDER BY PRODUCT_ID ASC
     </select>
 
+    <!-- 특정 제품 조회 -->
     <select id="selectProduct" parameterType="String" resultMap="ProductResultMap">
         SELECT PRODUCT_ID, COMP_ID, PRODUCT_NAME, CATEGORY_MAIN, CATEGORY_SUB,
                VENDOR_NAME, PRODUCT_SPEC, UNIT, PACK_QTY, SAFETY_STOCK,
@@ -82,6 +86,7 @@
         WHERE  PRODUCT_ID = #{productId}
     </select>
 
+    <!-- 검색 조건에 따른 제품 목록 조회 -->
     <select id="selectProductsByCondition" parameterType="Map" resultMap="ProductResultMap">
         SELECT PRODUCT_ID, COMP_ID, PRODUCT_NAME, CATEGORY_MAIN, CATEGORY_SUB,
                VENDOR_NAME, PRODUCT_SPEC, UNIT, PACK_QTY, SAFETY_STOCK,
@@ -130,6 +135,7 @@
         ORDER BY PRODUCT_ID ASC
     </select>
 
+    <!-- 제품 등록 -->
     <insert id="insertProduct" parameterType="com.olivin.app.standard.service.ProductVO">
         INSERT INTO PRODUCTS (
             PRODUCT_ID, COMP_ID, PRODUCT_NAME, CATEGORY_MAIN, CATEGORY_SUB,
@@ -140,11 +146,11 @@
             #{productId}, #{compId}, #{productName}, #{categoryMain}, #{categorySub},
             #{vendorName}, #{productSpec}, #{unit}, #{packQty}, #{safetyStock},
             #{purchasePrice}, #{sellPrice}, #{regUser}, #{regDate}, 
-            NVL(#{status}, 'PENDING'), #{productImage}, #{note}
+            NVL(#{status}, '040002'), #{productImage}, #{note}
         )
     </insert>
 
-    <!-- ✅ 기존 updateProduct 쿼리 완전 교체 (NULL 안전) -->
+    <!-- 제품 정보 수정 (NULL 안전 처리) -->
     <update id="updateProduct" parameterType="com.olivin.app.standard.service.ProductVO">
         UPDATE PRODUCTS 
         SET    
@@ -167,7 +173,7 @@
         WHERE  PRODUCT_ID = #{productId}
     </update>
 
-    <!-- ✅ 상태 전용 업데이트 메서드들 -->
+    <!-- 상태 전용 업데이트 (승인/반려 처리용) -->
     <update id="updateProductStatus" parameterType="map">
         UPDATE PRODUCTS 
         SET STATUS = #{status},
@@ -176,7 +182,7 @@
         WHERE PRODUCT_ID = #{productId}
     </update>
 
-    <!-- ✅ 승인/반려 전용 업데이트 쿼리 (더 안전한 버전) -->
+    <!-- 승인/반려 전용 업데이트 (사유 포함) -->
     <update id="updateProductApprovalStatus" parameterType="map">
         UPDATE PRODUCTS 
         SET    STATUS = #{status},
@@ -192,7 +198,7 @@
           AND  STATUS = '040002'  <!-- 승인 대기 상태인 경우만 업데이트 -->
     </update>
 
-    <!-- ✅ 가장 간단한 승인 전용 업데이트 -->
+    <!-- 간단한 승인 전용 업데이트 -->
     <update id="updateProductSimpleApproval" parameterType="map">
         UPDATE PRODUCTS 
         SET STATUS = #{status},
@@ -202,14 +208,27 @@
           AND STATUS = '040002'
     </update>
 
-    <!-- ✅ 디버깅용 상태 조회 쿼리 -->
+    <!-- 제품 삭제 -->
+    <delete id="deleteProduct" parameterType="String">
+        DELETE FROM PRODUCTS 
+        WHERE  PRODUCT_ID = #{productId}
+    </delete>
+
+    <!-- 제품 ID 존재 여부 확인 -->
+    <select id="checkProductId" parameterType="String" resultType="int">
+        SELECT COUNT(*)
+        FROM   PRODUCTS
+        WHERE  PRODUCT_ID = #{productId}
+    </select>
+
+    <!-- 디버깅용 - 제품 상태 조회 -->
     <select id="selectProductStatus" parameterType="String" resultType="String">
         SELECT STATUS 
         FROM   PRODUCTS 
         WHERE  PRODUCT_ID = #{productId}
     </select>
 
-    <!-- ✅ 상태별 제품 개수 조회 (디버깅용) -->
+    <!-- 디버깅용 - 상태별 제품 개수 조회 -->
     <select id="selectProductCountByStatus" resultType="map">
         SELECT STATUS, COUNT(*) as COUNT
         FROM   PRODUCTS
@@ -217,7 +236,7 @@
         ORDER BY STATUS
     </select>
 
-    <!-- ✅ 제품 상태 이력 조회 (감사/추적용) -->
+    <!-- 제품 상태 이력 조회 (감사/추적용) -->
     <select id="selectProductStatusHistory" parameterType="String" resultType="map">
         SELECT PRODUCT_ID,
                STATUS,
@@ -229,18 +248,7 @@
         WHERE  PRODUCT_ID = #{productId}
     </select>
 
-    <delete id="deleteProduct" parameterType="String">
-        DELETE FROM PRODUCTS 
-        WHERE  PRODUCT_ID = #{productId}
-    </delete>
-
-    <select id="checkProductId" parameterType="String" resultType="int">
-        SELECT COUNT(*)
-        FROM   PRODUCTS
-        WHERE  PRODUCT_ID = #{productId}
-    </select>
-
-    <!-- ✅ 승인 대기 상태 제품만 조회 -->
+    <!-- 승인 대기 상태 제품만 조회 -->
     <select id="selectPendingProducts" resultMap="ProductResultMap">
         SELECT PRODUCT_ID, COMP_ID, PRODUCT_NAME, CATEGORY_MAIN, CATEGORY_SUB,
                VENDOR_NAME, PRODUCT_SPEC, UNIT, PACK_QTY, SAFETY_STOCK,
@@ -248,10 +256,10 @@
                UPDATE_USER, UPDATE_DATE, STATUS, PRODUCT_IMAGE, NOTE
         FROM   PRODUCTS
         WHERE  STATUS = '040002'  <!-- 승인 대기 -->
-        ORDER BY PRODUCT_ID ASC
+        ORDER BY REG_DATE DESC
     </select>
 
-    <!-- ✅ 승인 완료 상태 제품만 조회 -->
+    <!-- 승인 완료 상태 제품만 조회 -->
     <select id="selectApprovedProducts" resultMap="ProductResultMap">
         SELECT PRODUCT_ID, COMP_ID, PRODUCT_NAME, CATEGORY_MAIN, CATEGORY_SUB,
                VENDOR_NAME, PRODUCT_SPEC, UNIT, PACK_QTY, SAFETY_STOCK,
@@ -259,7 +267,72 @@
                UPDATE_USER, UPDATE_DATE, STATUS, PRODUCT_IMAGE, NOTE
         FROM   PRODUCTS
         WHERE  STATUS = '040001'  <!-- 승인 완료 -->
-        ORDER BY PRODUCT_ID ASC
+        ORDER BY REG_DATE DESC
+    </select>
+
+    <!-- 반려된 제품 조회 (추가) -->
+    <select id="selectRejectedProducts" resultMap="ProductResultMap">
+        SELECT PRODUCT_ID, COMP_ID, PRODUCT_NAME, CATEGORY_MAIN, CATEGORY_SUB,
+               VENDOR_NAME, PRODUCT_SPEC, UNIT, PACK_QTY, SAFETY_STOCK,
+               PURCHASE_PRICE, SELL_PRICE, REG_USER, REG_DATE,
+               UPDATE_USER, UPDATE_DATE, STATUS, PRODUCT_IMAGE, NOTE
+        FROM   PRODUCTS
+        WHERE  STATUS = '040003'  <!-- 반려 -->
+        ORDER BY UPDATE_DATE DESC
+    </select>
+
+    <!-- 제품명으로 검색 (자동완성용) -->
+    <select id="selectProductNamesByKeyword" parameterType="String" resultType="String">
+        SELECT DISTINCT PRODUCT_NAME
+        FROM   PRODUCTS
+        WHERE  PRODUCT_NAME LIKE '%' || #{keyword} || '%'
+          AND  STATUS = '040001'  <!-- 승인된 제품만 -->
+        ORDER BY PRODUCT_NAME
+        FETCH FIRST 10 ROWS ONLY
+    </select>
+
+    <!-- 브랜드명으로 검색 (자동완성용) -->
+    <select id="selectVendorNamesByKeyword" parameterType="String" resultType="String">
+        SELECT DISTINCT VENDOR_NAME
+        FROM   PRODUCTS
+        WHERE  VENDOR_NAME LIKE '%' || #{keyword} || '%'
+          AND  STATUS = '040001'  <!-- 승인된 제품만 -->
+        ORDER BY VENDOR_NAME
+        FETCH FIRST 10 ROWS ONLY
+    </select>
+
+    <!-- 카테고리별 제품 통계 -->
+    <select id="selectProductStatsByCategory" resultType="map">
+        SELECT CATEGORY_MAIN,
+               COUNT(*) as TOTAL_COUNT,
+               SUM(CASE WHEN STATUS = '040001' THEN 1 ELSE 0 END) as APPROVED_COUNT,
+               SUM(CASE WHEN STATUS = '040002' THEN 1 ELSE 0 END) as PENDING_COUNT,
+               SUM(CASE WHEN STATUS = '040003' THEN 1 ELSE 0 END) as REJECTED_COUNT
+        FROM   PRODUCTS
+        GROUP BY CATEGORY_MAIN
+        ORDER BY CATEGORY_MAIN
+    </select>
+
+    <!-- 최근 등록된 제품 조회 (대시보드용) -->
+    <select id="selectRecentProducts" parameterType="int" resultMap="ProductResultMap">
+        SELECT PRODUCT_ID, COMP_ID, PRODUCT_NAME, CATEGORY_MAIN, CATEGORY_SUB,
+               VENDOR_NAME, PRODUCT_SPEC, UNIT, PACK_QTY, SAFETY_STOCK,
+               PURCHASE_PRICE, SELL_PRICE, REG_USER, REG_DATE,
+               UPDATE_USER, UPDATE_DATE, STATUS, PRODUCT_IMAGE, NOTE
+        FROM   PRODUCTS
+        ORDER BY REG_DATE DESC
+        FETCH FIRST #{limit} ROWS ONLY
+    </select>
+
+    <!-- 제품 ID 범위별 개수 조회 (통계용) -->
+    <select id="selectProductCountByIdRange" resultType="map">
+        SELECT 
+               SUBSTR(PRODUCT_ID, 1, 4) as PREFIX,
+               COUNT(*) as COUNT
+        FROM   PRODUCTS
+        WHERE  PRODUCT_ID LIKE 'PRD%'
+        GROUP BY SUBSTR(PRODUCT_ID, 1, 4)
+        ORDER BY PREFIX
     </select>
 
 </mapper>
