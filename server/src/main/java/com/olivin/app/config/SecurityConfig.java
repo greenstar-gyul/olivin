@@ -67,6 +67,7 @@ public class SecurityConfig {
                 .requestMatchers("/outbndMgmt/**").permitAll()
                 .requestMatchers("/api/inbndMgmt/**").permitAll()
                 .requestMatchers("/api/public/**").permitAll()
+                .requestMatchers("/api/dashboard/**").permitAll()
                 .requestMatchers("/actuator/health").permitAll()
                 .requestMatchers("/error").permitAll()
                 .requestMatchers("/test**").permitAll()  
