@@ -197,11 +197,11 @@ const inputs = ref({
   title: '제품 등록/수정',
   inputs: [
     { type: 'text', label: '제품ID', placeholder: '카테고리 선택 시 자동생성', name: 'productId', readonly: true },
-    { type: 'text', label: '회사코드', placeholder: 'OY001, OY002 등', name: 'compId', required: true },
     { type: 'text', label: '제품명', placeholder: '제품명을 입력하세요', name: 'productName', required: true },
+    { type: 'text', label: '회사코드', placeholder: 'OY001, OY002 등', name: 'compId', required: true },
+    { type: 'text', label: '브랜드', placeholder: '브랜드명을 입력하세요', name: 'vendorName', required: true },
     { type: 'select', label: '카테고리', placeholder: '카테고리를 선택하세요', name: 'categoryMain', required: true, options: categoryMainOptions },
     { type: 'select', label: '세부카테고리', placeholder: '세부카테고리를 선택하세요', name: 'categorySub', options: [] },
-    { type: 'text', label: '브랜드', placeholder: '브랜드명을 입력하세요', name: 'vendorName', required: true },
     { type: 'text', label: '용량/규격', placeholder: '50ml, 30포, 7.5g 등', name: 'productSpec' },
     { type: 'select', label: '단위', placeholder: '단위를 선택하세요', name: 'unit', required: true, options: unitOptions },
     { type: 'number', label: '입수량', placeholder: '박스당 개수', name: 'packQty' },
