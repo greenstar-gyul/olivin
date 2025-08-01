@@ -14,7 +14,7 @@ const instance = axios.create({
 instance.interceptors.request.use(
   (config) => {
     // localStorage에서 토큰 가져와서 헤더에 자동 추가
-    const token = localStorage.getItem('token')
+    const token = JSON.parse(localStorage.getItem('auth')).token; 
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
     }

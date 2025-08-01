@@ -5,6 +5,92 @@ import BasicTable from '@/components/table/BasicTable.vue';
 import InputForm from '@/components/inputForm/InputForm.vue';
 import Button from 'primevue/button';
 
+// URL
+const API_BASE_URL = '/api/depts';
+
+// 필터 정의
+const filters = ref({
+  title: '조회 조건',
+  filters: [
+    { type: 'text', label: '회사코드', value: '', name: 'compId' },
+    { type: 'text', label: '회사명', value: '', name: 'compName' },
+    { type: 'text', label: '부서코드', value: '', name: 'departmentId' },
+    { type: 'text', label: '부서명', value: '', name: 'deptName' }
+  ]
+});
+
+// 테이블 헤더
+const header = ref({
+  title: '조회 결과',
+  header: {
+    id: '회사명',
+    name: '직급',
+    category: '사원이름',
+    publisher: '아이디',
+    store: '비밀번호',
+    size: '규격',
+    quantity: '현재 재고',
+    safe: '안전 재고'
+  },
+  rightAligned: ['quantity', 'safe']
+});
+
+// 테이블 아이템 예시데이터
+// const items = ref([
+//   { id: 1, name: '제품 A', category: '카테고리 1', publisher: '공급사 A', store: '지점 A', size: '규격 A', quantity: 100, safe: 50 },
+//   { id: 2, name: '제품 B', category: '카테고리 2', publisher: '공급사 B', store: '지점 B', size: '규격 B', quantity: 200, safe: 100 },
+//   { id: 3, name: '제품 C', category: '카테고리 3', publisher: '공급사 C', store: '지점 C', size: '규격 C', quantity: 300, safe: 150 }
+// ]);
+
+// 입력필드
+const inputs = ref({
+  title: '입력 폼',
+  inputs: [
+    { type: 'text', label: '회사ID', value: '', name: 'compId' },
+    { type: 'text', label: '회사명', value: '', name: 'compName' },
+    {
+      type: 'select',
+      label: '부서명',
+      value: '',
+      name: 'select1',
+      options: [
+        { name: '부서 1', value: '부서 1' },
+        { name: '부서 2', value: '부서 2' },
+        { name: '부서 3', value: '부서 3' }
+      ]
+    },
+    {
+      type: 'select',
+      label: '직급',
+      value: '',
+      name: 'select2',
+      options: [
+        { name: '직급 1', value: '직급 1' },
+        { name: '직급 2', value: '직급 2' },
+        { name: '직급 3', value: '직급 3' }
+      ]
+    },
+    { type: 'text', label: '등록사원', value: '', name: 'empName' },
+    { type: 'text', label: '연락처', value: '', name: 'phone' },
+    { type: 'text', label: '기타', value: '', name: 'password' },
+    { type: 'textarea', label: '비고', value: '', name: 'note' }
+  ]
+});
+
+// 폼 데이터를 반응형으로 관리
+const formData = ref({
+  compId: '',
+  compName: '',
+  departmentId: '',
+  deptName: '',
+  position: '',
+  phone: ''
+});
+
+const selectedDept = ref(null);
+const selectDeptId = ref('');
+
+
 export default {
   name: 'StandardInput',
 
