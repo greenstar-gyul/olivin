@@ -6,7 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * 지점을 검색하는 VO 클래스 <br>
+ * 회원의 회사를 검색하는 VO 클래스 <br>
  * 회원의 지점에 대한 정보를 가지고 오는 VO입니다.<br>
  * <br>
  * 작성자: 이창현<br>
@@ -18,7 +18,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class BranchVO {	
+public class UserCompanyVO {	
 	private String employeeId;
 	private String compId;
 	private String empName;

@@ -4,7 +4,7 @@ import BasicTable from '@/components/table/BasicTable.vue';
 import dateUtils from '@/utils/dateUtils';
 import { ref } from 'vue';
 
-const emit = defineEmits(['searchData', 'openSearchModal']);
+const emit = defineEmits(['searchData', 'openSearchModal', 'resetSearchOptions']);
 const props = defineProps({
   filters: {
     type: Array,
@@ -28,6 +28,10 @@ const openSearchModal = (filterName) => {
   emit('openSearchModal', filterName);
 };
 
+const resetSearchOptions = () => {
+  emit('resetSearchOptions');
+};
+
 // SearchForm의 ref
 const searchFormRef = ref(null);
 
@@ -38,6 +42,6 @@ defineExpose({
 
 </script>
 <template>
-  <SearchForm ref="searchFormRef" :filters="props.filters" @searchData="searchData" @openSearchModal="openSearchModal" ></SearchForm>
+  <SearchForm ref="searchFormRef" :filters="props.filters" @searchData="searchData" @openSearchModal="openSearchModal" @resetSearchOptions="resetSearchOptions" ></SearchForm>
   <BasicTable :data="props.items" :header="props.header"></BasicTable>
 </template>

@@ -20,6 +20,7 @@ import lombok.RequiredArgsConstructor;
  * 수정이력:
  * 2025.07.25 : 최초 작성
  * 2025.07.30 : 주석 추가, 구현
+ * 2025.07.31 : API 경로 매핑 추가
  */
 @RestController
 @RequiredArgsConstructor
@@ -31,5 +32,11 @@ public class HeadInventoryController {
     @GetMapping("/inventory/headStock/all")
     public List<HeadInventoryVO> getAllHeadInventory() {
         return headInventoryService.selectAllHeadInventory();
+    }
+
+    // This endpoint retrieves head inventory based on search criteria
+    @GetMapping("/inventory/headStock/search")
+    public List<HeadInventoryVO> searchHeadInventory(HeadInventoryVO headInventoryVO) {
+        return headInventoryService.selectHeadInventoryList(headInventoryVO);
     }
 }

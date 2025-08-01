@@ -145,7 +145,15 @@ const onRowUnselect = (event) => {
       <Column v-for="item in items" :key="item" :field="item" :header="header.header[item] ?? item">
         <!-- 날짜포맷변경을 위해 추가한 파트 -->
         <template #body="slotProps">
-          <span :class="header.rightAligned && header.rightAligned.includes(item) ? 'text-right block' : ''">
+          <!-- 숫자형 데이터는 오른쪽 정렬하고 3자리 콤마 추가 -->
+          <!-- <span v-if="header.rightAligned && header.rightAligned.includes(item)" class="text-right block">
+            {{ slotProps.data[item].toLocaleString() }} -->
+          <!-- </span> -->
+          <!-- 일반 텍스트 데이터는 기본 정렬 -->
+          <!-- <span v-else>
+            {{ slotProps.data[item] }}
+          </span> -->
+          <span>
             {{ slotProps.data[item] }}
           </span>
         </template>

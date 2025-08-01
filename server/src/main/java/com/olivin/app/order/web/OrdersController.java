@@ -14,11 +14,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.olivin.app.order.service.BranchVO;
 import com.olivin.app.order.service.OrdersDTO;
 import com.olivin.app.order.service.OrdersDetailVO;
 import com.olivin.app.order.service.OrdersService;
 import com.olivin.app.order.service.OrdersVO;
+import com.olivin.app.order.service.UserCompanyVO;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -40,9 +40,9 @@ import lombok.extern.slf4j.Slf4j;
 public class OrdersController {
 	private final OrdersService ordersService;
 	
-	@GetMapping("/search/branch")
-	public BranchVO getBranchInfo(@RequestParam String empId) {
-		return ordersService.getBranchInfo(empId);
+	@GetMapping("/orders/user/compInfo")
+	public UserCompanyVO getCompInfo(@RequestParam String empId) {
+		return ordersService.getCompInfo(empId);
 	}
 	
 	@GetMapping("/orders")
@@ -94,14 +94,16 @@ public class OrdersController {
     
     log.debug("ORDER : {}", orderDTO.getOrders());
     log.debug("DETAIL : {}", orderDTO.getOrdersDetail());
-    if (orderDTO.getOrders() != null) {
-    	ordersService.createOrders(orderDTO.getOrders(), orderDTO.getOrdersDetail());
-    	result.put("result", "SUCCESS");
-			result.put("message", "성공");
-    } else {
-			result.put("result", "FAIL");
-			result.put("message", "실패");
-    }
+//    if (orderDTO.getOrders() != null) {
+//    	ordersService.createOrders(orderDTO.getOrders(), orderDTO.getOrdersDetail());
+//    	result.put("result", "SUCCESS");
+//			result.put("message", "성공");
+//    } else {
+//			result.put("result", "FAIL");
+//			result.put("message", "실패");
+//    }
+    result.put("result", "TEST");
+    result.put("data", orderDTO);
     
     return result;
 	}

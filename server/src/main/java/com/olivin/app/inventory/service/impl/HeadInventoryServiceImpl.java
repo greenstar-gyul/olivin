@@ -18,6 +18,7 @@ import lombok.RequiredArgsConstructor;
  * 작성일: 2025.07.30
  * 수정이력:
  * 2025.07.30 : 최초 작성
+ * 2025.07.31 : 재고 검색 기능 추가
  */
 @Service
 @RequiredArgsConstructor
@@ -28,5 +29,10 @@ public class HeadInventoryServiceImpl implements HeadInventoryService {
     @Override
     public List<HeadInventoryVO> selectAllHeadInventory() {
         return headInventoryMapper.selectAllHeadInventory();
+    }
+
+    @Override
+    public List<HeadInventoryVO> selectHeadInventoryList(HeadInventoryVO headInventoryVO) {
+        return headInventoryMapper.selectHeadInventoryList(headInventoryVO);
     }
 }

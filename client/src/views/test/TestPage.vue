@@ -136,7 +136,7 @@ const handleOpenModal = (filterName) => {
 
 // 필요한 함수를 자유롭게 선언하는 공간 ======
 const getSampleData = async () => {
-  const result = await axios.get('/api/test');
+  const result = await axios.get('/api/inventory/headStock/all');
   const data = await result.data;
 <<<<<<< HEAD
   console.log('Loaded sample data:', data);
