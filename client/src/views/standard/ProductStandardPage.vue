@@ -16,120 +16,130 @@ const baseUrl = computed(() => {
   return typeof window !== 'undefined' ? window.location.origin : '';
 });
 
-// ✅ 카테고리 옵션 (명세서 기준)
+// 카테고리 옵션 (6자리 데이터베이스 코드 기준)
 const categoryMainOptions = [
-  { name: '스킨케어', value: '0001', code: '11' },
-  { name: '메이크업', value: '0002', code: '11' },
-  { name: '클렌징', value: '0003', code: '11' },
-  { name: '헤어케어', value: '0004', code: '11' },
-  { name: '구강용품', value: '0005', code: '11' },
-  { name: '선케어', value: '0006', code: '11' },
-  { name: '뷰티소품', value: '0007', code: '11' },
-  { name: '건강/기능 식품', value: '0008', code: '11' },
-  { name: '푸드', value: '0009', code: '11' }
+  { name: '스킨케어', value: '110001', code: '11' },
+  { name: '메이크업', value: '110002', code: '11' },
+  { name: '클렌징', value: '110003', code: '11' },
+  { name: '헤어케어', value: '110004', code: '11' },
+  { name: '구강용품', value: '110005', code: '11' },
+  { name: '선케어', value: '110006', code: '11' },
+  { name: '뷰티소품', value: '110007', code: '11' },
+  { name: '건강/기능 식품', value: '110008', code: '11' },
+  { name: '푸드', value: '110009', code: '11' }
 ];
 
-// ✅ 세부카테고리 옵션 (명세서 기준)
+// 세부카테고리 옵션 (6자리 데이터베이스 코드 기준)
 const categorySubOptions = {
-  '0001': [ // 스킨케어
-    { name: '스킨/토너', value: '1001' },
-    { name: '에센스/세럼/앰플', value: '1002' },
-    { name: '크림', value: '1003' },
-    { name: '로션', value: '1004' },
-    { name: '미스트/오일', value: '1005' },
-    { name: '스킨케어 디바이스', value: '1006' }
+  '110001': [ // 스킨케어
+    { name: '스킨/토너', value: '121001' },
+    { name: '에센스/세럼/앰플', value: '121002' },
+    { name: '크림', value: '121003' },
+    { name: '로션', value: '121004' },
+    { name: '미스트/오일', value: '121005' },
+    { name: '스킨케어 디바이스', value: '121006' }
   ],
-  '0002': [ // 메이크업
-    { name: '베이스 메이크업', value: '2001' },
-    { name: '아이 메이크업', value: '2002' },
-    { name: '치크&컨투어', value: '2003' },
-    { name: '립 메이크업', value: '2004' },
-    { name: '피니시&픽서', value: '2005' },
-    { name: '네일 메이크업', value: '2006' }
+  '110002': [ // 메이크업
+    { name: '베이스 메이크업', value: '122001' },
+    { name: '아이 메이크업', value: '122002' },
+    { name: '치크&컨투어', value: '122003' },
+    { name: '립 메이크업', value: '122004' },
+    { name: '피니시&픽서', value: '122005' },
+    { name: '네일 메이크업', value: '122006' }
   ],
-  '0003': [ // 클렌징
-    { name: '클렌징폼/젤', value: '3001' },
-    { name: '오일/밤', value: '3002' },
-    { name: '워터/밀크', value: '3003' },
-    { name: '필링&스크럽', value: '3004' },
-    { name: '티슈/패드', value: '3005' },
-    { name: '립&아이리무버', value: '3006' },
-    { name: '클렌징 디바이스', value: '3007' }
+  '110003': [ // 클렌징
+    { name: '클렌징폼/젤', value: '123001' },
+    { name: '오일/밤', value: '123002' },
+    { name: '워터/밀크', value: '123003' },
+    { name: '필링&스크럽', value: '123004' },
+    { name: '티슈/패드', value: '123005' },
+    { name: '립&아이리무버', value: '123006' },
+    { name: '클렌징 디바이스', value: '123007' }
   ],
-  '0004': [ // 헤어케어
-    { name: '샴푸/린스', value: '4001' },
-    { name: '트리트먼트/팩', value: '4002' },
-    { name: '두피앰플/토닉', value: '4003' },
-    { name: '헤어에센스', value: '4004' },
-    { name: '염색약/펌', value: '4005' },
-    { name: '헤어기기/브러시', value: '4006' },
-    { name: '스타일링', value: '4007' }
+  '110004': [ // 헤어케어
+    { name: '샴푸/린스', value: '124001' },
+    { name: '트리트먼트/팩', value: '124002' },
+    { name: '두피앰플/토닉', value: '124003' },
+    { name: '헤어에센스', value: '124004' },
+    { name: '염색약/펌', value: '124005' },
+    { name: '헤어기기/브러시', value: '124006' },
+    { name: '스타일링', value: '124007' }
   ],
-  '0005': [ // 구강용품
-    { name: '칫솔', value: '5001' },
-    { name: '치약', value: '5002' },
-    { name: '애프터구강케어', value: '5003' },
-    { name: '구강가전', value: '5004' }
+  '110005': [ // 구강용품
+    { name: '칫솔', value: '125001' },
+    { name: '치약', value: '125002' },
+    { name: '애프터구강케어', value: '125003' },
+    { name: '구강가전', value: '125004' }
   ],
-  '0006': [ // 선케어
-    { name: '선크림', value: '6001' },
-    { name: '선스틱', value: '6002' },
-    { name: '선쿠션', value: '6003' },
-    { name: '선스프레이/선패치', value: '6004' },
-    { name: '태닝/애프터선', value: '6005' }
+  '110006': [ // 선케어
+    { name: '선크림', value: '126001' },
+    { name: '선스틱', value: '126002' },
+    { name: '선쿠션', value: '126003' },
+    { name: '선스프레이/선패치', value: '126004' },
+    { name: '태닝/애프터선', value: '126005' }
   ],
-  '0007': [ // 뷰티소품
-    { name: '메이크업소품', value: '7001' },
-    { name: '아이소품', value: '7002' },
-    { name: '스킨케어소품', value: '7003' },
-    { name: '헤어소품', value: '7004' },
-    { name: '네일/바디소품', value: '7005' },
-    { name: '뷰티잡화', value: '7006' }
+  '110007': [ // 뷰티소품
+    { name: '메이크업소품', value: '127001' },
+    { name: '아이소품', value: '127002' },
+    { name: '스킨케어소품', value: '127003' },
+    { name: '헤어소품', value: '127004' },
+    { name: '네일/바디소품', value: '127005' },
+    { name: '뷰티잡화', value: '127006' }
   ],
-  '0008': [ // 건강/기능 식품
-    { name: '비타민', value: '8001' },
-    { name: '영양제', value: '8002' },
-    { name: '유산균', value: '8003' },
-    { name: '슬리밍/이너뷰티', value: '8004' }
+  '110008': [ // 건강/기능 식품
+    { name: '비타민', value: '128001' },
+    { name: '영양제', value: '128002' },
+    { name: '유산균', value: '128003' },
+    { name: '슬리밍/이너뷰티', value: '128004' }
   ],
-  '0009': [ // 푸드
-    { name: '식단관리/이너뷰티', value: '9001' },
-    { name: '과자/초콜릿/디저트', value: '9002' },
-    { name: '생수/음료/커피', value: '9003' },
-    { name: '간편식/요리', value: '9004' },
-    { name: '베이비푸드', value: '9005' }
+  '110009': [ // 푸드
+    { name: '식단관리/이너뷰티', value: '129001' },
+    { name: '과자/초콜릿/디저트', value: '129002' },
+    { name: '생수/음료/커피', value: '129003' },
+    { name: '간편식/요리', value: '129004' },
+    { name: '베이비푸드', value: '129005' }
   ]
 };
 
-// ✅ 단위 옵션 (명세서 기준)
+// 단위 옵션 (6자리 데이터베이스 코드 기준)
 const unitOptions = [
-  { name: 'ml', value: '0001' },
-  { name: 'g', value: '0002' },
-  { name: '개', value: '0003' },
-  { name: '박스', value: '0004' },
-  { name: '팩', value: '0005' }
+  { name: 'ml', value: '130001' },
+  { name: 'g', value: '130002' },
+  { name: 'ea', value: '130003' },
+  { name: 'box', value: '130004' },
+  { name: 'pack', value: '130005' }
 ];
 
-// ✅ 제품 ID 생성 함수
-const generateProductId = (categoryMain) => {
-  const categoryMap = {
-    '0001': '1', // 스킨케어: 100001~199999
-    '0002': '2', // 메이크업: 200001~299999
-    '0003': '3', // 클렌징: 300001~399999
-    '0004': '4', // 헤어케어: 400001~499999
-    '0005': '5', // 구강용품: 500001~599999
-    '0006': '6', // 선케어: 600001~699999
-    '0007': '7', // 뷰티소품: 700001~799999
-    '0008': '8', // 건강/기능 식품: 800001~899999
-    '0009': '9'  // 푸드: 900001~999999
-  };
-  
-  const prefix = categoryMap[categoryMain];
-  if (!prefix) return '';
-  
-  // 임시로 000001부터 시작 (실제로는 DB에서 마지막 번호 조회 후 +1)
-  const sequence = '00001';
-  return `PRD${prefix}${sequence}`;
+// 백엔드에서 실제 다음 제품 ID를 가져오는 함수
+const getNextProductIdFromServer = async (categoryMain) => {
+  try {
+    console.log('백엔드에서 제품 ID 요청:', categoryMain);
+    const response = await axios.get(`${API_BASE_URL}/next-id/${categoryMain}`);
+    
+    console.log('백엔드 응답:', response.data);
+    
+    if (response.data.success) {
+      return response.data.nextProductId;
+    } else {
+      console.error('제품 ID 생성 실패:', response.data.message);
+      toast.add({ 
+        severity: 'error', 
+        summary: '오류', 
+        detail: response.data.message || '제품 ID 생성에 실패했습니다.', 
+        life: 3000 
+      });
+      return '';
+    }
+  } catch (error) {
+    console.error('제품 ID 생성 API 호출 실패:', error);
+    toast.add({ 
+      severity: 'error', 
+      summary: '오류', 
+      detail: '제품 ID 생성 중 서버 오류가 발생했습니다.', 
+      life: 3000 
+    });
+    return '';
+  }
 };
 
 const filters = ref({
@@ -218,31 +228,57 @@ const selectedImageFile = ref(null);
 const selectedImageFiles = ref([]);
 const uploadedImageUrl = ref('');
 
-// ✅ 선택된 대분류에 따른 세부카테고리 옵션
+// 선택된 대분류에 따른 세부카테고리 옵션
 const filteredCategorySubOptions = computed(() => {
   return categorySubOptions[formData.value.categoryMain] || [];
 });
 
-// ✅ 조회 조건의 카테고리에 따른 세부카테고리 옵션
+// 조회 조건의 카테고리에 따른 세부카테고리 옵션
 const filteredSearchCategorySubOptions = computed(() => {
   const categoryMainFilter = filters.value.filters.find(f => f.name === 'categoryMain');
   return categorySubOptions[categoryMainFilter?.value] || [];
 });
 
-// ✅ 카테고리 변경 시 제품 ID 자동생성 및 세부카테고리 초기화
-const onCategoryMainChange = () => {
+// 카테고리 변경 시 제품 ID 자동생성 및 세부카테고리 초기화
+const onCategoryMainChange = async () => {
+  console.log('카테고리 변경됨:', formData.value.categoryMain);
+  
   // 세부카테고리 초기화
   formData.value.categorySub = '';
   
   // 제품 ID 자동생성
-  if (formData.value.categoryMain) {
-    formData.value.productId = generateProductId(formData.value.categoryMain);
+  if (formData.value.categoryMain && formData.value.categoryMain.trim() !== '') {
+    try {
+      // 로딩 상태 표시
+      formData.value.productId = '생성 중...';
+      
+      // 백엔드에서 실제 다음 제품 ID 가져오기
+      const nextProductId = await getNextProductIdFromServer(formData.value.categoryMain);
+      
+      if (nextProductId && nextProductId.trim() !== '') {
+        formData.value.productId = nextProductId;
+        console.log('생성된 제품 ID:', nextProductId);
+        
+        toast.add({ 
+          severity: 'success', 
+          summary: '성공', 
+          detail: `제품 ID가 생성되었습니다: ${nextProductId}`, 
+          life: 2000 
+        });
+      } else {
+        formData.value.productId = '';
+      }
+    } catch (error) {
+      console.error('제품 ID 생성 중 오류:', error);
+      formData.value.productId = '';
+    }
   } else {
+    // 카테고리가 선택되지 않은 경우
     formData.value.productId = '';
   }
 };
 
-// ✅ 조회 조건의 카테고리 변경 시 세부카테고리 초기화
+// 조회 조건의 카테고리 변경 시 세부카테고리 초기화
 const onSearchCategoryMainChange = () => {
   const categorySubFilter = filters.value.filters.find(f => f.name === 'categorySub');
   if (categorySubFilter) {
@@ -250,7 +286,7 @@ const onSearchCategoryMainChange = () => {
   }
 };
 
-// ✅ 코드를 이름으로 변환하는 함수들
+// 코드를 이름으로 변환하는 함수들 (6자리 코드 기준)
 const getCategoryMainName = (code) => {
   const category = categoryMainOptions.find(opt => opt.value === code);
   return category ? category.name : code;
@@ -269,6 +305,17 @@ const getUnitName = (code) => {
   return unit ? unit.name : code;
 };
 
+// 상태 코드를 이름으로 변환하는 함수 (6자리 코드 기준)
+const getStatusName = (code) => {
+  const statusMap = {
+    '040001': '완료',
+    '040002': '대기', 
+    '040003': '반려'
+  };
+  return statusMap[code] || code;
+};
+
+// 제품 선택 시 폼 데이터 업데이트
 const onProductSelect = async (product) => {
   if (!product) return;
   
@@ -284,7 +331,7 @@ const onProductSelect = async (product) => {
   }
 };
 
-// 폼 데이터 업데이트 함수 개선
+// 폼 데이터 업데이트 함수
 const updateFormData = async (productData) => {
   try {
     // formData 객체를 직접 업데이트
@@ -308,6 +355,7 @@ const updateFormData = async (productData) => {
   }
 };
 
+// 라디오 버튼 변경 시 처리
 const onRadioChange = (productId) => {
   const product = items.value.find(item => item.productId === productId);
   if (product) {
@@ -315,11 +363,13 @@ const onRadioChange = (productId) => {
   }
 };
 
+// 테이블 행 클릭 시 처리
 const onRowClick = (product) => {
   selectedProductId.value = product.productId;
   onProductSelect(product);
 };
 
+// 제품 목록 로드
 const loadProducts = async () => {
   try {
     const response = await axios.get(`${API_BASE_URL}`);
@@ -335,6 +385,7 @@ const loadProducts = async () => {
   }
 };
 
+// 제품 이미지 업로드
 const uploadProductImage = async (file) => {
   if (!file) return null;
   
@@ -359,6 +410,7 @@ const uploadProductImage = async (file) => {
   }
 };
 
+// 파일 선택 시 처리
 const onFileSelect = (event) => {
   selectedImageFiles.value = event.files;
   if (event.files && event.files.length > 0) {
@@ -366,6 +418,7 @@ const onFileSelect = (event) => {
   }
 };
 
+// 파일 업로드 처리
 const onFileUpload = async () => {
   if (selectedImageFile.value) {
     try {
@@ -388,24 +441,28 @@ const onFileUpload = async () => {
   }
 };
 
+// 수동 업로드
 const manualUpload = () => {
   if (fileUploadRef.value) {
     fileUploadRef.value.upload();
   }
 };
 
+// 파일 제거
 const onFileRemove = () => {
   selectedImageFile.value = null;
   selectedImageFiles.value = [];
   uploadedImageUrl.value = '';
 };
 
+// 파일 클리어
 const onFileClear = () => {
   selectedImageFile.value = null;
   selectedImageFiles.value = [];
   uploadedImageUrl.value = '';
 };
 
+// 폼 초기화
 const clearForm = () => {
   selectedProduct.value = null;
   selectedProductId.value = '';
@@ -435,10 +492,12 @@ const clearForm = () => {
   }
 };
 
+// 검색 처리
 const searchData = async (searchOptions) => {
   try {
     const params = {};
     
+    // 검색 파라미터 설정
     if (searchOptions.productName && searchOptions.productName.trim() !== '') {
       params.productName = searchOptions.productName.trim();
     }
@@ -486,8 +545,10 @@ const searchData = async (searchOptions) => {
   }
 };
 
+// 데이터 저장
 const saveData = async () => {
   try {
+    // 필수 필드 검증
     const requiredFields = [
       { field: 'productName', label: '제품명' },
       { field: 'compId', label: '회사코드' },
@@ -505,6 +566,7 @@ const saveData = async () => {
     
     let imageUrl = uploadedImageUrl.value;
     
+    // 이미지 업로드 처리
     if (selectedImageFile.value && !uploadedImageUrl.value) {
       try {
         imageUrl = await uploadProductImage(selectedImageFile.value);
@@ -521,10 +583,10 @@ const saveData = async () => {
     const productData = {
       ...formData.value,
       productImage: imageUrl,
-      status: '040002' // 등록 대기 상태
+      status: '040002' // 등록 대기 상태 (6자리 코드)
     };
     
-    // 제품 ID가 있으면 수정 모드 (updateUser, updateDate는 백엔드에서 처리)
+    // 제품 ID가 있으면 수정 모드, 없으면 신규 등록
     if (formData.value.productId && formData.value.productId.trim() !== '') {
       // 수정 시에는 제품 ID를 유지
     } else {
@@ -553,6 +615,7 @@ const saveData = async () => {
   }
 };
 
+// 날짜 포맷팅 함수들
 const formatDate = (dateString) => {
   if (!dateString) return '';
   try {
@@ -606,6 +669,7 @@ const formatDateTimeForInput = (dateString) => {
   }
 };
 
+// 컴포넌트 마운트 시 초기화
 onMounted(() => {
   loadProducts();
   
@@ -754,6 +818,9 @@ onMounted(() => {
                     <span v-else-if="key === 'unit'">
                       {{ getUnitName(item[key]) }}
                     </span>
+                    <span v-else-if="key === 'status'">
+                      {{ getStatusName(item[key]) }}
+                    </span>
                     <span v-else-if="key === 'purchasePrice' || key === 'sellPrice'">
                       {{ item[key] ? item[key].toLocaleString() : '' }}원
                     </span>
@@ -804,7 +871,7 @@ onMounted(() => {
                 <span v-if="input.required" class="text-red-500">*</span>
               </label>
               
-              <!-- ✅ select 필드들 처리 -->
+              <!-- select 필드들 처리 -->
               <select
                 v-if="input.type === 'select'"
                 v-model="formData[input.name]"
