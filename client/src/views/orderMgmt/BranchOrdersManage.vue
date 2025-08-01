@@ -1,6 +1,6 @@
 <script setup>
 import InputDataTable from '@/components/common/InputDataTable.vue';
-import { onBeforeMount, ref } from 'vue';
+import { onBeforeMount, onMounted, ref, watch } from 'vue';
 import { convertDate } from '@/utils/dateUtils';
 import { useAuth } from '@/composables/useAuth';
 import { useConfirm } from 'primevue';
@@ -14,6 +14,7 @@ const confirm = useConfirm(); //confirm
 // 폼 기본값
 const defaultForm = ref({
   orderDate: convertDate(new Date()),
+  totalAmount: '0',
 });
 
 // 폼 스키마
@@ -21,23 +22,26 @@ const formSchema = ref([
   { type: 'text', label: '발주명', id: 'orderTitle', placeholder: '발주명을 입력하세요.' },
   { type: 'select', label: '발주사유', id: 'reason', placeholder: '발주사유를 선택하세요.',
     options: [
-      { name: '140001', value: 140001 },
-      { name: '140002', value: 140002 },
-      { name: '140003', value: 140003 },
-      { name: '140004', value: 140004 },
-      { name: '140005', value: 140005 },
-      { name: '140006', value: 140006 },
+      { name: '정기 발주', value: 140001 },
+      { name: '수요 예측 발주', value: 140002 },
+      { name: '재고 부족', value: 140003 },
+      { name: '신상품 발주', value: 140004 },
+      { name: '긴급 발주', value: 140005 },
+      { name: '행사상품 발주', value: 140006 },
     ]
   },
   { type: 'data', label: '등록자', id: 'userId', data: 'text' },
   { type: 'date', label: '납기예정일', id: 'dueDate', placeholder: '납기예정일을 선택하세요.' },
   { type: 'data', label: '지점명', id: 'orderFrom', data: 'text' },
   { type: 'data', label: '발주요청일', id: 'orderDate', data: 'date' },
+  { type: 'data', label: '총 가격', id: 'totalAmount', data: 'text' }
 ]);
 
 // TODO : 폼 총 가격 출력
 
 /* Input Table */
+
+let tableData = ref([]);
 
 // 테이블 기본값
 const defaultTable = {
@@ -52,7 +56,8 @@ const columns = [
   { type: 'text', header: '제품분류', field: 'categoryMain' },
   { type: 'number', header: '단가', field: 'price' },
   { inputType: 'number', header: '수량', field: 'quantity', placeholder: '수량을 입력하세요.' },
-  { type: 'text', header: '단위', field: 'unit' }
+  { type: 'text', header: '단위', field: 'unit' },
+  { type: 'number', header: '박스당 수량', field: 'packQty' }
 ];
 
 /* modal */
@@ -143,11 +148,15 @@ const itemConfirmModal = async (selectedItems) => {
     // TODO : 다른 alert() 함수를 사용하면 변경
     alert("이미 동일한 제품이 있습니다.");
   } else {
+    const product = await axios.get(`/api/products/${selectedItems.productId}`);
+
     modalData.item[modalData.fieldName] = selectedItems.productName;
-  
-    modalData.item["productId"] = selectedItems.productId;
-    modalData.item["categoryMain"] = selectedItems.categoryMain;
-    modalData.item["price"] = selectedItems.purchasePrice;
+    modalData.item['productId'] = selectedItems.productId;
+    modalData.item['categoryMain'] = selectedItems.categoryMain;
+    modalData.item['price'] = selectedItems.purchasePrice;
+    modalData.item['packQty'] = product.data.packQty;
+
+    console.log(modalData);
   }
 
   itemModalVisible.value = false; //모달 닫음
@@ -200,8 +209,7 @@ const saveFormHandler = async (formData, tableData) => {
         return;
       }
     }
-    const product = await axios.get(`/api/products/${table.productId}`);
-    totalAmount += table.price * table.quantity * product.data.packQty;
+    // totalAmount += table.price * table.quantity * product.data.packQty;
   }
 
   confirm.require({
@@ -238,6 +246,19 @@ const saveFormHandler = async (formData, tableData) => {
   });
 };
 
+watch(
+  () => tableData.value,
+  (newVal) => {
+    console.log('tableData');
+    let total = 0;
+    for (const data of tableData.value) {
+      total += data.price * data.packQty * data.quantity;
+    }
+    formData.value.totalAmount = total;
+  },
+  { deep: true }
+);
+
 const getBranchInfo = async (empId) => {
   const req = await axios.get('/api/orders/user/compInfo', {
     params: {
@@ -266,13 +287,17 @@ onBeforeMount(async () => {
     defaultForm.value.orderFromId = branchInfo.compId;
   } else {
     // TODO : 임시적으로 추가 했기 때문에 삭제 요함.
-    formSchema.value.splice(-2, 1, {
+    formSchema.value.splice(-3, 1, {
       type: 'item-search',
       label: '지점명',
       id: 'orderFrom',
       placeholder: '지점을 입력하세요.'
     });
   }
+});
+
+onMounted(() => {
+  tableData = inputRef.value.getTableData();
 });
 </script>
 <template>

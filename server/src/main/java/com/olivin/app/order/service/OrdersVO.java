@@ -27,7 +27,8 @@ import lombok.NoArgsConstructor;
 public class OrdersVO {
 	private String orderId;
 	private String orderTitle;
-	private String userId;
+	private String creatorId;
+	private String creatorName;
 	private String orderType;
 	private String orderFromId;
 	private String orderFrom;
@@ -39,7 +40,8 @@ public class OrdersVO {
 	private Date orderDate;
   
 	private String orderStatus;
-	private String approvalUser;
+	private String approverId;
+	private String approverName;
 
 	@DateTimeFormat(pattern = "yyyy-MM-dd")
   @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
