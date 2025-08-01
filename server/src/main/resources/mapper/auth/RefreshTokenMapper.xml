@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.olivin.app.auth.mapper.RefreshTokenMapper">
+
+    <!-- Refresh Token 저장 (시퀀스 사용) -->
+    <insert id="insertRefreshToken" parameterType="RefreshTokenVO">
+        <selectKey keyProperty="id" resultType="Long" order="BEFORE">
+            SELECT REFRESH_TOKENS_SEQ.NEXTVAL FROM DUAL
+        </selectKey>
+        INSERT INTO REFRESH_TOKENS (ID, USER_ID, TOKEN, EXPIRES_AT)
+        VALUES (#{id}, #{userId}, #{token}, TO_DATE(#{expiresAt}, 'YYYY-MM-DD HH24:MI:SS'))
+    </insert>
+    
+    <!-- 사용자 ID로 기존 토큰 삭제 -->
+    <delete id="deleteByUserId" parameterType="Long">
+        DELETE FROM REFRESH_TOKENS WHERE USER_ID = #{userId}
+    </delete>
+    
+    <!-- 토큰으로 삭제 -->
+    <delete id="deleteByToken" parameterType="String">
+        DELETE FROM REFRESH_TOKENS WHERE TOKEN = #{token}
+    </delete>
+    
+    <!-- 토큰 존재 여부 확인 -->
+    <select id="countByToken" parameterType="String" resultType="int">
+        SELECT COUNT(*) FROM REFRESH_TOKENS 
+        WHERE TOKEN = #{token} AND EXPIRES_AT > SYSDATE
+    </select>
+    
+    <!-- 만료된 토큰 삭제 -->
+    <delete id="deleteExpiredTokens">
+        DELETE FROM REFRESH_TOKENS WHERE EXPIRES_AT &lt; SYSDATE
+    </delete>
+
+</mapper>
