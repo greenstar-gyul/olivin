@@ -5,6 +5,7 @@ import BasicTable from '@/components/table/BasicTable.vue';
 import InputForm from '@/components/inputForm/InputForm.vue';
 import Button from 'primevue/button';
 
+<<<<<<< HEAD
 // URL
 const API_BASE_URL = '/api/depts';
 
@@ -91,6 +92,8 @@ const selectedDept = ref(null);
 const selectDeptId = ref('');
 
 
+=======
+>>>>>>> 4a6f4ee5fefd1335f078ba79245eb0f7cf811c21
 export default {
   name: 'StandardInput',
 
