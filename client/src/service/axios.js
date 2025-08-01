@@ -14,7 +14,8 @@ const instance = axios.create({
 instance.interceptors.request.use(
   (config) => {
     // localStorage에서 토큰 가져와서 헤더에 자동 추가
-    const token = localStorage.getItem('token')
+    // const token = localStorage.getItem('token')
+    const token = JSON.parse(localStorage.getItem('auth')).token;
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
     }
@@ -54,8 +55,8 @@ instance.interceptors.response.use(
           delete instance.defaults.headers.common['Authorization']
           
           // 로그인 페이지가 아니면 리다이렉트
-          if (window.location.pathname !== '/login') {
-            window.location.href = '/login'
+          if (window.location.pathname !== '/auth/login') {
+            window.location.href = '/auth/login'
           }
           break
           

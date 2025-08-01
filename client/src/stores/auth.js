@@ -79,6 +79,9 @@ export const useAuthStore = defineStore('auth', () => {
 
   // 📍 사용자 정보 및 권한 복구
   const initializeAuth = async () => {
+
+    if (loading.value) return
+    
     if (token.value) {
       try {
         const res = await axios.get('/api/auth/me')
