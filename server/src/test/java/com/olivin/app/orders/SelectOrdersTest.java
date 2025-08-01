@@ -82,7 +82,7 @@ class SelectOrdersTest {
 		
 		OrdersVO master = OrdersVO.builder()
 				.orderTitle("20250728 재고부족 발주건")
-				.userId("이창현")
+				.creatorId("이창현")
 				.orderType("OH")
 				.reason("OT001")
 				.orderDate(new Date())
