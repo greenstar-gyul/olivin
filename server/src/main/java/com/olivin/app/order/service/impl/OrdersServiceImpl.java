@@ -10,7 +10,10 @@ import com.olivin.app.order.mapper.OrdersMapper;
 import com.olivin.app.order.service.OrdersDetailVO;
 import com.olivin.app.order.service.OrdersService;
 import com.olivin.app.order.service.OrdersVO;
+import com.olivin.app.order.service.SearchOrdersVO;
 import com.olivin.app.order.service.UserCompanyVO;
+import com.olivin.app.standard.service.ProductService;
+import com.olivin.app.standard.service.ProductVO;
 
 import lombok.RequiredArgsConstructor;
 
@@ -29,6 +32,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class OrdersServiceImpl implements OrdersService {
 	private final OrdersMapper ordersMapper;
+	private final ProductService productService;
 	
 	@Override
 	public UserCompanyVO getCompInfo(String empId) {
@@ -36,7 +40,7 @@ public class OrdersServiceImpl implements OrdersService {
 	}
 	
 	@Override
-	public List<OrdersVO> getAllOrders(OrdersVO ordersVO) {
+	public List<OrdersVO> getAllOrders(SearchOrdersVO ordersVO) {
 		return ordersMapper.selectAllList(ordersVO);
 	}
 
@@ -55,12 +59,20 @@ public class OrdersServiceImpl implements OrdersService {
 	public void createOrders(OrdersVO ordersVO, List<OrdersDetailVO> detailVOList) {
 		// 1. 메인 주문 정보 등록
 		ordersVO.setOrderDate(new Date()); //SYSDATE
-		ordersVO.setOrderStatus("03001");
+		ordersVO.setOrderStatus("030001"); //승인대기
     ordersMapper.insertOne(ordersVO);
     // 2. 상세 주문 정보 리스트 등록
     if (detailVOList != null && !detailVOList.isEmpty()) {
     	int count = 0;
+    	//category, vendorId, vendorName, 가지고 오기.
     	for (OrdersDetailVO detailVO : detailVOList) {
+    		// 3. 제품 정보 추가
+    		ProductVO productVO = productService.getProduct(detailVO.getProductId());
+    		detailVO.setCategory(productVO.getCategoryMain());
+    		detailVO.setVendorId(productVO.getCompId());
+    		detailVO.setVendorName(productVO.getVendorName());
+    		
+    		// 4. 발주서 코드 지정
     		detailVO.setPoId(ordersVO.getOrderId()+String.format("%03d", ++count));
     		detailVO.setOrderId(ordersVO.getOrderId());
     		ordersMapper.insertDetailOne(detailVO);

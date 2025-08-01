@@ -15,7 +15,7 @@ public interface OrdersService {
 	// 회사정보 조회
 	UserCompanyVO getCompInfo(String empId);
 	//1. 전체조회
-	List<OrdersVO> getAllOrders(OrdersVO ordersVO);
+	List<OrdersVO> getAllOrders(SearchOrdersVO ordersVO);
 	//2. 단건조회
 	OrdersVO getOneOrders(String orderId);
 	//3. 상세조회
