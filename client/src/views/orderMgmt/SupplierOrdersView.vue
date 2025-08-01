@@ -11,7 +11,7 @@ const header = ref({
     orderTitle: '제안명', 
     reason: '제안사유', 
     orderDate: '제안요청일', 
-    userId: '등록자', 
+    creatorName: '등록자', 
     orderFrom: '공급업체명', 
     totalAmount: '총 금액', 
     dueDate: '납기예정일',

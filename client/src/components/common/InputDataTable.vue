@@ -120,9 +120,19 @@ const tableSearch = (item, fieldName) => {
   emit('tableSearch', item, fieldName, tableData);
 }
 
+const getFormData = () => {
+  return formData;
+}
+
+const getTableData = () => {
+  return tableData;
+}
+
 defineExpose({
   resetFormHandler,
-  resetTableHandler
+  resetTableHandler,
+  getFormData,
+  getTableData,
 })
 </script>
 <template>
