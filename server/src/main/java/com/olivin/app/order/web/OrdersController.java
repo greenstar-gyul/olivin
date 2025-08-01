@@ -18,6 +18,7 @@ import com.olivin.app.order.service.OrdersDTO;
 import com.olivin.app.order.service.OrdersDetailVO;
 import com.olivin.app.order.service.OrdersService;
 import com.olivin.app.order.service.OrdersVO;
+import com.olivin.app.order.service.SearchOrdersVO;
 import com.olivin.app.order.service.UserCompanyVO;
 
 import lombok.RequiredArgsConstructor;
@@ -46,7 +47,7 @@ public class OrdersController {
 	}
 	
 	@GetMapping("/orders")
-	public List<OrdersVO> ordersList(@ModelAttribute OrdersVO search) {
+	public List<OrdersVO> ordersList(@ModelAttribute SearchOrdersVO search) {
 		log.debug("order = {}", search);
 		return ordersService.getAllOrders(search);
 	}
@@ -67,19 +68,19 @@ public class OrdersController {
 	}
 	
 	@GetMapping("/orders/head")
-	public List<OrdersVO> orderHeadList(@ModelAttribute OrdersVO search) {
+	public List<OrdersVO> orderHeadList(@ModelAttribute SearchOrdersVO search) {
 		search.setOrderType("150001");
 		return ordersService.getAllOrders(search);
 	}
 
 	@GetMapping("/orders/branch")
-	public List<OrdersVO> orderBranchList(@ModelAttribute OrdersVO search) {
+	public List<OrdersVO> orderBranchList(@ModelAttribute SearchOrdersVO search) {
 		search.setOrderType("150002");
 		return ordersService.getAllOrders(search);
 	}
 	
 	@GetMapping("/orders/supplier")
-	public List<OrdersVO> orderSupplierList(@ModelAttribute OrdersVO search) {
+	public List<OrdersVO> orderSupplierList(@ModelAttribute SearchOrdersVO search) {
 		search.setOrderType("150003");
 		return ordersService.getAllOrders(search);
 	}
@@ -94,16 +95,16 @@ public class OrdersController {
     
     log.debug("ORDER : {}", orderDTO.getOrders());
     log.debug("DETAIL : {}", orderDTO.getOrdersDetail());
-//    if (orderDTO.getOrders() != null) {
-//    	ordersService.createOrders(orderDTO.getOrders(), orderDTO.getOrdersDetail());
-//    	result.put("result", "SUCCESS");
-//			result.put("message", "성공");
-//    } else {
-//			result.put("result", "FAIL");
-//			result.put("message", "실패");
-//    }
-    result.put("result", "TEST");
-    result.put("data", orderDTO);
+    if (orderDTO.getOrders() != null) {
+    	ordersService.createOrders(orderDTO.getOrders(), orderDTO.getOrdersDetail());
+    	result.put("result", "SUCCESS");
+			result.put("message", "성공");
+    } else {
+			result.put("result", "FAIL");
+			result.put("message", "실패");
+    }
+//    result.put("result", "TEST");
+//    result.put("data", orderDTO);
     
     return result;
 	}

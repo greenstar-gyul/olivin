@@ -25,7 +25,6 @@ public class OrdersDetailVO {
 	private String productName;
 	private Integer quantity;
 	private String unit;
-	private String status;
 	private String category;
 	private String vendorId;
 	private String vendorName;

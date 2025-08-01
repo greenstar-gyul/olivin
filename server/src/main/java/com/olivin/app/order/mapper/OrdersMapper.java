@@ -4,6 +4,7 @@ import java.util.List;
 
 import com.olivin.app.order.service.OrdersDetailVO;
 import com.olivin.app.order.service.OrdersVO;
+import com.olivin.app.order.service.SearchOrdersVO;
 import com.olivin.app.order.service.UserCompanyVO;
 
 /**
@@ -19,7 +20,7 @@ public interface OrdersMapper {
 	// 회사정보 조회
 	public UserCompanyVO selectCompInfo(String empId);
 	//1. 전체조회 : (조건조회)
-	public List<OrdersVO> selectAllList(OrdersVO ordersVO);
+	public List<OrdersVO> selectAllList(SearchOrdersVO ordersVO);
 	//2. 단건조회
 	public OrdersVO selectOneByOrderId(String orderId);
 	//3. 상세조회

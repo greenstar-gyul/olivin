@@ -14,7 +14,7 @@ const confirm = useConfirm(); //confirm
 // 폼 기본값
 const defaultForm = ref({
   orderDate: convertDate(new Date()),
-  totalAmount: '0',
+  totalAmount: '0원',
 });
 
 // 폼 스키마
@@ -30,9 +30,10 @@ const formSchema = ref([
       { name: '행사상품 발주', value: 140006 },
     ]
   },
-  { type: 'data', label: '등록자', id: 'userId', data: 'text' },
+  { type: 'data', label: '등록자', id: 'creatorName', data: 'text' },
   { type: 'date', label: '납기예정일', id: 'dueDate', placeholder: '납기예정일을 선택하세요.' },
   { type: 'data', label: '지점명', id: 'orderFrom', data: 'text' },
+  { type: 'text', label: '비고', id: 'remark', placeholder: '비고를 입력하세요.'},
   { type: 'data', label: '발주요청일', id: 'orderDate', data: 'date' },
   { type: 'data', label: '총 가격', id: 'totalAmount', data: 'text' }
 ]);
@@ -41,7 +42,7 @@ const formSchema = ref([
 
 /* Input Table */
 
-let tableData = ref([]);
+let tableData = ref({});
 
 // 테이블 기본값
 const defaultTable = {
@@ -139,7 +140,7 @@ const itemCloseModal = () => {
 const itemConfirmModal = async (selectedItems) => {
   const modalData = itemModalReturn.value;
   // console.log('selected Item', selectedItems);
-  // console.log('data', modalData);
+  console.log('data', modalData);
   const same = modalData.data.filter((e) => {
     return e[modalData.fieldName] == selectedItems.productName;
   });
@@ -155,8 +156,6 @@ const itemConfirmModal = async (selectedItems) => {
     modalData.item['categoryMain'] = selectedItems.categoryMain;
     modalData.item['price'] = selectedItems.purchasePrice;
     modalData.item['packQty'] = product.data.packQty;
-
-    console.log(modalData);
   }
 
   itemModalVisible.value = false; //모달 닫음
@@ -200,22 +199,30 @@ const saveFormHandler = async (formData, tableData) => {
     }
   }
 
-  let totalAmount = 0;
   for (const table of tableData) {
     for (const data in table) {
       if (!table[data]) {
+        if (form == 'remark') break;
         // TODO : 다른 alert() 함수를 사용하면 변경
         alert("테이블에 비어있는 데이터가 있습니다.");
         return;
       }
     }
-    // totalAmount += table.price * table.quantity * product.data.packQty;
   }
 
+  //본사 정보
+  const req = await axios.get(`/api/search/company/head`, {
+    params : {
+      searchValue: ''
+    }
+  });
+  const headInfo = req.data[0];
+
+  const totalAmount = parseFloat(String(formData.totalAmount).replace(/[,원]/g, ''));
   confirm.require({
     icon: 'pi pi-info-circle',
     header: '발주서를 등록',
-    message: '발주서를 최종 등록하시겠습니까?',
+    message: '발주서를 등록하시겠습니까?',
     rejectProps: {
       label: '취소',
       severity: 'secondary',
@@ -227,14 +234,19 @@ const saveFormHandler = async (formData, tableData) => {
     accept: async () => {
       const req = await axios.post('/api/orders', {
         orders: {
-            ...formData,
-            reason: formData.reason.value+"",
-            totalAmount
+          ...formData,
+          creatorId: defaultForm.value.creatorId,
+          orderType: '150002', //지점 발주
+          reason: formData.reason.value+"", //발주 사유
+          //수주처 정보
+          orderToId: headInfo.compId,
+          orderTo: headInfo.compName,
+          totalAmount //총 가격
         },
         ordersDetail: tableData.map((e) => {
           return {
             ...e,
-            unit: '130004'
+            unit: '130004' //'box'
           }
         })
       });
@@ -249,12 +261,15 @@ const saveFormHandler = async (formData, tableData) => {
 watch(
   () => tableData.value,
   (newVal) => {
-    console.log('tableData');
-    let total = 0;
-    for (const data of tableData.value) {
-      total += data.price * data.packQty * data.quantity;
+    if (tableData.value.value) {
+      let total = 0;
+      for (const data of tableData.value.value) {
+        const quantity = data.quantity ? data.quantity : 0;
+        total += data.price * data.packQty * quantity;
+      }
+      const formData = inputRef.value.getFormData();
+      formData.value.totalAmount = Number(total).toLocaleString()+'원';
     }
-    formData.value.totalAmount = total;
   },
   { deep: true }
 );
@@ -278,7 +293,8 @@ onBeforeMount(async () => {
   defaultForm.value.dueDate = convertDate(dueDate);
 
   const user = useAuth().user;
-  defaultForm.value.userId = user.value.empName;
+  defaultForm.value.creatorId = user.value.employeeId;
+  defaultForm.value.creatorName = user.value.empName;
   // console.log(user);
 
   const branchInfo = await getBranchInfo(user.value.employeeId);
@@ -287,17 +303,17 @@ onBeforeMount(async () => {
     defaultForm.value.orderFromId = branchInfo.compId;
   } else {
     // TODO : 임시적으로 추가 했기 때문에 삭제 요함.
-    formSchema.value.splice(-3, 1, {
+    formSchema.value.splice(-4, 1, {
       type: 'item-search',
       label: '지점명',
-      id: 'orderFrom',
+      id: 'orderForm',
       placeholder: '지점을 입력하세요.'
     });
   }
 });
 
 onMounted(() => {
-  tableData = inputRef.value.getTableData();
+  tableData.value = inputRef.value.getTableData();
 });
 </script>
 <template>
