@@ -20,6 +20,7 @@ import lombok.NoArgsConstructor;
 public class HeadInventoryVO {
     private String productId; // 제품 ID
     private String productName; // 제품 이름
+    private String lotNo; // 로트 번호
     private String categoryMain; // 대분류
     private String categorySub; // 소분류
     private String vendorName; // 공급사 이름

@@ -1,11 +1,8 @@
 // SecurityConfig.java
 package com.olivin.app.config;
 
-import com.olivin.app.auth.service.UserService;
-import com.olivin.app.security.JwtAuthenticationEntryPoint;
-import com.olivin.app.security.JwtAuthenticationFilter;
+import java.util.List;
 
-import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -25,7 +22,11 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import java.util.List;
+import com.olivin.app.auth.service.UserService;
+import com.olivin.app.security.JwtAuthenticationEntryPoint;
+import com.olivin.app.security.JwtAuthenticationFilter;
+
+import lombok.RequiredArgsConstructor;
 
 @Configuration
 @EnableWebSecurity
@@ -62,7 +63,7 @@ public class SecurityConfig {
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 // 인증 없이 접근 가능한 경로
-                .requestMatchers("/api/auth/**").permitAll()
+                .requestMatchers("/api/auth/login").permitAll()
                 .requestMatchers("/api/outbndMgmt/**").permitAll()
                 .requestMatchers("/outbndMgmt/**").permitAll()
                 .requestMatchers("/api/inbndMgmt/**").permitAll()
