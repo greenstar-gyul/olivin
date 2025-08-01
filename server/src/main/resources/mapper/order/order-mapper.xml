@@ -23,13 +23,15 @@
         SELECT
             order_id,
             order_title,
-            user_id,
+            creator_id,
+            creator_name,
             order_type,
             order_from_id,
             reason,
             order_date,
             order_status,
-            approval_user,
+            approver_id,
+            approver_name,
             approval_date,
             total_amount,
             due_date,
@@ -46,8 +48,11 @@
             <if test="orderTitle != null and orderTitle != ''">
                 AND order_title LIKE '%'||#{orderTitle}||'%'
             </if>
-            <if test="userId != null and userId != ''">
-                AND user_id LIKE '%'||#{userId}||'%'
+            <if test="creatorName != null and creatorName != ''">
+                AND creator_name LIKE '%'||#{creatorName}||'%'
+            </if>
+            <if test="approverName != null and approverName != ''">
+                AND approver_name LIKE '%'||#{approverName}||'%'
             </if>
             <if test="orderType != null and orderType != ''">
                 AND order_type = #{orderType}
@@ -81,18 +86,21 @@
         SELECT
             order_id,
             order_title,
-            user_id,
+            creator_id,
+            creator_name,
             order_type,
             order_from_id,
             reason,
             order_date,
             order_status,
-            approval_user,
+            approval_id,
+            approval_name,
             approval_date,
             total_amount,
             due_date,
             remark,
             order_to_id,
+            order_to,
             order_from
         FROM
             purchase_orders
@@ -147,26 +155,29 @@
         WHERE order_id LIKE <include refid="orderIdPrefix"/> || TO_CHAR(SYSDATE, 'YYYYMMDD') || '%'
         </selectKey>
         INSERT INTO purchase_orders (
-            order_id,
-            order_title,
-            user_id,
-            order_type,
-            order_from_id,
-            order_from,
-            order_to_id,
-            order_to,
-            reason,
-            order_date,
-            order_status,
-            approval_user,
-            approval_date,
-            total_amount,
-            due_date,
-            remark
+           order_id,
+           order_title,
+           creator_id,
+           creator_name,
+           order_type,
+           order_from_id,
+           reason,
+           order_date,
+           order_status,
+           approval_id,
+           approval_name,
+           approval_date,
+           total_amount,
+           due_date,
+           remark,
+           order_to_id,
+           order_to,
+           order_from
         ) VALUES (
             #{orderId},
             #{orderTitle},
-            #{userId},
+            #{creatorId},
+            #{creatorName},
             #{orderType},
             #{orderFromId},
             #{orderFrom},
@@ -175,7 +186,8 @@
             #{reason},
             #{orderDate},
             #{orderStatus},
-            #{approvalUser},
+            #{approvalId}
+            #{approvalName},
             #{approvalDate},
             #{totalAmount},
             #{dueDate},

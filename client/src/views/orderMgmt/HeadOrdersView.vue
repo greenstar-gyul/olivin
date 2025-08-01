@@ -11,7 +11,7 @@ const header = ref({
     orderTitle: '발주명', 
     reason: '발주사유', 
     orderDate: '발주요청일', 
-    userId: '등록자', 
+    creatorName: '등록자', 
     orderTo: '공급업체명', 
     totalAmount: '총 금액', 
     dueDate: '납기예정일',
