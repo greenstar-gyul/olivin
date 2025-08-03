@@ -19,17 +19,22 @@
 		WHERE employee_id = #{empId}
     </select>
 	<!-- select -->
-    <select id="selectAllList" resultType="OrdersVO" parameterType="OrdersVO">
+    <select id="selectAllList" resultType="OrdersVO" parameterType="SearchOrdersVO">
         SELECT
             order_id,
             order_title,
-            user_id,
+            creator_id,
+            creator_name,
             order_type,
+            get_datacode_name(order_type) as order_type_name,
             order_from_id,
             reason,
+            get_datacode_name(reason) as reason_name,
             order_date,
             order_status,
-            approval_user,
+            get_datacode_name(order_status) as order_status_name,
+            approver_id,
+            approver_name,
             approval_date,
             total_amount,
             due_date,
@@ -46,8 +51,11 @@
             <if test="orderTitle != null and orderTitle != ''">
                 AND order_title LIKE '%'||#{orderTitle}||'%'
             </if>
-            <if test="userId != null and userId != ''">
-                AND user_id LIKE '%'||#{userId}||'%'
+            <if test="creatorName != null and creatorName != ''">
+                AND creator_name LIKE '%'||#{creatorName}||'%'
+            </if>
+            <if test="approverName != null and approverName != ''">
+                AND approver_name LIKE '%'||#{approverName}||'%'
             </if>
             <if test="orderType != null and orderType != ''">
                 AND order_type = #{orderType}
@@ -67,12 +75,18 @@
             <if test="orderStatus != null and orderStatus != ''">
                 AND order_status = #{orderStatus}
             </if>
-            <if test="orderDate != null">
-                AND order_date &gt;= #{orderDate}
-            </if>
-            <if test="dueDate != null">
-                AND due_date &lt;= #{dueDate}
-            </if>
+	        <if test="orderDateStart != null and orderDateStart != ''">
+	            AND order_date &gt;= #{orderDateStart}
+	        </if>
+	        <if test="orderDateEnd != null and orderDateEnd != ''">
+	            AND order_date &lt;= #{orderDateEnd}
+	        </if>
+	        <if test="dueDateStart != null and dueDateStart != ''">
+	            AND due_date &gt;= #{dueDateStart}
+	        </if>
+	        <if test="dueDateEnd != null and dueDateEnd != ''">
+	            AND due_date &lt;= #{dueDateEnd}
+	        </if>
         </where>
         ORDER BY order_id DESC
     </select>
@@ -81,18 +95,24 @@
         SELECT
             order_id,
             order_title,
-            user_id,
+            creator_id,
+            creator_name,
             order_type,
+            get_datacode_name(order_type) as order_type_name,
             order_from_id,
             reason,
+            get_datacode_name(reason) as reason_name,
             order_date,
             order_status,
-            approval_user,
+            get_datacode_name(order_status) as order_status_name,
+            approver_id,
+            approver_name,
             approval_date,
             total_amount,
             due_date,
             remark,
             order_to_id,
+            order_to,
             order_from
         FROM
             purchase_orders
@@ -107,8 +127,7 @@
             product_id,
             product_name,
             quantity,
-            unit,
-            status,
+            get_datacode_name(unit) as unit,
             category,
             vendor_id,
             vendor_name,
@@ -126,8 +145,7 @@
             od.product_name,
             od.quantity,
             od.price,
-            od.unit,
-            od.status
+            od.unit
         FROM
             purchase_orders o
         JOIN
@@ -147,26 +165,26 @@
         WHERE order_id LIKE <include refid="orderIdPrefix"/> || TO_CHAR(SYSDATE, 'YYYYMMDD') || '%'
         </selectKey>
         INSERT INTO purchase_orders (
-            order_id,
-            order_title,
-            user_id,
-            order_type,
-            order_from_id,
-            order_from,
-            order_to_id,
-            order_to,
-            reason,
-            order_date,
-            order_status,
-            approval_user,
-            approval_date,
-            total_amount,
-            due_date,
-            remark
+           order_id,
+           order_title,
+           creator_id,
+           creator_name,
+           order_type,
+           order_from_id,
+           order_from,
+           order_to_id,
+           order_to,
+           reason,
+           order_date,
+           order_status,
+           total_amount,
+           due_date,
+           remark
         ) VALUES (
             #{orderId},
             #{orderTitle},
-            #{userId},
+            #{creatorId},
+            #{creatorName},
             #{orderType},
             #{orderFromId},
             #{orderFrom},
@@ -175,8 +193,6 @@
             #{reason},
             #{orderDate},
             #{orderStatus},
-            #{approvalUser},
-            #{approvalDate},
             #{totalAmount},
             #{dueDate},
             #{remark}
@@ -191,7 +207,6 @@
             product_name,
             quantity,
             unit,
-            status,
             category,
             vendor_id,
             vendor_name,
@@ -203,7 +218,6 @@
             #{productName},
             #{quantity},
             #{unit},
-            #{status},
             #{category},
             #{vendorId},
             #{vendorName},

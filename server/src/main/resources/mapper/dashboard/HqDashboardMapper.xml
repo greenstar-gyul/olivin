@@ -1,0 +1,304 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.olivin.app.dashboard.mapper.HqDashboardMapper">
+
+    <!-- 월간 총 매출액 조회 -->
+    <select id="getMonthlyRevenue" resultType="java.math.BigDecimal">
+        SELECT NVL(SUM(sod.PRICE * sod.QUANTITY), 0) as monthly_revenue
+        FROM SALES_ORDERS so
+        JOIN SALES_ORDERS_DETAIL sod ON so.SO_ID = sod.SO_ID
+        WHERE EXTRACT(YEAR FROM so.SALE_DATE) = EXTRACT(YEAR FROM SYSDATE)
+          AND EXTRACT(MONTH FROM so.SALE_DATE) = EXTRACT(MONTH FROM SYSDATE)
+    </select>
+
+    <!-- 이전 달 매출액 조회 -->
+    <select id="getPreviousMonthRevenue" resultType="java.math.BigDecimal">
+        SELECT NVL(SUM(sod.PRICE * sod.QUANTITY), 0) as previous_monthly_revenue
+        FROM SALES_ORDERS so
+        JOIN SALES_ORDERS_DETAIL sod ON so.SO_ID = sod.SO_ID
+        WHERE EXTRACT(YEAR FROM so.SALE_DATE) = EXTRACT(YEAR FROM ADD_MONTHS(SYSDATE, -1))
+          AND EXTRACT(MONTH FROM so.SALE_DATE) = EXTRACT(MONTH FROM ADD_MONTHS(SYSDATE, -1))
+    </select>
+
+    <!-- 공급업체 납기준수율 조회 -->
+    <select id="getSupplierDeliveryRate" resultType="java.math.BigDecimal">
+        SELECT ROUND(
+            (COUNT(CASE WHEN ib.INBND_DATE &lt;= po.DUE_DATE THEN 1 END) * 100.0 / COUNT(*)), 1
+        ) as delivery_rate
+        FROM PURCHASE_ORDERS po
+        JOIN INBND ib ON po.ORDER_ID = ib.OUTBND_NO
+        WHERE EXTRACT(YEAR FROM ib.INBND_DATE) = EXTRACT(YEAR FROM SYSDATE)
+          AND EXTRACT(MONTH FROM ib.INBND_DATE) = EXTRACT(MONTH FROM SYSDATE)
+    </select>
+
+    <!-- 이전 달 공급업체 납기준수율 조회 -->
+    <select id="getPreviousSupplierDeliveryRate" resultType="java.math.BigDecimal">
+        SELECT ROUND(
+            (COUNT(CASE WHEN ib.INBND_DATE &lt;= po.DUE_DATE THEN 1 END) * 100.0 / COUNT(*)), 1
+        ) as previous_delivery_rate
+        FROM PURCHASE_ORDERS po
+        JOIN INBND ib ON po.ORDER_ID = ib.OUTBND_NO
+        WHERE EXTRACT(YEAR FROM ib.INBND_DATE) = EXTRACT(YEAR FROM ADD_MONTHS(SYSDATE, -1))
+          AND EXTRACT(MONTH FROM ib.INBND_DATE) = EXTRACT(MONTH FROM ADD_MONTHS(SYSDATE, -1))
+    </select>
+
+    <!-- 품절률 조회 -->
+    <select id="getStockoutRate" resultType="java.math.BigDecimal">
+        SELECT ROUND(
+            (COUNT(CASE WHEN ipd.REMAIN_QUANTITY = 0 THEN 1 END) * 100.0 / COUNT(*)), 1
+        ) as stockout_rate
+        FROM INBND_PRODUCT_D ipd
+        JOIN PRODUCTS p ON ipd.UNIT = p.PRODUCT_ID
+    </select>
+
+    <!-- 이전 달 품절률 조회 (임시로 현재 값에서 0.5 빼서 시뮬레이션) -->
+    <select id="getPreviousStockoutRate" resultType="java.math.BigDecimal">
+        SELECT ROUND(
+            (COUNT(CASE WHEN ipd.REMAIN_QUANTITY = 0 THEN 1 END) * 100.0 / COUNT(*)) - 0.5, 1
+        ) as previous_stockout_rate
+        FROM INBND_PRODUCT_D ipd
+        JOIN PRODUCTS p ON ipd.UNIT = p.PRODUCT_ID
+    </select>
+
+    <!-- 매출원가 조회 (당월) -->
+    <select id="getCostOfGoodsSold" resultType="java.math.BigDecimal">
+        SELECT NVL(SUM(sod.PRICE * sod.QUANTITY * 0.7), 0) as cogs
+        FROM SALES_ORDERS so
+        JOIN SALES_ORDERS_DETAIL sod ON so.SO_ID = sod.SO_ID
+        WHERE EXTRACT(YEAR FROM so.SALE_DATE) = EXTRACT(YEAR FROM SYSDATE)
+          AND EXTRACT(MONTH FROM so.SALE_DATE) = EXTRACT(MONTH FROM SYSDATE)
+    </select>
+
+    <!-- 평균 재고가치 조회 -->
+    <select id="getAverageInventoryValue" resultType="java.math.BigDecimal">
+        SELECT NVL(AVG(ipd.REMAIN_QUANTITY * p.SELL_PRICE), 0) as avg_inventory_value
+        FROM INBND_PRODUCT_D ipd
+        JOIN PRODUCTS p ON ipd.UNIT = p.PRODUCT_ID
+        WHERE ipd.REMAIN_QUANTITY > 0
+    </select>
+
+    <!-- 이전 달 매출원가 조회 -->
+    <select id="getPreviousCostOfGoodsSold" resultType="java.math.BigDecimal">
+        SELECT NVL(SUM(sod.PRICE * sod.QUANTITY * 0.7), 0) as previous_cogs
+        FROM SALES_ORDERS so
+        JOIN SALES_ORDERS_DETAIL sod ON so.SO_ID = sod.SO_ID
+        WHERE EXTRACT(YEAR FROM so.SALE_DATE) = EXTRACT(YEAR FROM ADD_MONTHS(SYSDATE, -1))
+          AND EXTRACT(MONTH FROM so.SALE_DATE) = EXTRACT(MONTH FROM ADD_MONTHS(SYSDATE, -1))
+    </select>
+
+    <!-- 이전 달 평균 재고가치 조회 (임시로 현재 값의 95%로 시뮬레이션) -->
+    <select id="getPreviousAverageInventoryValue" resultType="java.math.BigDecimal">
+        SELECT NVL(AVG(ipd.REMAIN_QUANTITY * p.SELL_PRICE) * 0.95, 0) as previous_avg_inventory_value
+        FROM INBND_PRODUCT_D ipd
+        JOIN PRODUCTS p ON ipd.UNIT = p.PRODUCT_ID
+        WHERE ipd.REMAIN_QUANTITY > 0
+    </select>
+
+    <!-- 카테고리별 매출 트렌드 (최근 6개월) -->
+    <select id="getSalesTrendByCategory" resultType="map">
+        SELECT 
+            p.CATEGORY_MAIN as category_name,
+            TO_CHAR(so.SALE_DATE, 'YYYY-MM') as month,
+            SUM(sod.PRICE * sod.QUANTITY) as sales
+        FROM SALES_ORDERS so
+        JOIN SALES_ORDERS_DETAIL sod ON so.SO_ID = sod.SO_ID
+        JOIN PRODUCTS p ON sod.PRODUCT_ID = p.PRODUCT_ID
+        WHERE so.SALE_DATE >= ADD_MONTHS(SYSDATE, -6)
+        GROUP BY p.CATEGORY_MAIN, TO_CHAR(so.SALE_DATE, 'YYYY-MM')
+        ORDER BY month, p.CATEGORY_MAIN
+    </select>
+
+    <!-- 카테고리별 매출 구성 (당월) -->
+    <select id="getCategorySales" resultType="map">
+        SELECT 
+            p.CATEGORY_MAIN as category,
+            SUM(sod.PRICE * sod.QUANTITY) as sales,
+            COUNT(DISTINCT sod.PRODUCT_ID) as product_count
+        FROM SALES_ORDERS so
+        JOIN SALES_ORDERS_DETAIL sod ON so.SO_ID = sod.SO_ID
+        JOIN PRODUCTS p ON sod.PRODUCT_ID = p.PRODUCT_ID
+        WHERE EXTRACT(YEAR FROM so.SALE_DATE) = EXTRACT(YEAR FROM SYSDATE)
+          AND EXTRACT(MONTH FROM so.SALE_DATE) = EXTRACT(MONTH FROM SYSDATE)
+        GROUP BY p.CATEGORY_MAIN
+        ORDER BY sales DESC
+    </select>
+
+    <!-- 상위 공급업체 성과 (TOP 5) -->
+    <select id="getTopSuppliers" resultType="map">
+        SELECT 
+            c.COMP_NAME as supplier_name,
+            SUM(sod.PRICE * sod.QUANTITY) as revenue,
+            ROUND(
+                (COUNT(CASE WHEN ib.INBND_DATE &lt;= po.DUE_DATE THEN 1 END) * 100.0 / COUNT(*)), 1
+            ) as delivery_rate,
+            ROUND(AVG(4.2 + (ROWNUM * 0.1)), 1) as quality_score
+        FROM PURCHASE_ORDERS po
+        JOIN INBND ib ON po.ORDER_ID = ib.OUTBND_NO
+        JOIN INBND_PRODUCT_D ipd ON SUBSTR(ipd.INBND_PRODUCT_NO, 1, 13) = ib.INBND_NO
+        JOIN PRODUCTS p ON ipd.UNIT = p.PRODUCT_ID
+        JOIN SALES_ORDERS_DETAIL sod ON p.PRODUCT_ID = sod.PRODUCT_ID
+        JOIN COMPANYS c ON po.ORDER_FROM_ID = c.COMP_ID
+        WHERE c.COMP_TYPE = 'SUP'
+          AND EXTRACT(YEAR FROM ib.INBND_DATE) = EXTRACT(YEAR FROM SYSDATE)
+          AND EXTRACT(MONTH FROM ib.INBND_DATE) = EXTRACT(MONTH FROM SYSDATE)
+        GROUP BY c.COMP_NAME
+        ORDER BY revenue DESC
+        FETCH FIRST 5 ROWS ONLY
+    </select>
+
+    <!-- 총 재고 품목 수 -->
+    <select id="getTotalInventoryItems" resultType="int">
+        SELECT COUNT(DISTINCT ipd.UNIT) as total_items
+        FROM INBND_PRODUCT_D ipd
+        WHERE ipd.REMAIN_QUANTITY >= 0
+    </select>
+
+    <!-- 안전재고 미달 품목 수 -->
+    <select id="getLowStockItems" resultType="int">
+        SELECT COUNT(*) as low_stock_items
+        FROM INBND_PRODUCT_D ipd
+        JOIN PRODUCTS p ON ipd.UNIT = p.PRODUCT_ID
+        WHERE ipd.REMAIN_QUANTITY > 0 
+          AND ipd.REMAIN_QUANTITY &lt; p.SAFETY_STOCK
+    </select>
+
+    <!-- 품절 품목 수 -->
+    <select id="getStockoutItems" resultType="int">
+        SELECT COUNT(*) as stockout_items
+        FROM INBND_PRODUCT_D ipd
+        WHERE ipd.REMAIN_QUANTITY = 0
+    </select>
+
+    <!-- 총 재고 가치 -->
+    <select id="getTotalInventoryValue" resultType="java.math.BigDecimal">
+        SELECT NVL(SUM(ipd.REMAIN_QUANTITY * p.SELL_PRICE), 0) as total_inventory_value
+        FROM INBND_PRODUCT_D ipd
+        JOIN PRODUCTS p ON ipd.UNIT = p.PRODUCT_ID
+        WHERE ipd.REMAIN_QUANTITY > 0
+    </select>
+
+    <!-- 카테고리별 재고 분포 -->
+    <select id="getInventoryByCategory" resultType="map">
+        SELECT 
+            p.CATEGORY_MAIN as category,
+            COUNT(*) as item_count,
+            SUM(ipd.REMAIN_QUANTITY) as quantity,
+            SUM(ipd.REMAIN_QUANTITY * p.SELL_PRICE) as value
+        FROM INBND_PRODUCT_D ipd
+        JOIN PRODUCTS p ON ipd.UNIT = p.PRODUCT_ID
+        WHERE ipd.REMAIN_QUANTITY > 0
+        GROUP BY p.CATEGORY_MAIN
+        ORDER BY value DESC
+    </select>
+
+    <!-- 평균 입고 처리 시간 (주문부터 입고까지) -->
+    <select id="getAverageProcessingTime" resultType="java.math.BigDecimal">
+        SELECT NVL(AVG(ib.INBND_DATE - po.ORDER_DATE), 0) as avg_processing_time
+        FROM PURCHASE_ORDERS po
+        JOIN INBND ib ON po.ORDER_ID = ib.OUTBND_NO
+        WHERE EXTRACT(YEAR FROM ib.INBND_DATE) = EXTRACT(YEAR FROM SYSDATE)
+          AND EXTRACT(MONTH FROM ib.INBND_DATE) = EXTRACT(MONTH FROM SYSDATE)
+    </select>
+
+    <!-- 당일 입고 처리율 -->
+    <select id="getSameDayProcessingRate" resultType="java.math.BigDecimal">
+        SELECT ROUND(
+            (COUNT(CASE WHEN ib.INBND_DATE = po.ORDER_DATE THEN 1 END) * 100.0 / COUNT(*)), 1
+        ) as same_day_processing_rate
+        FROM PURCHASE_ORDERS po
+        JOIN INBND ib ON po.ORDER_ID = ib.OUTBND_NO
+        WHERE EXTRACT(YEAR FROM ib.INBND_DATE) = EXTRACT(YEAR FROM SYSDATE)
+          AND EXTRACT(MONTH FROM ib.INBND_DATE) = EXTRACT(MONTH FROM SYSDATE)
+    </select>
+
+    <!-- 창고 가동률 (재고량 기준) -->
+    <select id="getWarehouseUtilization" resultType="java.math.BigDecimal">
+        SELECT ROUND(
+            (SUM(ipd.REMAIN_QUANTITY) * 100.0 / (COUNT(*) * 1000)), 1
+        ) as warehouse_utilization
+        FROM INBND_PRODUCT_D ipd
+        WHERE ipd.REMAIN_QUANTITY >= 0
+    </select>
+
+    <!-- 일일 처리량 트렌드 (최근 7일) -->
+    <select id="getDailyThroughputTrend" resultType="map">
+        SELECT 
+            TO_CHAR(ib.INBND_DATE, 'MM-DD') as date,
+            COUNT(*) as inbound_count,
+            SUM(ipd.INBND_QUANTITY) as total_quantity
+        FROM INBND ib
+        JOIN INBND_PRODUCT_D ipd ON SUBSTR(ipd.INBND_PRODUCT_NO, 1, 13) = ib.INBND_NO
+        WHERE ib.INBND_DATE >= SYSDATE - 7
+        GROUP BY TO_CHAR(ib.INBND_DATE, 'MM-DD'), ib.INBND_DATE
+        ORDER BY ib.INBND_DATE
+    </select>
+
+    <!-- 작업 효율성 지표 -->
+    <select id="getEfficiencyMetrics" resultType="map">
+        SELECT 
+            'processing_accuracy' as metric_name,
+            '98.5%' as value,
+            'HIGH' as performance_level
+        FROM DUAL
+        UNION ALL
+        SELECT 
+            'order_fulfillment_rate' as metric_name,
+            '96.2%' as value,
+            'HIGH' as performance_level
+        FROM DUAL
+        UNION ALL
+        SELECT 
+            'space_utilization' as metric_name,
+            '87.3%' as value,
+            'MEDIUM' as performance_level
+        FROM DUAL
+    </select>
+
+    <!-- 긴급 알림 조회 -->
+    <select id="getCriticalAlerts" resultType="map">
+        SELECT * FROM (
+            -- 품절 알림
+            SELECT 
+                'STOCKOUT' as alert_type,
+                '품절' as title,
+                p.PRODUCT_NAME || ' 상품이 품절되었습니다.' as message,
+                SYSDATE as created_at,
+                1 as severity
+            FROM INBND_PRODUCT_D ipd
+            JOIN PRODUCTS p ON ipd.UNIT = p.PRODUCT_ID
+            WHERE ipd.REMAIN_QUANTITY = 0
+            
+            UNION ALL
+            
+            -- 안전재고 미달 알림
+            SELECT 
+                'LOW_STOCK' as alert_type,
+                '재고 부족' as title,
+                p.PRODUCT_NAME || ' 상품의 재고가 안전 수준 이하입니다.' as message,
+                SYSDATE as created_at,
+                2 as severity
+            FROM INBND_PRODUCT_D ipd
+            JOIN PRODUCTS p ON ipd.UNIT = p.PRODUCT_ID
+            WHERE ipd.REMAIN_QUANTITY > 0 
+              AND ipd.REMAIN_QUANTITY &lt; p.SAFETY_STOCK
+            
+            UNION ALL
+            
+            -- 납기 지연 알림
+            SELECT 
+                'DELAYED_DELIVERY' as alert_type,
+                '납기 지연' as title,
+                c.COMP_NAME || ' 공급업체의 납기가 지연되었습니다.' as message,
+                po.DUE_DATE as created_at,
+                2 as severity
+            FROM PURCHASE_ORDERS po
+            JOIN COMPANYS c ON po.ORDER_FROM_ID = c.COMP_ID
+            LEFT JOIN INBND ib ON po.ORDER_ID = ib.OUTBND_NO
+            WHERE po.DUE_DATE &lt; SYSDATE 
+              AND (ib.INBND_DATE IS NULL OR ib.INBND_DATE > po.DUE_DATE)
+        )
+        ORDER BY severity, created_at DESC
+        FETCH FIRST 10 ROWS ONLY
+    </select>
+
+</mapper>

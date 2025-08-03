@@ -44,11 +44,23 @@ const inputTableRef = ref(null);
 
 
 function defaultFormData() {
-  return props.formSchema.map(element => ({
-    [element.id]: props.defaultForm[element.id] || ''
-  })).reduce((acc, curr) => ({
-    ...acc, ...curr
-  }), {});
+  const formSchemaIds = (props.formSchema || []).map(e => e.id);
+
+  const schemaBased = formSchemaIds.reduce((acc, id) => {
+    acc[id] = props.defaultForm?.[id] || '';
+    return acc;
+  }, {});
+
+  const fullData = { ...schemaBased };
+
+  // defaultForm에만 있는 값 추가
+  Object.keys(props.defaultForm || {}).forEach(key => {
+    if (!formSchemaIds.includes(key)) {
+      fullData[key] = props.defaultForm[key];
+    }
+  });
+
+  return fullData;
 }
 
 function defaultTableData() {
@@ -120,9 +132,19 @@ const tableSearch = (item, fieldName) => {
   emit('tableSearch', item, fieldName, tableData);
 }
 
+const getFormData = () => {
+  return formData;
+}
+
+const getTableData = () => {
+  return tableData;
+}
+
 defineExpose({
   resetFormHandler,
-  resetTableHandler
+  resetTableHandler,
+  getFormData,
+  getTableData,
 })
 </script>
 <template>

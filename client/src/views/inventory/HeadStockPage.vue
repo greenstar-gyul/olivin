@@ -1,4 +1,3 @@
-<!-- 조회 테스트 페이지 -->
 <script setup>
 import { onMounted, ref } from 'vue';
 import SearchTable from '../../components/common/SearchTable.vue';
@@ -11,12 +10,13 @@ const header = ref({
   header: { // 테이블의 헤더 정보
     productId: '제품번호', 
     productName: '제품명', 
+    lotNo: 'LOT',
     categoryMain: '대분류', 
     categorySub: '소분류', 
     vendorName: '공급사', 
     productSpec: '규격', 
-    stockQuantity: '재고수량', 
-    safetyStock: '안전 재고', 
+    stockQuantity: '재고수량(박스)', 
+    safetyStock: '안전 재고(박스)', 
   },
   rightAligned: ['stockQuantity', 'safetyStock'] // 오른쪽 정렬할 컬럼 리스트
 });
@@ -291,7 +291,7 @@ const searchStocks = async (searchOptions) => {
     const response = await axios.get('/api/inventory/headStock/search', {
       params: {
         productName: searchOptions.productModal || '',
-        categorySubName: searchOptions.productType || '',
+        categorySub: searchOptions.productType || '',
         vendorName: searchOptions.publisher || '',
       }
     });

@@ -9,13 +9,13 @@ const header = ref({
   header: {
     orderId: '발주서코드', 
     orderTitle: '발주명', 
-    reason: '발주사유', 
+    reasonName: '발주사유', 
     orderDate: '발주요청일', 
-    userId: '등록자', 
+    creatorName: '등록자', 
     orderTo: '공급업체명', 
     totalAmount: '총 금액', 
     dueDate: '납기예정일',
-    orderStatus: '발주상태'
+    orderStatusName: '발주상태'
   },
   rightAligned: ['totalAmount']
 });

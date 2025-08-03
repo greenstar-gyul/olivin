@@ -1,6 +1,6 @@
 <script setup>
 import InputDataTable from '@/components/common/InputDataTable.vue';
-import { onBeforeMount, ref } from 'vue';
+import { onBeforeMount, onMounted, ref, watch } from 'vue';
 import { convertDate } from '@/utils/dateUtils';
 import { useAuth } from '@/composables/useAuth';
 import { useConfirm } from 'primevue';
@@ -14,6 +14,7 @@ const confirm = useConfirm(); //confirm
 // 폼 기본값
 const defaultForm = ref({
   orderDate: convertDate(new Date()),
+  totalAmount: '0원',
 });
 
 // 폼 스키마
@@ -21,23 +22,27 @@ const formSchema = ref([
   { type: 'text', label: '발주명', id: 'orderTitle', placeholder: '발주명을 입력하세요.' },
   { type: 'select', label: '발주사유', id: 'reason', placeholder: '발주사유를 선택하세요.',
     options: [
-      { name: '140001', value: 140001 },
-      { name: '140002', value: 140002 },
-      { name: '140003', value: 140003 },
-      { name: '140004', value: 140004 },
-      { name: '140005', value: 140005 },
-      { name: '140006', value: 140006 },
+      { name: '정기 발주', value: 140001 },
+      { name: '수요 예측 발주', value: 140002 },
+      { name: '재고 부족', value: 140003 },
+      { name: '신상품 발주', value: 140004 },
+      { name: '긴급 발주', value: 140005 },
+      { name: '행사상품 발주', value: 140006 },
     ]
   },
-  { type: 'data', label: '등록자', id: 'userId', data: 'text' },
+  { type: 'data', label: '등록자', id: 'creatorName', data: 'text' },
   { type: 'date', label: '납기예정일', id: 'dueDate', placeholder: '납기예정일을 선택하세요.' },
   { type: 'data', label: '지점명', id: 'orderFrom', data: 'text' },
+  { type: 'text', label: '비고', id: 'remark', placeholder: '비고를 입력하세요.'},
   { type: 'data', label: '발주요청일', id: 'orderDate', data: 'date' },
+  { type: 'data', label: '총 가격', id: 'totalAmount', data: 'text' }
 ]);
 
 // TODO : 폼 총 가격 출력
 
 /* Input Table */
+
+let tableData = ref({});
 
 // 테이블 기본값
 const defaultTable = {
@@ -52,7 +57,8 @@ const columns = [
   { type: 'text', header: '제품분류', field: 'categoryMain' },
   { type: 'number', header: '단가', field: 'price' },
   { inputType: 'number', header: '수량', field: 'quantity', placeholder: '수량을 입력하세요.' },
-  { type: 'text', header: '단위', field: 'unit' }
+  { type: 'text', header: '단위', field: 'unit' },
+  { type: 'number', header: '박스당 수량', field: 'packQty' }
 ];
 
 /* modal */
@@ -134,7 +140,7 @@ const itemCloseModal = () => {
 const itemConfirmModal = async (selectedItems) => {
   const modalData = itemModalReturn.value;
   // console.log('selected Item', selectedItems);
-  // console.log('data', modalData);
+  console.log('data', modalData);
   const same = modalData.data.filter((e) => {
     return e[modalData.fieldName] == selectedItems.productName;
   });
@@ -143,11 +149,13 @@ const itemConfirmModal = async (selectedItems) => {
     // TODO : 다른 alert() 함수를 사용하면 변경
     alert("이미 동일한 제품이 있습니다.");
   } else {
+    const product = await axios.get(`/api/products/${selectedItems.productId}`);
+
     modalData.item[modalData.fieldName] = selectedItems.productName;
-  
-    modalData.item["productId"] = selectedItems.productId;
-    modalData.item["categoryMain"] = selectedItems.categoryMain;
-    modalData.item["price"] = selectedItems.purchasePrice;
+    modalData.item['productId'] = selectedItems.productId;
+    modalData.item['categoryMain'] = selectedItems.categoryMain;
+    modalData.item['price'] = selectedItems.purchasePrice;
+    modalData.item['packQty'] = product.data.packQty;
   }
 
   itemModalVisible.value = false; //모달 닫음
@@ -191,23 +199,30 @@ const saveFormHandler = async (formData, tableData) => {
     }
   }
 
-  let totalAmount = 0;
   for (const table of tableData) {
     for (const data in table) {
       if (!table[data]) {
+        if (form == 'remark') break;
         // TODO : 다른 alert() 함수를 사용하면 변경
         alert("테이블에 비어있는 데이터가 있습니다.");
         return;
       }
     }
-    const product = await axios.get(`/api/products/${table.productId}`);
-    totalAmount += table.price * table.quantity * product.data.packQty;
   }
 
+  //본사 정보
+  const req = await axios.get(`/api/search/company/head`, {
+    params : {
+      searchValue: ''
+    }
+  });
+  const headInfo = req.data[0];
+
+  const totalAmount = parseFloat(String(formData.totalAmount).replace(/[,원]/g, ''));
   confirm.require({
     icon: 'pi pi-info-circle',
     header: '발주서를 등록',
-    message: '발주서를 최종 등록하시겠습니까?',
+    message: '발주서를 등록하시겠습니까?',
     rejectProps: {
       label: '취소',
       severity: 'secondary',
@@ -219,14 +234,19 @@ const saveFormHandler = async (formData, tableData) => {
     accept: async () => {
       const req = await axios.post('/api/orders', {
         orders: {
-            ...formData,
-            reason: formData.reason.value+"",
-            totalAmount
+          ...formData,
+          creatorId: defaultForm.value.creatorId,
+          orderType: '150002', //지점 발주
+          reason: formData.reason.value+"", //발주 사유
+          //수주처 정보
+          orderToId: headInfo.compId,
+          orderTo: headInfo.compName,
+          totalAmount //총 가격
         },
         ordersDetail: tableData.map((e) => {
           return {
             ...e,
-            unit: '130004'
+            unit: '130004' //'box'
           }
         })
       });
@@ -237,6 +257,22 @@ const saveFormHandler = async (formData, tableData) => {
     }
   });
 };
+
+watch(
+  () => tableData.value,
+  (newVal) => {
+    if (tableData.value.value) {
+      let total = 0;
+      for (const data of tableData.value.value) {
+        const quantity = data.quantity ? data.quantity : 0;
+        total += data.price * data.packQty * quantity;
+      }
+      const formData = inputRef.value.getFormData();
+      formData.value.totalAmount = Number(total).toLocaleString()+'원';
+    }
+  },
+  { deep: true }
+);
 
 const getBranchInfo = async (empId) => {
   const req = await axios.get('/api/orders/user/compInfo', {
@@ -257,7 +293,8 @@ onBeforeMount(async () => {
   defaultForm.value.dueDate = convertDate(dueDate);
 
   const user = useAuth().user;
-  defaultForm.value.userId = user.value.empName;
+  defaultForm.value.creatorId = user.value.employeeId;
+  defaultForm.value.creatorName = user.value.empName;
   // console.log(user);
 
   const branchInfo = await getBranchInfo(user.value.employeeId);
@@ -266,13 +303,17 @@ onBeforeMount(async () => {
     defaultForm.value.orderFromId = branchInfo.compId;
   } else {
     // TODO : 임시적으로 추가 했기 때문에 삭제 요함.
-    formSchema.value.splice(-2, 1, {
+    formSchema.value.splice(-4, 1, {
       type: 'item-search',
       label: '지점명',
-      id: 'orderFrom',
+      id: 'orderForm',
       placeholder: '지점을 입력하세요.'
     });
   }
+});
+
+onMounted(() => {
+  tableData.value = inputRef.value.getTableData();
 });
 </script>
 <template>

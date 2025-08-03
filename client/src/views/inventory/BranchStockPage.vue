@@ -16,8 +16,8 @@ const header = ref({
     compName: '지점명', 
     vendorName: '공급사', 
     productSpec: '규격', 
-    stockQuantity: '재고수량', 
-    safetyStock: '안전 재고', 
+    stockQuantity: '재고수량(개)', 
+    safetyStock: '안전 재고(개)', 
   },
   rightAligned: ['stockQuantity', 'safetyStock'] // 오른쪽 정렬할 컬럼 리스트
 });
@@ -289,11 +289,12 @@ const searchPublishers = async (searchValue) => {
 const searchStocks = async (searchOptions) => {
   try {
     console.log('Searching stocks with options:', searchOptions);
-    const response = await axios.get('/api/inventory/headStock/search', {
+    const response = await axios.get('/api/inventory/branchStock/search', {
       params: {
         productName: searchOptions.productModal || '',
-        categorySubName: searchOptions.productType || '',
+        categorySub: searchOptions.productType || '',
         vendorName: searchOptions.publisher || '',
+        compName: searchOptions.store || ''
       }
     });
     items.value = await response.data; // 서버에서 받은 데이터를 items에 저장

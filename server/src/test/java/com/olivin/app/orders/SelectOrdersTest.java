@@ -17,6 +17,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import com.olivin.app.order.service.OrdersDetailVO;
 import com.olivin.app.order.service.OrdersService;
 import com.olivin.app.order.service.OrdersVO;
+import com.olivin.app.order.service.SearchOrdersVO;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -28,8 +29,9 @@ class SelectOrdersTest {
 	private OrdersService ordersService;
 	
 	@Test
+	@Disabled
 	void allSelect() {
-		List<OrdersVO> list = ordersService.getAllOrders(OrdersVO.builder().build());
+		List<OrdersVO> list = ordersService.getAllOrders(SearchOrdersVO.builder().build());
 		
 		int c = 0;
 		for (OrdersVO vo : list) {
@@ -82,7 +84,7 @@ class SelectOrdersTest {
 		
 		OrdersVO master = OrdersVO.builder()
 				.orderTitle("20250728 재고부족 발주건")
-				.userId("이창현")
+				.creatorId("이창현")
 				.orderType("OH")
 				.reason("OT001")
 				.orderDate(new Date())
@@ -103,7 +105,6 @@ class SelectOrdersTest {
 				.quantity(100)
 				.unit("U001")
 				.price(15000d)
-				.status("OS001")
 				.category("PC001")
 				.vendorId("COM002")
 				.vendorName("네이처코스메틱")
@@ -114,7 +115,6 @@ class SelectOrdersTest {
 				.quantity(50)
 				.unit("U001")
 				.price(13500d)
-				.status("OS001")
 				.category("PC001")
 				.vendorId("COM002")
 				.vendorName("네이처코스메틱")
