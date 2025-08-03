@@ -7,13 +7,6 @@ import { ref, onMounted, nextTick, computed } from 'vue';
 import { useToast } from 'primevue/usetoast';
 import axios from '@/service/axios';
 
-<<<<<<< HEAD
-
-const fileUploadRef = ref();
-
-
-
-=======
 const API_BASE_URL = '/api/depts';
 const toast = useToast();
 const fileUploadRef = ref();
@@ -148,7 +141,6 @@ const searchData = async (searchOptions) => {
 const saveData = (inputData) => {
   console.log('Saving data:', inputData);
 };
->>>>>>> 4a6f4ee5fefd1335f078ba79245eb0f7cf811c21
 </script>
 
 <template>
