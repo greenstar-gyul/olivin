@@ -160,29 +160,36 @@ public class ProductServiceImpl implements ProductService {
             
             if (lastProductId != null && !lastProductId.isEmpty()) {
                 // 마지막 ID에서 숫자 부분 추출
-                // PRD100018 -> 100018 추출 (prefix 길이만큼 자르기)
+                // 예: PRD1000018 -> 1000018 추출
                 String numberPart = lastProductId.substring(prefix.length());
-                int lastNumber = Integer.parseInt(numberPart);
-                int nextNumber = lastNumber + 1;
+                System.out.println("추출된 숫자 부분: " + numberPart);
                 
-                System.out.println("숫자 부분: " + numberPart);
-                System.out.println("마지막 번호: " + lastNumber + " -> 다음 번호: " + nextNumber);
-                
-                // ✅ 기존 패턴과 동일한 자리수로 포맷팅
-                // PRD100018의 패턴: PRD + 1 + 00018 (5자리)
-                // 즉, 100018에서 다음은 100019가 되어야 함
-                String formattedNumber = String.format("%06d", nextNumber);
-                nextProductId = prefix + formattedNumber;
+                try {
+                    int lastNumber = Integer.parseInt(numberPart);
+                    int nextNumber = lastNumber + 1;
+                    
+                    System.out.println("마지막 번호: " + lastNumber + " -> 다음 번호: " + nextNumber);
+                    
+                    // 기존과 동일한 자리수로 포맷팅 (6자리 유지)
+                    String formattedNumber = String.format("%06d", nextNumber);
+                    nextProductId = prefix + formattedNumber;
+                    
+                } catch (NumberFormatException e) {
+                    System.err.println("❌ 숫자 파싱 오류: " + numberPart);
+                    // 파싱 오류 시 해당 카테고리의 첫 번째 번호로 설정
+                    String categoryNumber = prefix.substring(3); // "PRD1"에서 "1" 추출
+                    int startNumber = Integer.parseInt(categoryNumber) * 100000 + 1; // 1 -> 100001
+                    nextProductId = prefix + String.format("%06d", startNumber);
+                }
                 
             } else {
-                // ✅ 첫 번째 제품인 경우 - 기존 패턴 분석
-                // 현재 DB: PRD100001 ~ PRD100018 패턴
-                // 따라서 첫 제품은 PRD100001이어야 함
+                // 해당 카테고리의 첫 번째 제품인 경우
                 System.out.println("해당 카테고리의 첫 번째 제품");
                 
                 // 스킨케어(PRD1)의 경우 100001부터 시작
+                // 메이크업(PRD2)의 경우 200001부터 시작
                 String categoryNumber = prefix.substring(3); // "PRD1"에서 "1" 추출
-                int startNumber = Integer.parseInt(categoryNumber) * 100000 + 1; // 1 -> 100001
+                int startNumber = Integer.parseInt(categoryNumber) * 100000 + 1; // 1 -> 100001, 2 -> 200001
                 
                 nextProductId = prefix + String.format("%06d", startNumber);
             }
