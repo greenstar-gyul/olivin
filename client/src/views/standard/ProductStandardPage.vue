@@ -149,7 +149,6 @@ const filters = ref({
     { type: 'text', label: '브랜드', value: '', placeholder: '브랜드명을 입력하세요', name: 'vendorName' },
     { type: 'select', label: '카테고리', value: '', placeholder: '카테고리를 선택하세요', name: 'categoryMain', options: categoryMainOptions },
     { type: 'select', label: '세부카테고리', value: '', placeholder: '세부카테고리를 선택하세요', name: 'categorySub', options: [] },
-    { type: 'text', label: '회사코드', value: '', placeholder: 'OY001, OY002 등', name: 'compId' },
     { type: 'number', label: '입수량', value: '', placeholder: '입수량을 입력하세요', name: 'packQty' },
     { type: 'text', label: '등록자', value: '', placeholder: '등록자를 입력하세요', name: 'regUser' },
     { type: 'dateRange', label: '등록일', value: ['', ''], placeholder: '등록일 범위를 선택하세요', name: 'regDateRange' }
@@ -164,11 +163,11 @@ const header = ref({
   title: '제품 기준정보 관리',
   header: {
     productId: '제품ID',
-    compId: '회사코드', 
     productName: '제품명', 
+    compId: '회사코드', 
+    vendorName: '브랜드',
     categoryMain: '카테고리', 
     categorySub: '세부카테고리',
-    vendorName: '브랜드',
     productSpec: '용량/규격',
     unit: '단위',
     packQty: '입수량',
@@ -777,7 +776,7 @@ onMounted(() => {
       <!-- 좌측: 제품 목록 -->
       <div class="card p-6">
         <div class="font-semibold text-xl mb-4">{{ header.title }}</div>
-        <div class="overflow-x-auto">
+        <div class="overflow-auto max-h-[1000px] border border-gray-200 rounded">
           <div class="min-w-max">
             <table class="w-full border-collapse border border-gray-300">
               <thead>

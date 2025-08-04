@@ -38,6 +38,7 @@ const header = ref({
     phone: '전화번호', 
     address: '주소',
     addressDetail: '상세주소',
+    zipcode: '우편번호',
     regUser: '등록자',
     regDate: '등록일'
   },
