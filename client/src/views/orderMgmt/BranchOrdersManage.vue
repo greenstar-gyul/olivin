@@ -193,6 +193,7 @@ const saveFormHandler = async (formData, tableData) => {
 
   for (const form in formData) {
     if (!formData[form]) {
+      if (form == 'remark') continue;
       // TODO : 다른 alert() 함수를 사용하면 변경
       alert("폼에 정보에 비어있는 데이터가 있습니다.");
       return;
@@ -202,7 +203,6 @@ const saveFormHandler = async (formData, tableData) => {
   for (const table of tableData) {
     for (const data in table) {
       if (!table[data]) {
-        if (form == 'remark') break;
         // TODO : 다른 alert() 함수를 사용하면 변경
         alert("테이블에 비어있는 데이터가 있습니다.");
         return;
@@ -306,7 +306,7 @@ onBeforeMount(async () => {
     formSchema.value.splice(-4, 1, {
       type: 'item-search',
       label: '지점명',
-      id: 'orderForm',
+      id: 'orderFrom',
       placeholder: '지점을 입력하세요.'
     });
   }
