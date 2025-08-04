@@ -1,14 +1,14 @@
 package com.olivin.app.standard.web;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -32,7 +32,17 @@ import lombok.RequiredArgsConstructor;
 public class ProductController {
     
     private final ProductService productService;
-    private static final String UPLOAD_DIR = "uploads/products/";
+    
+    // application.yml에서 설정할 수 있도록 변경
+    @Value("${app.upload.dir:uploads/products/}")
+    private String uploadDir;
+    
+    // 업로드 디렉토리를 프로젝트 루트 하위로 설정
+    private String getUploadDirectory() {
+        // 현재 작업 디렉토리 기준으로 uploads 폴더 생성
+        String currentDir = System.getProperty("user.dir");
+        return currentDir + File.separator + "uploads" + File.separator + "products" + File.separator;
+    }
 
     /**
      * 서버 연결 확인용 핑 API
@@ -69,27 +79,20 @@ public class ProductController {
         Map<String, Object> result = new HashMap<>();
         
         try {
-            System.out.println("=== 제품 ID 생성 API 호출 ===");
-            System.out.println("요청 카테고리: " + categoryMain);
-            
             String nextProductId = productService.getNextProductId(categoryMain);
             
             if (nextProductId != null && !nextProductId.isEmpty()) {
                 result.put("success", true);
                 result.put("nextProductId", nextProductId);
                 result.put("message", "제품 ID 생성 성공");
-                System.out.println("✅ 생성된 제품 ID: " + nextProductId);
             } else {
                 result.put("success", false);
                 result.put("message", "유효하지 않은 카테고리입니다.");
-                System.err.println("❌ 제품 ID 생성 실패: 유효하지 않은 카테고리");
             }
             
         } catch (Exception e) {
             result.put("success", false);
             result.put("message", "제품 ID 생성 중 오류가 발생했습니다: " + e.getMessage());
-            System.err.println("❌ 제품 ID 생성 API 오류: " + e.getMessage());
-            e.printStackTrace();
         }
         
         return ResponseEntity.ok(result);
@@ -156,32 +159,64 @@ public class ProductController {
                 return ResponseEntity.badRequest().body(result);
             }
             
+            // 업로드 디렉토리 경로 설정
+            String uploadDirPath = getUploadDirectory();
+            
             // 업로드 디렉토리 생성
-            Path uploadPath = Paths.get(UPLOAD_DIR);
-            if (!Files.exists(uploadPath)) {
-                Files.createDirectories(uploadPath);
+            File uploadDir = new File(uploadDirPath);
+            if (!uploadDir.exists()) {
+                boolean created = uploadDir.mkdirs();
+                if (!created) {
+                    result.put("success", false);
+                    result.put("message", "업로드 디렉토리를 생성할 수 없습니다.");
+                    return ResponseEntity.internalServerError().body(result);
+                }
+            }
+            
+            // 디렉토리 권한 확인
+            if (!uploadDir.canWrite()) {
+                result.put("success", false);
+                result.put("message", "업로드 디렉토리에 쓰기 권한이 없습니다.");
+                return ResponseEntity.internalServerError().body(result);
             }
             
             // 고유한 파일명 생성
             String originalFilename = file.getOriginalFilename();
-            String extension = originalFilename.substring(originalFilename.lastIndexOf("."));
+            String extension = "";
+            if (originalFilename != null && originalFilename.contains(".")) {
+                extension = originalFilename.substring(originalFilename.lastIndexOf("."));
+            }
             String fileName = UUID.randomUUID().toString() + extension;
             
             // 파일 저장
-            Path filePath = uploadPath.resolve(fileName);
-            file.transferTo(filePath.toFile());
+            File destinationFile = new File(uploadDir, fileName);
             
-            // 이미지 URL 생성
+            try {
+                file.transferTo(destinationFile);
+                
+                // 파일이 실제로 저장되었는지 확인
+                if (!destinationFile.exists()) {
+                    throw new IOException("파일이 저장되지 않았습니다.");
+                }
+                
+            } catch (IOException e) {
+                result.put("success", false);
+                result.put("message", "파일 저장 중 오류가 발생했습니다: " + e.getMessage());
+                return ResponseEntity.internalServerError().body(result);
+            }
+            
+            // 이미지 URL 생성 (웹에서 접근 가능한 경로)
             String imageUrl = "/uploads/products/" + fileName;
             
             result.put("success", true);
             result.put("message", "이미지 업로드 성공");
             result.put("imageUrl", imageUrl);
             result.put("fileName", fileName);
+            result.put("filePath", destinationFile.getAbsolutePath());
             
-        } catch (IOException e) {
+        } catch (Exception e) {
             result.put("success", false);
-            result.put("message", "파일 업로드 중 오류가 발생했습니다: " + e.getMessage());
+            result.put("message", "파일 업로드 중 예상치 못한 오류가 발생했습니다: " + e.getMessage());
         }
         
         return ResponseEntity.ok(result);
@@ -193,23 +228,29 @@ public class ProductController {
     @GetMapping("/images/{fileName}")
     public ResponseEntity<byte[]> getImage(@PathVariable String fileName) {
         try {
-            Path imagePath = Paths.get(UPLOAD_DIR + fileName);
-            if (!Files.exists(imagePath)) {
+            String uploadDirPath = getUploadDirectory();
+            File imageFile = new File(uploadDirPath, fileName);
+            
+            if (!imageFile.exists()) {
                 return ResponseEntity.notFound().build();
             }
             
-            byte[] imageBytes = Files.readAllBytes(imagePath);
+            byte[] imageBytes = Files.readAllBytes(imageFile.toPath());
             
             // 파일 확장자에 따른 Content-Type 설정
             String contentType = "image/jpeg";
-            if (fileName.toLowerCase().endsWith(".png")) {
+            String lowerFileName = fileName.toLowerCase();
+            if (lowerFileName.endsWith(".png")) {
                 contentType = "image/png";
-            } else if (fileName.toLowerCase().endsWith(".gif")) {
+            } else if (lowerFileName.endsWith(".gif")) {
                 contentType = "image/gif";
+            } else if (lowerFileName.endsWith(".webp")) {
+                contentType = "image/webp";
             }
             
             return ResponseEntity.ok()
                     .header("Content-Type", contentType)
+                    .header("Cache-Control", "max-age=3600") // 1시간 캐시
                     .body(imageBytes);
                     
         } catch (IOException e) {
@@ -225,9 +266,6 @@ public class ProductController {
         Map<String, Object> result = new HashMap<>();
         
         try {
-            System.out.println("=== 제품 등록 요청 ===");
-            System.out.println("제품 정보: " + productVO.toString());
-            
             // 필수 필드 검증
             if (productVO.getProductName() == null || productVO.getProductName().trim().isEmpty()) {
                 result.put("success", false);
@@ -241,6 +279,16 @@ public class ProductController {
                 return ResponseEntity.badRequest().body(result);
             }
             
+            // 제품 ID 중복 확인
+            if (productVO.getProductId() != null && !productVO.getProductId().trim().isEmpty()) {
+                boolean exists = productService.isProductIdExists(productVO.getProductId());
+                if (exists) {
+                    result.put("success", false);
+                    result.put("message", "이미 존재하는 제품 ID입니다: " + productVO.getProductId());
+                    return ResponseEntity.badRequest().body(result);
+                }
+            }
+            
             // 제품 저장
             int saveResult = productService.saveProduct(productVO);
             
@@ -249,17 +297,20 @@ public class ProductController {
                 result.put("message", "제품이 성공적으로 등록되었습니다. 승인 후 판매 가능합니다.");
                 result.put("productId", productVO.getProductId());
                 result.put("status", productVO.getStatus());
-                System.out.println("✅ 제품 등록 성공: " + productVO.getProductId());
             } else {
                 result.put("success", false);
                 result.put("message", "제품 등록에 실패했습니다.");
-                System.err.println("❌ 제품 등록 실패");
+            }
+        } catch (org.springframework.dao.DataIntegrityViolationException e) {
+            result.put("success", false);
+            if (e.getMessage().contains("unique constraint")) {
+                result.put("message", "중복된 데이터가 존재합니다. 제품 ID나 제품명을 확인해주세요.");
+            } else {
+                result.put("message", "데이터 무결성 오류가 발생했습니다: " + e.getMessage());
             }
         } catch (Exception e) {
             result.put("success", false);
             result.put("message", "제품 등록 중 오류가 발생했습니다: " + e.getMessage());
-            System.err.println("❌ 제품 등록 오류: " + e.getMessage());
-            e.printStackTrace();
         }
         
         return ResponseEntity.ok(result);
@@ -276,8 +327,13 @@ public class ProductController {
         Map<String, Object> result = new HashMap<>();
         
         try {
-            System.out.println("=== 제품 수정 요청 ===");
-            System.out.println("제품 ID: " + productId);
+            // 제품 존재 여부 확인
+            ProductVO existingProduct = productService.getProduct(productId);
+            if (existingProduct == null) {
+                result.put("success", false);
+                result.put("message", "존재하지 않는 제품입니다: " + productId);
+                return ResponseEntity.notFound().build();
+            }
             
             productVO.setProductId(productId);
             int updateResult = productService.modifyProduct(productVO);
@@ -285,17 +341,20 @@ public class ProductController {
             if (updateResult > 0) {
                 result.put("success", true);
                 result.put("message", "제품이 성공적으로 수정되었습니다.");
-                System.out.println("✅ 제품 수정 성공: " + productId);
             } else {
                 result.put("success", false);
                 result.put("message", "제품 수정에 실패했습니다.");
-                System.err.println("❌ 제품 수정 실패: " + productId);
+            }
+        } catch (org.springframework.dao.DataIntegrityViolationException e) {
+            result.put("success", false);
+            if (e.getMessage().contains("unique constraint")) {
+                result.put("message", "중복된 데이터가 존재합니다. 제품명이나 다른 정보를 확인해주세요.");
+            } else {
+                result.put("message", "데이터 무결성 오류가 발생했습니다: " + e.getMessage());
             }
         } catch (Exception e) {
             result.put("success", false);
             result.put("message", "제품 수정 중 오류가 발생했습니다: " + e.getMessage());
-            System.err.println("❌ 제품 수정 오류: " + e.getMessage());
-            e.printStackTrace();
         }
         
         return ResponseEntity.ok(result);
@@ -309,25 +368,18 @@ public class ProductController {
         Map<String, Object> result = new HashMap<>();
         
         try {
-            System.out.println("=== 제품 삭제 요청 ===");
-            System.out.println("제품 ID: " + productId);
-            
             int deleteResult = productService.removeProduct(productId);
             
             if (deleteResult > 0) {
                 result.put("success", true);
                 result.put("message", "제품이 성공적으로 삭제되었습니다.");
-                System.out.println("✅ 제품 삭제 성공: " + productId);
             } else {
                 result.put("success", false);
                 result.put("message", "제품 삭제에 실패했습니다.");
-                System.err.println("❌ 제품 삭제 실패: " + productId);
             }
         } catch (Exception e) {
             result.put("success", false);
             result.put("message", "제품 삭제 중 오류가 발생했습니다: " + e.getMessage());
-            System.err.println("❌ 제품 삭제 오류: " + e.getMessage());
-            e.printStackTrace();
         }
         
         return ResponseEntity.ok(result);
@@ -358,10 +410,6 @@ public class ProductController {
         Map<String, Object> result = new HashMap<>();
         
         try {
-            System.out.println("=== 제품 승인 요청 ===");
-            System.out.println("ProductId: " + productId);
-            System.out.println("RequestData: " + requestData);
-            
             String approver = (String) requestData.getOrDefault("approver", "SYSTEM");
             
             int approveResult = productService.approveProduct(productId, approver);
@@ -369,17 +417,13 @@ public class ProductController {
             if (approveResult > 0) {
                 result.put("success", true);
                 result.put("message", "제품이 승인되었습니다. 이제 판매 가능합니다.");
-                System.out.println("✅ 승인 성공: " + productId);
             } else {
                 result.put("success", false);
                 result.put("message", "제품 승인에 실패했습니다.");
-                System.out.println("❌ 승인 실패: " + productId + " (DB 업데이트 결과: " + approveResult + ")");
             }
         } catch (Exception e) {
             result.put("success", false);
             result.put("message", "제품 승인 중 오류가 발생했습니다: " + e.getMessage());
-            System.err.println("❌ 승인 예외 발생: " + e.getMessage());
-            e.printStackTrace();
         }
         
         return ResponseEntity.ok(result);
@@ -396,10 +440,6 @@ public class ProductController {
         Map<String, Object> result = new HashMap<>();
         
         try {
-            System.out.println("=== 제품 반려 요청 ===");
-            System.out.println("ProductId: " + productId);
-            System.out.println("RequestData: " + requestData);
-            
             String approver = (String) requestData.getOrDefault("approver", "SYSTEM");
             String reason = (String) requestData.get("reason");
             
@@ -408,62 +448,15 @@ public class ProductController {
             if (rejectResult > 0) {
                 result.put("success", true);
                 result.put("message", "제품 승인이 거부되었습니다.");
-                System.out.println("✅ 반려 성공: " + productId);
             } else {
                 result.put("success", false);
                 result.put("message", "제품 승인 거부에 실패했습니다.");
-                System.out.println("❌ 반려 실패: " + productId + " (DB 업데이트 결과: " + rejectResult + ")");
             }
         } catch (Exception e) {
             result.put("success", false);
             result.put("message", "제품 승인 거부 중 오류가 발생했습니다: " + e.getMessage());
-            System.err.println("❌ 반려 예외 발생: " + e.getMessage());
-            e.printStackTrace();
         }
         
         return ResponseEntity.ok(result);
-    }
-    
-    /**
-     * 테스트용 승인 API (디버깅용)
-     */
-    @GetMapping("/test-approve/{productId}")
-    public ResponseEntity<Map<String, Object>> testApprove(@PathVariable String productId) {
-        Map<String, Object> result = new HashMap<>();
-        
-        try {
-            System.out.println("=== 테스트 승인 ===");
-            
-            // 1. 제품 조회
-            ProductVO product = productService.getProduct(productId);
-            if (product == null) {
-                result.put("error", "제품을 찾을 수 없습니다: " + productId);
-                return ResponseEntity.ok(result);
-            }
-            
-            result.put("before_status", product.getStatus());
-            System.out.println("승인 전 상태: " + product.getStatus());
-            
-            // 2. 승인 처리
-            int approveResult = productService.approveProduct(productId, "TEST_USER");
-            result.put("approve_result", approveResult);
-            System.out.println("승인 결과: " + approveResult);
-            
-            // 3. 다시 조회해서 상태 확인
-            ProductVO updatedProduct = productService.getProduct(productId);
-            if (updatedProduct != null) {
-                result.put("after_status", updatedProduct.getStatus());
-                System.out.println("승인 후 상태: " + updatedProduct.getStatus());
-                
-                result.put("success", "040001".equals(updatedProduct.getStatus()));
-            }
-            
-            return ResponseEntity.ok(result);
-            
-        } catch (Exception e) {
-            result.put("error", e.getMessage());
-            e.printStackTrace();
-            return ResponseEntity.ok(result);
-        }
     }
 }
