@@ -21,4 +21,9 @@ public class OutbndController {
     public List<OutbndVO> outbndList() {
       return outbndService.getAllOutbnd();
     } // end of outbndList()
+
+    @GetMapping("/hqOutnbndCode")
+    public String outbndCode() {
+      return outbndService.getCodeForUpdate();
+    } // emd pf pitbmdCpde()
 } // end of class
