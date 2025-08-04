@@ -35,13 +35,35 @@
         ORDER BY PRODUCT_ID ASC
     </select>
 
-    <!-- 카테고리별 마지막 제품 ID 조회 (제품 ID 자동생성용) -->
+    <!-- 카테고리별 마지막 제품 ID 조회 (제품 ID 자동생성용)  -->
     <select id="selectLastProductIdByCategory" parameterType="String" resultType="String">
+        <![CDATA[
+        SELECT PRODUCT_ID
+        FROM   (
+            SELECT PRODUCT_ID
+            FROM   PRODUCTS
+            WHERE  PRODUCT_ID LIKE #{prefix} || '%'
+            ORDER BY PRODUCT_ID DESC
+        )
+        WHERE ROWNUM = 1
+        ]]>
+    </select>
+
+    <!-- 또는 Oracle 12c 이상인 경우 -->
+    <select id="selectLastProductIdByCategoryNew" parameterType="String" resultType="String">
+        SELECT PRODUCT_ID
+        FROM   PRODUCTS
+        WHERE  PRODUCT_ID LIKE CONCAT(#{prefix}, '%')
+        ORDER BY PRODUCT_ID DESC
+        FETCH FIRST 1 ROWS ONLY
+    </select>
+
+    <!-- 디버깅용 - 특정 접두어로 시작하는 모든 제품 ID 조회 -->
+    <select id="selectProductIdsByPrefix" parameterType="String" resultType="String">
         SELECT PRODUCT_ID
         FROM   PRODUCTS
         WHERE  PRODUCT_ID LIKE #{prefix} || '%'
-        ORDER BY PRODUCT_ID DESC
-        FETCH FIRST 1 ROWS ONLY
+        ORDER BY PRODUCT_ID ASC
     </select>
 
     <!-- 조건별 제품 목록 조회 -->
