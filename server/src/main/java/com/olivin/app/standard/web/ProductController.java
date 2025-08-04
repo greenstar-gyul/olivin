@@ -71,32 +71,10 @@ public class ProductController {
     }
     
     /**
-     * 카테고리별 다음 제품 ID 자동생성 API
-     * 실제 DB의 마지막 제품 ID를 조회하여 다음 순번 생성
+     * 카테고리별 다음 제품 ID 자동생성 API (제거됨)
+     * 이제 등록 버튼 클릭 시에만 제품 ID가 생성됨
      */
-    @GetMapping("/next-id/{categoryMain}")
-    public ResponseEntity<Map<String, Object>> getNextProductId(@PathVariable String categoryMain) {
-        Map<String, Object> result = new HashMap<>();
-        
-        try {
-            String nextProductId = productService.getNextProductId(categoryMain);
-            
-            if (nextProductId != null && !nextProductId.isEmpty()) {
-                result.put("success", true);
-                result.put("nextProductId", nextProductId);
-                result.put("message", "제품 ID 생성 성공");
-            } else {
-                result.put("success", false);
-                result.put("message", "유효하지 않은 카테고리입니다.");
-            }
-            
-        } catch (Exception e) {
-            result.put("success", false);
-            result.put("message", "제품 ID 생성 중 오류가 발생했습니다: " + e.getMessage());
-        }
-        
-        return ResponseEntity.ok(result);
-    }
+    // 이 API는 더 이상 사용하지 않음
     
     /**
      * 제품 목록 조회 (POST 방식)
@@ -259,7 +237,7 @@ public class ProductController {
     }
     
     /**
-     * 제품 등록
+     * 제품 등록 - 등록 시점에 제품 ID 자동 생성
      */
     @PostMapping
     public ResponseEntity<Map<String, Object>> createProduct(@RequestBody ProductVO productVO) {
@@ -279,17 +257,13 @@ public class ProductController {
                 return ResponseEntity.badRequest().body(result);
             }
             
-            // 제품 ID 중복 확인
-            if (productVO.getProductId() != null && !productVO.getProductId().trim().isEmpty()) {
-                boolean exists = productService.isProductIdExists(productVO.getProductId());
-                if (exists) {
-                    result.put("success", false);
-                    result.put("message", "이미 존재하는 제품 ID입니다: " + productVO.getProductId());
-                    return ResponseEntity.badRequest().body(result);
-                }
+            if (productVO.getCategoryMain() == null || productVO.getCategoryMain().trim().isEmpty()) {
+                result.put("success", false);
+                result.put("message", "카테고리는 필수입니다.");
+                return ResponseEntity.badRequest().body(result);
             }
             
-            // 제품 저장
+            // 제품 저장 (내부에서 제품 ID 자동 생성)
             int saveResult = productService.saveProduct(productVO);
             
             if (saveResult > 0) {
@@ -300,13 +274,6 @@ public class ProductController {
             } else {
                 result.put("success", false);
                 result.put("message", "제품 등록에 실패했습니다.");
-            }
-        } catch (org.springframework.dao.DataIntegrityViolationException e) {
-            result.put("success", false);
-            if (e.getMessage().contains("unique constraint")) {
-                result.put("message", "중복된 데이터가 존재합니다. 제품 ID나 제품명을 확인해주세요.");
-            } else {
-                result.put("message", "데이터 무결성 오류가 발생했습니다: " + e.getMessage());
             }
         } catch (Exception e) {
             result.put("success", false);

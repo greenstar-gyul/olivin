@@ -61,14 +61,20 @@ public class ProductServiceImpl implements ProductService {
     }
     
     /**
-     * 제품 저장 (신규 등록)
+     * 제품 저장 (신규 등록) - 등록 시점에 제품 ID 자동 생성
      */
     @Override
     public int saveProduct(ProductVO productVO) {
-        // 제품 ID가 없으면 자동 생성
-        if (productVO.getProductId() == null || productVO.getProductId().isEmpty()) {
-            String newProductId = generateProductId();
-            productVO.setProductId(newProductId);
+        // 제품 ID 자동 생성 (카테고리 기반)
+        if (productVO.getCategoryMain() != null && !productVO.getCategoryMain().isEmpty()) {
+            String newProductId = getNextProductId(productVO.getCategoryMain());
+            if (newProductId != null && !newProductId.isEmpty()) {
+                productVO.setProductId(newProductId);
+            } else {
+                throw new RuntimeException("제품 ID 생성에 실패했습니다. 카테고리를 확인해주세요.");
+            }
+        } else {
+            throw new RuntimeException("카테고리는 필수입니다.");
         }
         
         // 상태가 없으면 승인 대기로 설정
@@ -76,8 +82,10 @@ public class ProductServiceImpl implements ProductService {
             productVO.setStatus(STATUS_PENDING);
         }
         
-        // 등록일 설정
-        productVO.setRegDate(new Date());
+        // 등록일 설정 (사용자가 입력한 값이 없으면 현재 시간)
+        if (productVO.getRegDate() == null) {
+            productVO.setRegDate(new Date());
+        }
         
         // 등록자가 없으면 기본값 설정
         if (productVO.getRegUser() == null || productVO.getRegUser().isEmpty()) {
@@ -123,6 +131,7 @@ public class ProductServiceImpl implements ProductService {
     /**
      * 카테고리별 다음 제품 ID 생성 (5자리 숫자 패턴)
      * 예: PRD100001, PRD200001, PRD300001...
+     * 이제 등록 버튼 클릭 시에만 호출됨
      */
     @Override
     public String getNextProductId(String categoryMain) {
