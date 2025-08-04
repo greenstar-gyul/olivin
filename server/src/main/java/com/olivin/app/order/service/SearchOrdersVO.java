@@ -59,8 +59,12 @@ public class SearchOrdersVO {
 	private String remark;
 	
 	//검색할때 사용되는 변수
-  private String orderDateStart;
-  private String orderDateEnd;
-  private String dueDateStart;
-  private String dueDateEnd;
+	@DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+  private Date orderDateFrom;
+	@DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+  private Date orderDateTo;
+	@DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+  private Date dueDateFrom;
+	@DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+  private Date dueDateTo;
 }
