@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch } from 'vue';
+import { ref, watch, computed } from 'vue';
 import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
 
@@ -100,7 +100,7 @@ const onRowUnselect = (event) => {
       :selectionMode="props.checked ? props.checkType : null">
 
       <Column v-if="props.checked" :selectionMode="props.checkType" headerStyle="width: 3rem"></Column>
-
+      
       <!-- 동적 컬럼 생성 -->
       <Column v-for="colKey in tableColumns" :key="colKey" :field="colKey" :header="header.header[colKey] ?? colKey">
         <template #body="slotProps">

@@ -49,9 +49,7 @@ export default {
       compId: '',
       compName: '',
       departmentId: '',
-      deptName: '',
-      position: '',
-      phone: ''
+      deptName: ''
     });
 
     const selectedDept = ref(null);
@@ -70,21 +68,16 @@ export default {
       ]
     });
 
-    // 테이블 헤더
-    const header = ref({
-      title: '조회 결과',
-      header: {
-        id: '회사명',
-        name: '직급',
-        category: '사원이름',
-        publisher: '아이디',
-        store: '비밀번호',
-        size: '규격',
-        quantity: '현재 재고',
-        safe: '안전 재고'
-      },
-      rightAligned: ['quantity', 'safe']
-    });
+//   const header = ref({
+//     title: '조회 결과',
+//     header: {
+//     compId: '회사명',
+//     compName: '직급',
+//     departmentId: '부서코드',
+//     deptName: '부서명'
+//   },
+//   rightAligned: ['quantity', 'safe']
+// });
 
     // 테이블 아이템 예시데이터
     // const items = ref([
@@ -176,7 +169,7 @@ export default {
       onRowUnselect,
       filters, // 외부에 선언된 설정 객체도 template에서 사용하려면 반환해야 함
       items: props.items, // props.items는 template에서 직접 사용 가능하지만 명시적으로 반환
-      header,
+      //header,
       inputs
     };
   }
@@ -195,6 +188,7 @@ export default {
       :data="items"
       :header="header"
       :checked="true"
+      @searchData="searchData"
       @rowSelect="onRowSelect"
       @rowUnselect="onRowUnselect"
       class="col-span-4"
