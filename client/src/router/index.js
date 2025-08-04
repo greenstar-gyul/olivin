@@ -10,6 +10,12 @@ const router = createRouter({
             component: AppLayout,
             children: [
                 {
+                    path: '/dashboard/hq',
+                    name: 'HqDashboard',
+                    component: () => import('@/views/dashboard/HqDashboard.vue'),
+                    meta: { roles: ['system_admin'] }
+                },
+                {
                     path: '/',
                     name: 'dashboard',
                     component: () => import('@/views/Dashboard.vue')
