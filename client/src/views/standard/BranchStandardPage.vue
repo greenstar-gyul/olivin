@@ -13,6 +13,39 @@ const COMPANY_TYPES = {
   SUPPLIER: '100003'      // 공급업체
 };
 
+// 현재 로그인한 사용자 정보
+const currentUser = ref({
+  empId: '',
+  empName: ''
+});
+
+// 현재 로그인한 사용자 정보 가져오기
+const getCurrentUser = async () => {
+  try {
+    const response = await axios.get('/api/auth/me');
+    
+    if (response.data.success && response.data.data) {
+      const userData = response.data.data;
+      
+      currentUser.value = {
+        empId: userData.employeeId || userData.empId || userData.emp_id || 'admin',
+        empName: userData.empName || userData.emp_name || userData.name || userData.userName || '관리자'
+      };
+      
+      return currentUser.value;
+    } else {
+      throw new Error('API 응답에 사용자 데이터가 없습니다');
+    }
+  } catch (error) {
+    // API 실패 시 기본값 사용
+    currentUser.value = {
+      empId: 'admin',
+      empName: '관리자'
+    };
+    return currentUser.value;
+  }
+};
+
 const filters = ref({
   title: '조회 조건',
   filters: [
@@ -39,6 +72,7 @@ const header = ref({
     phone: '전화번호', 
     address: '주소',
     addressDetail: '상세주소',
+    zipcode: '우편번호',
     regUser: '등록자',
     regDate: '등록일'
   },
@@ -62,8 +96,8 @@ const inputs = ref({
       { name: '주간정산', value: '주간정산' }
     ]},
     { type: 'text', label: '정산담당자', placeholder: '정산담당자명', name: 'settleMgr' },
-    { type: 'text', label: '등록자', placeholder: '등록자 ID', name: 'regUser' },
-    { type: 'datetime-local', label: '등록일시', placeholder: '등록일시', name: 'regDate' },
+    { type: 'text', label: '등록자', placeholder: '등록자 ID', name: 'regUser', readonly: true },
+    { type: 'text', label: '등록일', placeholder: '2024-01-01 형식으로 입력하세요', name: 'regDate' },
     { type: 'textarea', label: '비고', placeholder: '특이사항을 입력하세요', name: 'note' }
   ]
 });
@@ -88,19 +122,18 @@ const formData = ref({
 // 컴포넌트 마운트 시 데이터 로드
 onMounted(async () => {
   await loadBranches();
+  await getCurrentUser();
   initializeFormData();
 });
 
 // 폼 데이터 초기화
 const initializeFormData = () => {
-  formData.value.regUser = 'admin';
+  formData.value.regUser = currentUser.value.empId;
   const now = new Date();
   const year = now.getFullYear();
   const month = String(now.getMonth() + 1).padStart(2, '0');
   const day = String(now.getDate()).padStart(2, '0');
-  const hours = String(now.getHours()).padStart(2, '0');
-  const minutes = String(now.getMinutes()).padStart(2, '0');
-  formData.value.regDate = `${year}-${month}-${day}T${hours}:${minutes}`;
+  formData.value.regDate = `${year}-${month}-${day}`;
 };
 
 // 지점 목록 조회 - 제품 방식과 동일하게 처리
@@ -137,8 +170,8 @@ const loadBranches = async (searchParams = {}) => {
     items.value = branches.map(item => ({
       ...item,
       address: formatAddress(item.address, item.addressDetail),
-      regDate: item.regDate ? formatDateTime(item.regDate) : '',
-      updateDate: item.updateDate ? formatDateTime(item.updateDate) : null
+      regDate: item.regDate ? formatDate(item.regDate) : '',
+      updateDate: item.updateDate ? formatDate(item.updateDate) : null
     }));
     
     console.log('최종 지점 목록:', items.value);
@@ -170,9 +203,9 @@ const updateFormData = async (branchData) => {
       if (key in branchData) {
         let value = branchData[key] || '';
         
-        // datetime-local 타입을 위한 포맷팅
+        // 날짜 필드를 위한 포맷팅 (날짜만)
         if ((key === 'regDate' || key === 'updateDate') && value) {
-          value = formatDateTimeForInput(value);
+          value = formatDateForInput(value);
         }
         
         formData.value[key] = String(value);
@@ -206,24 +239,22 @@ const formatAddress = (address, addressDetail) => {
   return addressDetail ? `${address} ${addressDetail}` : address;
 };
 
-// 날짜 포맷 함수들 (제품 방식과 동일)
-const formatDateTime = (dateString) => {
+// 날짜 포맷 함수들 (제품 방식과 동일 - 날짜만 표시)
+const formatDate = (dateString) => {
   if (!dateString) return '';
   try {
     const date = new Date(dateString);
-    return date.toLocaleString('ko-KR', {
+    return date.toLocaleDateString('ko-KR', {
       year: 'numeric',
       month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit'
+      day: '2-digit'
     });
   } catch (error) {
     return dateString;
   }
 };
 
-const formatDateTimeForInput = (dateString) => {
+const formatDateForInput = (dateString) => {
   if (!dateString) return '';
   
   try {
@@ -236,10 +267,8 @@ const formatDateTimeForInput = (dateString) => {
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
-    const hours = String(date.getHours()).padStart(2, '0');
-    const minutes = String(date.getMinutes()).padStart(2, '0');
     
-    return `${year}-${month}-${day}T${hours}:${minutes}`;
+    return `${year}-${month}-${day}`;
   } catch (error) {
     console.error('날짜 포맷 오류:', error);
     return dateString;
@@ -247,22 +276,23 @@ const formatDateTimeForInput = (dateString) => {
 };
 
 // 폼 초기화 (제품 방식과 동일)
-const clearForm = () => {
+const clearForm = async () => {
   selectedBranch.value = null;
   selectedBranchId.value = '';
+  
+  // 현재 사용자 정보 가져오기
+  const user = await getCurrentUser();
   
   // formData 초기화
   Object.keys(formData.value).forEach(key => {
     if (key === 'regUser') {
-      formData.value[key] = 'admin';
+      formData.value[key] = user.empId;
     } else if (key === 'regDate') {
       const now = new Date();
       const year = now.getFullYear();
       const month = String(now.getMonth() + 1).padStart(2, '0');
       const day = String(now.getDate()).padStart(2, '0');
-      const hours = String(now.getHours()).padStart(2, '0');
-      const minutes = String(now.getMinutes()).padStart(2, '0');
-      formData.value[key] = `${year}-${month}-${day}T${hours}:${minutes}`;
+      formData.value[key] = `${year}-${month}-${day}`;
     } else {
       formData.value[key] = '';
     }
@@ -296,7 +326,7 @@ const searchData = async (searchOptions) => {
   await loadBranches(searchParams);
 };
 
-// 지점 등록/수정 (제품 방식과 동일)
+// 지점 등록/수정 (제품 방식과 동일하게 수정)
 const saveData = async () => {
   try {
     console.log('저장할 지점 데이터:', formData.value);
@@ -315,25 +345,55 @@ const saveData = async () => {
       }
     }
     
-    // API 호출을 위한 데이터 구성
+    // 등록일 처리 (날짜 문자열을 Date 객체로 변환)
+    let regDate = null;
+    if (formData.value.regDate && formData.value.regDate.trim() !== '') {
+      try {
+        const dateStr = formData.value.regDate.trim();
+        regDate = new Date(dateStr + 'T00:00:00'); // 시간은 00:00:00으로 설정
+        
+        if (isNaN(regDate.getTime())) {
+          throw new Error('유효하지 않은 날짜 형식');
+        }
+      } catch (error) {
+        alert('등록일 형식이 올바르지 않습니다. (예: 2024-01-01)');
+        return;
+      }
+    }
+    
+    // 선택된 지점이 있으면 수정 모드, 없으면 신규 등록
+    const isUpdateMode = selectedBranch.value && selectedBranchId.value;
+    
+    // 기본 지점 데이터 구성
     const branchData = {
       ...formData.value,
       compType: COMPANY_TYPES.BRANCH // 지점 유형 고정
     };
     
     let response;
-    if (formData.value.compId && formData.value.compId.trim() !== '') {
-      // 수정 모드
-      response = await axios.put(`${API_BASE_URL}/${formData.value.compId}`, branchData);
+    
+    if (isUpdateMode) {
+      // 수정 모드 - update_user와 update_date 추가
+      const currentUserData = await getCurrentUser();
+      const now = new Date();
+      
+      branchData.compId = selectedBranchId.value;
+      branchData.updateUser = currentUserData.empId; // 수정자 ID
+      branchData.updateDate = now; // 수정일시
+      branchData.regDate = regDate; // 등록일은 기존 값 유지
+      
+      response = await axios.put(`${API_BASE_URL}/${selectedBranchId.value}`, branchData);
     } else {
       // 신규 등록 모드
+      branchData.regDate = regDate; // 등록일
       delete branchData.compId; // 백엔드에서 자동 생성
+      
       response = await axios.post(API_BASE_URL, branchData);
     }
     
     // 응답 처리 (제품 방식과 동일한 구조)
     if (response.data.result_code === 'SUCCESS') {
-      alert(formData.value.compId ? '지점이 성공적으로 수정되었습니다.' : '지점이 성공적으로 등록되었습니다.');
+      alert(isUpdateMode ? '지점이 성공적으로 수정되었습니다.' : '지점이 성공적으로 등록되었습니다.');
       clearForm();
       await loadBranches();
     } else {
@@ -524,9 +584,19 @@ const saveData = async () => {
                 </option>
               </select>
               
+              <!-- 등록자 필드 - 특별 처리 (사용자명만 표시) -->
+              <input
+                v-else-if="input.name === 'regUser'"
+                :value="currentUser.empName || '관리자'"
+                type="text"
+                :placeholder="input.placeholder"
+                readonly
+                class="p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-100"
+              />
+              
               <!-- 일반 입력 필드들 -->
               <input
-                v-else-if="input.type === 'text' || input.type === 'datetime-local'"
+                v-else
                 v-model="formData[input.name]"
                 :type="input.type"
                 :placeholder="input.placeholder"
