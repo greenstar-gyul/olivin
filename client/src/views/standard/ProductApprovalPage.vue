@@ -5,7 +5,54 @@ import axios from '@/service/axios';
 
 const API_BASE_URL = '/api/products';
 
-// 필터 옵션에도 6자리 코드 기준 셀렉트 박스 추가
+// 현재 로그인한 사용자 정보
+const currentUser = ref({
+  empId: '',
+  empName: ''
+});
+
+// 사용자 정보 가져오기 함수 (간소화)
+const getCurrentUser = async () => {
+  try {
+    const response = await axios.get('/api/auth/me');
+    
+    if (response.data.success && response.data.data) {
+      const userData = response.data.data;
+      
+      let empId = 'olivin10001';
+      let empName = '김홍인';
+      
+      // 사용자 데이터에서 ID와 이름 추출
+      const possibleSources = [userData.user, userData, userData.employee, userData.userInfo, userData.loginUser];
+      
+      for (const source of possibleSources) {
+        if (source && typeof source === 'object') {
+          const foundEmpId = [source.empId, source.emp_id, source.EMPLOYEE_ID, source.employeeId, source.id, source.userId, source.user_id, source.USER_ID]
+            .find(id => id && String(id).trim() !== '');
+          
+          const foundEmpName = [source.empName, source.emp_name, source.EMP_NAME, source.name, source.userName, source.user_name, source.USER_NAME, source.fullName, source.displayName]
+            .find(name => name && String(name).trim() !== '');
+          
+          if (foundEmpId) empId = String(foundEmpId).trim();
+          if (foundEmpName) empName = String(foundEmpName).trim();
+          
+          if (foundEmpId && foundEmpName) break;
+        }
+      }
+      
+      currentUser.value = { empId, empName };
+      return currentUser.value;
+    } else {
+      throw new Error('사용자 정보를 찾을 수 없습니다');
+    }
+  } catch (error) {
+    console.error('사용자 정보 가져오기 실패:', error);
+    currentUser.value = { empId: 'olivin10001', empName: '김홍인' };
+    return currentUser.value;
+  }
+};
+
+// 카테고리 옵션
 const categoryMainOptions = [
   { name: '스킨케어', value: '110001' },
   { name: '메이크업', value: '110002' },
@@ -18,11 +65,86 @@ const categoryMainOptions = [
   { name: '푸드', value: '110009' }
 ];
 
+// 세부카테고리 옵션
+const categorySubOptions = {
+  '110001': [
+    { name: '스킨/토너', value: '121001' },
+    { name: '에센스/세럼/앰플', value: '121002' },
+    { name: '크림', value: '121003' },
+    { name: '로션', value: '121004' },
+    { name: '미스트/오일', value: '121005' },
+    { name: '스킨케어 디바이스', value: '121006' }
+  ],
+  '110002': [
+    { name: '베이스 메이크업', value: '122001' },
+    { name: '아이 메이크업', value: '122002' },
+    { name: '치크&컨투어', value: '122003' },
+    { name: '립 메이크업', value: '122004' },
+    { name: '피니시&픽서', value: '122005' },
+    { name: '네일 메이크업', value: '122006' }
+  ],
+  '110003': [
+    { name: '클렌징폼/젤', value: '123001' },
+    { name: '오일/밤', value: '123002' },
+    { name: '워터/밀크', value: '123003' },
+    { name: '필링&스크럽', value: '123004' },
+    { name: '티슈/패드', value: '123005' },
+    { name: '립&아이리무버', value: '123006' },
+    { name: '클렌징 디바이스', value: '123007' }
+  ],
+  '110004': [
+    { name: '샴푸/린스', value: '124001' },
+    { name: '트리트먼트/팩', value: '124002' },
+    { name: '두피앰플/토닉', value: '124003' },
+    { name: '헤어에센스', value: '124004' },
+    { name: '염색약/펌', value: '124005' },
+    { name: '헤어기기/브러시', value: '124006' },
+    { name: '스타일링', value: '124007' }
+  ],
+  '110005': [
+    { name: '칫솔', value: '125001' },
+    { name: '치약', value: '125002' },
+    { name: '애프터구강케어', value: '125003' },
+    { name: '구강가전', value: '125004' }
+  ],
+  '110006': [
+    { name: '선크림', value: '126001' },
+    { name: '선스틱', value: '126002' },
+    { name: '선쿠션', value: '126003' },
+    { name: '선스프레이/선패치', value: '126004' },
+    { name: '태닝/애프터선', value: '126005' }
+  ],
+  '110007': [
+    { name: '메이크업소품', value: '127001' },
+    { name: '아이소품', value: '127002' },
+    { name: '스킨케어소품', value: '127003' },
+    { name: '헤어소품', value: '127004' },
+    { name: '네일/바디소품', value: '127005' },
+    { name: '뷰티잡화', value: '127006' }
+  ],
+  '110008': [
+    { name: '비타민', value: '128001' },
+    { name: '영양제', value: '128002' },
+    { name: '유산균', value: '128003' },
+    { name: '슬리밍/이너뷰티', value: '128004' }
+  ],
+  '110009': [
+    { name: '식단관리/이너뷰티', value: '129001' },
+    { name: '과자/초콜릿/디저트', value: '129002' },
+    { name: '생수/음료/커피', value: '129003' },
+    { name: '간편식/요리', value: '129004' },
+    { name: '베이비푸드', value: '129005' }
+  ]
+};
+
+// 검색 필터
+const selectedCategoryMain = ref('');
+
 const filters = ref([
   { type: 'text', label: '제품명', value: '', placeholder: '제품명을 입력하세요', name: 'productName' },
   { type: 'text', label: '브랜드', value: '', placeholder: '브랜드명을 입력하세요', name: 'vendorName' },
   { type: 'select', label: '카테고리', value: '', placeholder: '카테고리를 선택하세요', name: 'categoryMain', options: categoryMainOptions },
-  { type: 'text', label: '세부카테고리', value: '', placeholder: '세부카테고리를 입력하세요', name: 'categorySub' },
+  { type: 'select', label: '세부카테고리', value: '', placeholder: '세부카테고리를 선택하세요', name: 'categorySub', options: [] },
   { type: 'numberRange', label: '입수량', value: '', placeholder: '입수량 범위를 입력하세요', name: 'packQtyRange' },
   { type: 'dateRange', label: '등록일 범위', value: '', placeholder: '등록일 범위를 선택하세요', name: 'regDateRange' }
 ]);
@@ -31,6 +153,7 @@ const items = ref([]);
 const selectedProduct = ref(null);
 const selectedProductId = ref(null);
 
+// 테이블 헤더 - regUserName 사용 (백엔드 조인으로 가져온 직원 이름)
 const header = ref({
   title: '제품 승인 요청 목록',
   header: {
@@ -45,112 +168,49 @@ const header = ref({
     packQty: '입수량',
     purchasePrice: '구매단가',
     sellPrice: '판매단가',
-    regUser: '등록자',
+    regUserName: '등록자',  // 백엔드에서 조인된 직원 이름 사용
     regDate: '등록일자',
     status: '상태'
   },
   rightAligned: ['packQty', 'sellPrice']
 });
 
-// 코드를 이름으로 변환하는 함수들 (6자리 코드 기준)
-const getCategoryMainName = (code) => {
-  const categoryMap = {
-    '110001': '스킨케어',
-    '110002': '메이크업', 
-    '110003': '클렌징',
-    '110004': '헤어케어',
-    '110005': '구강용품',
-    '110006': '선케어',
-    '110007': '뷰티소품',
-    '110008': '건강/기능 식품',
-    '110009': '푸드'
-  };
-  return categoryMap[code] || code;
-};
-
+// 코드 변환 함수들
 const getCategorySubName = (code) => {
   const categorySubMap = {
-    // 스킨케어 (121xxx)
-    '121001': '스킨/토너',
-    '121002': '에센스/세럼/앰플',
-    '121003': '크림',
-    '121004': '로션',
-    '121005': '미스트/오일',
-    '121006': '스킨케어 디바이스',
-    // 메이크업 (122xxx)
-    '122001': '베이스 메이크업',
-    '122002': '아이 메이크업',
-    '122003': '치크&컨투어',
-    '122004': '립 메이크업',
-    '122005': '피니시&픽서',
-    '122006': '네일 메이크업',
-    // 클렌징 (123xxx)
-    '123001': '클렌징폼/젤',
-    '123002': '오일/밤',
-    '123003': '워터/밀크',
-    '123004': '필링&스크럽',
-    '123005': '티슈/패드',
-    '123006': '립&아이리무버',
-    '123007': '클렌징 디바이스',
-    // 헤어케어 (124xxx)
-    '124001': '샴푸/린스',
-    '124002': '트리트먼트/팩',
-    '124003': '두피앰플/토닉',
-    '124004': '헤어에센스',
-    '124005': '염색약/펌',
-    '124006': '헤어기기/브러시',
-    '124007': '스타일링',
-    // 구강용품 (125xxx)
-    '125001': '칫솔',
-    '125002': '치약',
-    '125003': '애프터구강케어',
-    '125004': '구강가전',
-    // 선케어 (126xxx)
-    '126001': '선크림',
-    '126002': '선스틱',
-    '126003': '선쿠션',
-    '126004': '선스프레이/선패치',
-    '126005': '태닝/애프터선',
-    // 뷰티소품 (127xxx)
-    '127001': '메이크업소품',
-    '127002': '아이소품',
-    '127003': '스킨케어소품',
-    '127004': '헤어소품',
-    '127005': '네일/바디소품',
-    '127006': '뷰티잡화',
-    // 건강/기능 식품 (128xxx)
-    '128001': '비타민',
-    '128002': '영양제',
-    '128003': '유산균',
-    '128004': '슬리밍/이너뷰티',
-    // 푸드 (129xxx)
-    '129001': '식단관리/이너뷰티',
-    '129002': '과자/초콜릿/디저트',
-    '129003': '생수/음료/커피',
-    '129004': '간편식/요리',
-    '129005': '베이비푸드'
+    '121001': '스킨/토너', '121002': '에센스/세럼/앰플', '121003': '크림', '121004': '로션', '121005': '미스트/오일', '121006': '스킨케어 디바이스',
+    '122001': '베이스 메이크업', '122002': '아이 메이크업', '122003': '치크&컨투어', '122004': '립 메이크업', '122005': '피니시&픽서', '122006': '네일 메이크업',
+    '123001': '클렌징폼/젤', '123002': '오일/밤', '123003': '워터/밀크', '123004': '필링&스크럽', '123005': '티슈/패드', '123006': '립&아이리무버', '123007': '클렌징 디바이스',
+    '124001': '샴푸/린스', '124002': '트리트먼트/팩', '124003': '두피앰플/토닉', '124004': '헤어에센스', '124005': '염색약/펌', '124006': '헤어기기/브러시', '124007': '스타일링',
+    '125001': '칫솔', '125002': '치약', '125003': '애프터구강케어', '125004': '구강가전',
+    '126001': '선크림', '126002': '선스틱', '126003': '선쿠션', '126004': '선스프레이/선패치', '126005': '태닝/애프터선',
+    '127001': '메이크업소품', '127002': '아이소품', '127003': '스킨케어소품', '127004': '헤어소품', '127005': '네일/바디소품', '127006': '뷰티잡화',
+    '128001': '비타민', '128002': '영양제', '128003': '유산균', '128004': '슬리밍/이너뷰티',
+    '129001': '식단관리/이너뷰티', '129002': '과자/초콜릿/디저트', '129003': '생수/음료/커피', '129004': '간편식/요리', '129005': '베이비푸드'
   };
   return categorySubMap[code] || code;
 };
 
 const getUnitName = (code) => {
   const unitMap = {
-    '130001': 'ml',
-    '130002': 'g',
-    '130003': 'ea',
-    '130004': 'box',
-    '130005': 'pack'
+    '130001': 'ml', '130002': 'g', '130003': 'ea', '130004': 'box', '130005': 'pack'
   };
   return unitMap[code] || code;
 };
 
 const getStatusName = (code) => {
   const statusMap = {
-    '040001': '완료',
-    '040002': '대기',
-    '040003': '반려'
+    '040001': '완료', '040002': '대기', '040003': '반려'
   };
   return statusMap[code] || code;
+};
+
+const getCategoryMainName = (code) => {
+  const categoryMap = {
+    '110001': '스킨케어', '110002': '메이크업', '110003': '클렌징', '110004': '헤어케어',
+    '110005': '구강용품', '110006': '선케어', '110007': '뷰티소품', '110008': '건강/기능 식품', '110009': '푸드'
+  };
+  return categoryMap[code] || code;
 };
 
 // 폼 데이터 관리
@@ -167,11 +227,12 @@ const formData = ref({
   purchasePrice: '',
   sellPrice: '',
   regUser: '',
+  regUserName: '',  // 백엔드에서 조인으로 가져온 등록자 이름
   regDate: '',
   note: ''
 });
 
-// inputs를 computed로 만들어서 formData와 동기화
+// inputs computed - 백엔드 조인된 직원 이름 직접 사용
 const inputs = computed(() => ({
   title: '제품 정보 및 승인 처리',
   inputs: [
@@ -186,67 +247,61 @@ const inputs = computed(() => ({
     { type: 'number', label: '입수량', value: formData.value.packQty, name: 'packQty', readonly: true },
     { type: 'number', label: '구매가격', value: formData.value.purchasePrice, name: 'purchasePrice', readonly: true },
     { type: 'number', label: '판매가격', value: formData.value.sellPrice, name: 'sellPrice', readonly: true },
-    { type: 'text', label: '등록자', value: formData.value.regUser, name: 'regUser', readonly: true },
+    { type: 'text', label: '등록자', value: formData.value.regUserName || formData.value.regUser, name: 'regUser', readonly: true }, // 백엔드 조인된 이름 우선 사용
     { type: 'date', label: '등록일자', value: formData.value.regDate, name: 'regDate', readonly: true },
     { type: 'textarea', label: '비고/처리사유', value: formData.value.note, name: 'note', readonly: false, placeholder: '승인 또는 반려 사유를 입력하세요' }
   ]
 }));
 
-// 테이블에 표시할 데이터 변환 함수 (6자리 코드를 이름으로 변환)
-const transformProductForDisplay = (product) => {
-  return {
-    ...product,
-    categoryMain: getCategoryMainName(product.categoryMain), // 원본 필드명으로 변환
-    categorySub: getCategorySubName(product.categorySub),     // 원본 필드명으로 변환
-    unit: getUnitName(product.unit),                          // 원본 필드명으로 변환
-    status: getStatusName(product.status),                    // 원본 필드명으로 변환
-    regDate: product.regDate ? formatDate(product.regDate) : ''
-  };
-};
-
-// 필요한 필드만 추출하는 함수 (원본 코드값은 별도 저장)
+// 제품 데이터 변환 함수 - 백엔드 조인된 데이터 그대로 사용
 const filterProductData = (product) => {
-  const {
-    productId, productName, vendorName, categoryMain, categorySub,
-    compId, productSpec, unit, packQty, purchasePrice, sellPrice,
-    regUser, regDate, status, note
-  } = product;
-  
-  // 원본 코드값들을 별도 필드로 저장
-  const processedProduct = {
-    productId, productName, vendorName, compId, productSpec, packQty, 
-    purchasePrice, sellPrice, regUser, note,
+  return {
+    productId: product.productId,
+    productName: product.productName,
+    vendorName: product.vendorName,
+    compId: product.compId,
+    productSpec: product.productSpec,
+    packQty: product.packQty,
+    purchasePrice: product.purchasePrice,
+    sellPrice: product.sellPrice,
+    note: product.note,
     // 표시용 (변환된 값)
-    categoryMain: getCategoryMainName(categoryMain),
-    categorySub: getCategorySubName(categorySub),
-    unit: getUnitName(unit),
-    status: getStatusName(status),
-    regDate: regDate ? formatDate(regDate) : '',
+    categoryMain: getCategoryMainName(product.categoryMain),
+    categorySub: getCategorySubName(product.categorySub),
+    unit: getUnitName(product.unit),
+    status: getStatusName(product.status),
+    regUserName: product.regUserName || product.regUser, // 백엔드에서 조인된 이름 우선 사용
+    regDate: product.regDate ? formatDate(product.regDate) : '',
     // 원본 코드값 (폼 데이터용)
-    categoryMainCode: categoryMain,
-    categorySubCode: categorySub,
-    unitCode: unit,
-    statusCode: status
+    categoryMainCode: product.categoryMain,
+    categorySubCode: product.categorySub,
+    unitCode: product.unit,
+    statusCode: product.status,
+    regUserCode: product.regUser
   };
-  
-  return processedProduct;
 };
 
-// 승인 대기 제품 조회 (6자리 상태 코드 사용)
+// 승인 대기 제품 조회 - 기존 search API 사용 (백엔드 조인 포함)
 const loadPendingProducts = async () => {
   try {
     console.log('승인 대기 제품 조회 시작...');
+    
     const response = await axios.get(`${API_BASE_URL}/search`, {
-      params: { status: '040002' } // 대기 상태 (6자리 코드)
+      params: { status: '040002' }
     });
     
-    console.log('API 응답:', response.data);
+    console.log('API 응답 (백엔드 조인 포함):', response.data);
     
     if (response.data && Array.isArray(response.data)) {
-      items.value = response.data
-        .filter(product => product.status === '040002') // 대기 상태만 필터링
-        .map(product => filterProductData(product));
+      items.value = response.data.map(product => filterProductData(product));
       console.log('처리된 제품 목록:', items.value);
+      
+      // 백엔드 조인 확인
+      if (items.value.length > 0) {
+        console.log('✅ 백엔드 조인 성공 - 첫 번째 제품:');
+        console.log('regUser (ID):', items.value[0].regUserCode);
+        console.log('regUserName (이름):', items.value[0].regUserName);
+      }
     }
   } catch (error) {
     console.error('승인 대기 제품 조회 실패:', error);
@@ -254,11 +309,26 @@ const loadPendingProducts = async () => {
   }
 };
 
-// 검색 기능 (6자리 상태 코드 사용)
+// 검색 기능
 const searchData = async (searchOptions) => {
   try {
     console.log('검색 옵션:', searchOptions);
-    const params = { status: '040002' }; // 대기 상태만 조회
+    
+    // 카테고리 변경 처리
+    if (searchOptions.categoryMain !== selectedCategoryMain.value) {
+      selectedCategoryMain.value = searchOptions.categoryMain || '';
+      
+      const categorySubFilter = filters.value.find(f => f.name === 'categorySub');
+      if (categorySubFilter) {
+        categorySubFilter.options = categorySubOptions[searchOptions.categoryMain] || [];
+        if (!searchOptions.categoryMain) {
+          categorySubFilter.value = '';
+          searchOptions.categorySub = '';
+        }
+      }
+    }
+    
+    const params = { status: '040002' };
     
     // 검색 조건 추가
     if (searchOptions.productName?.trim()) params.productName = searchOptions.productName.trim();
@@ -274,10 +344,10 @@ const searchData = async (searchOptions) => {
     
     console.log('검색 파라미터:', params);
     const response = await axios.get(`${API_BASE_URL}/search`, { params });
-    console.log('검색 결과:', response.data);
+    console.log('검색 결과 (백엔드 조인 포함):', response.data);
     
     items.value = response.data
-      .filter(product => product.status === '040002') // 대기 상태만 필터링
+      .filter(product => product.status === '040002')
       .map(product => filterProductData(product));
     
     console.log('필터링된 결과:', items.value);
@@ -297,9 +367,8 @@ const onRowSelect = (row) => {
     return;
   }
   
-  console.log('선택된 제품:', row);
+  console.log('선택된 제품 (백엔드 조인 데이터):', row);
   
-  // 중복 선택 방지
   if (selectedProductId.value === row.productId) {
     return;
   }
@@ -307,9 +376,8 @@ const onRowSelect = (row) => {
   selectedProductId.value = row.productId;
   selectedProduct.value = { ...row };
   
-  // formData 업데이트 (원본 코드값으로)
+  // formData 업데이트 - regUserName 포함
   Object.keys(formData.value).forEach(key => {
-    // 원본 코드값들을 사용
     if (key === 'categoryMain' && row.categoryMainCode) {
       formData.value[key] = String(row.categoryMainCode);
     } else if (key === 'categorySub' && row.categorySubCode) {
@@ -318,13 +386,17 @@ const onRowSelect = (row) => {
       formData.value[key] = String(row.unitCode);
     } else if (key === 'status' && row.statusCode) {
       formData.value[key] = String(row.statusCode);
+    } else if (key === 'regUser' && row.regUserCode) {
+      formData.value[key] = String(row.regUserCode);
+    } else if (key === 'regUserName' && row.regUserName) {
+      formData.value[key] = String(row.regUserName); // 백엔드에서 조인된 이름
     } else if (key in row && !key.endsWith('Code')) {
       formData.value[key] = String(row[key] || '');
     }
   });
   
   formData.value.note = '';
-  console.log('업데이트된 formData:', formData.value);
+  console.log('업데이트된 formData (백엔드 조인 이름 포함):', formData.value);
 };
 
 // 승인 처리
@@ -343,25 +415,24 @@ const handleApprove = async (approvalData) => {
   }
   
   try {
-    console.log('승인 처리 시작:', targetProduct.productId);
+    const currentUserData = await getCurrentUser();
+    
     const response = await axios.post(
       `${API_BASE_URL}/${targetProduct.productId}/approve`, 
       {
-        approver: 'ADMIN',
+        approver: currentUserData.empId,
         reason: reason,
-        status: '040001' // 완료 상태 (6자리 코드)
+        status: '040001'
       },
       {
         headers: { 'Content-Type': 'application/json' }
       }
     );
     
-    console.log('승인 응답:', response);
-    
     if (response.status === 200 && response.data.success) {
-      alert(`제품 "${targetProduct.productName}"이 승인되었습니다.`);
+      const approverName = response.data.approverName || currentUserData.empName;
+      alert(`제품 "${targetProduct.productName}"이 승인되었습니다. (승인자: ${approverName})`);
       
-      // 로컬에서 제거 후 새로고침
       items.value = items.value.filter(item => item.productId !== targetProduct.productId);
       resetForm();
       await loadPendingProducts();
@@ -397,25 +468,24 @@ const handleReject = async (rejectionData) => {
   }
   
   try {
-    console.log('반려 처리 시작:', targetProduct.productId);
+    const currentUserData = await getCurrentUser();
+    
     const response = await axios.post(
       `${API_BASE_URL}/${targetProduct.productId}/reject`, 
       {
-        approver: 'ADMIN',
+        approver: currentUserData.empId,
         reason: reason,
-        status: '040003' // 반려 상태 (6자리 코드)
+        status: '040003'
       },
       {
         headers: { 'Content-Type': 'application/json' }
       }
     );
     
-    console.log('반려 응답:', response);
-    
     if (response.status === 200 && response.data.success) {
-      alert(`제품 "${targetProduct.productName}"이 반려되었습니다.`);
+      const rejecterName = response.data.rejecterName || currentUserData.empName;
+      alert(`제품 "${targetProduct.productName}"이 반려되었습니다. (반려자: ${rejecterName})`);
       
-      // 로컬에서 제거 후 새로고침
       items.value = items.value.filter(item => item.productId !== targetProduct.productId);
       resetForm();
       await loadPendingProducts();
@@ -464,9 +534,27 @@ const formatDate = (dateString) => {
   }
 };
 
-onMounted(() => {
-  console.log('컴포넌트 마운트됨');
-  loadPendingProducts();
+// 컴포넌트 마운트 - 매우 간단해진 버전
+onMounted(async () => {
+  console.log('🚀 ProductApprovalPage 마운트 시작');
+  
+  try {
+    // 사용자 정보 로드
+    await getCurrentUser();
+    console.log('✅ 사용자 정보:', currentUser.value);
+    
+    // 제품 목록 로드 (백엔드에서 직원 이름 조인 포함)
+    await loadPendingProducts();
+    
+    console.log('🎉 모든 데이터 로드 완료');
+    
+  } catch (error) {
+    console.error('❌ 초기 데이터 로드 실패:', error);
+    
+    // 실패 시에도 기본 동작
+    await getCurrentUser().catch(() => {});
+    await loadPendingProducts().catch(() => {});
+  }
 });
 </script>
 
