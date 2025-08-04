@@ -4,4 +4,5 @@ import java.util.List;
 
 public interface OutbndService {
     List<OutbndVO> getAllOutbnd();
+    String getCodeForUpdate();
 }

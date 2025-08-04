@@ -112,6 +112,7 @@ const removeProductHandler = () => {
     <!-- middle table -->
     <BasicTable 
       :checked="true"
+      :checkType="'single'"
       :data="props.tableData"
       :header="props.tableHeader"
       @rowSelect="onRowSelect"
