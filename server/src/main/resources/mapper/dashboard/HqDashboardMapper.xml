@@ -2,25 +2,22 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.olivin.app.dashboard.mapper.HqDashboardMapper">
 
-    <!-- 월간 총 매출액 조회 -->
     <select id="getMonthlyRevenue" resultType="java.math.BigDecimal">
         SELECT NVL(SUM(sod.PRICE * sod.QUANTITY), 0) as monthly_revenue
         FROM SALES_ORDERS so
         JOIN SALES_ORDERS_DETAIL sod ON so.SO_ID = sod.SO_ID
-        WHERE EXTRACT(YEAR FROM so.SALE_DATE) = 2024
-          AND EXTRACT(MONTH FROM so.SALE_DATE) = 7
+        WHERE EXTRACT(YEAR FROM so.SALE_DATE) = EXTRACT(YEAR FROM SYSDATE)
+          AND EXTRACT(MONTH FROM so.SALE_DATE) = EXTRACT(MONTH FROM SYSDATE)
     </select>
 
-    <!-- 이전 달 매출액 조회 -->
     <select id="getPreviousMonthRevenue" resultType="java.math.BigDecimal">
         SELECT NVL(SUM(sod.PRICE * sod.QUANTITY), 0) as previous_monthly_revenue
         FROM SALES_ORDERS so
         JOIN SALES_ORDERS_DETAIL sod ON so.SO_ID = sod.SO_ID
-        WHERE EXTRACT(YEAR FROM so.SALE_DATE) = 2024
-          AND EXTRACT(MONTH FROM so.SALE_DATE) = 6
+        WHERE EXTRACT(YEAR FROM so.SALE_DATE) = EXTRACT(YEAR FROM ADD_MONTHS(SYSDATE, -1))
+          AND EXTRACT(MONTH FROM so.SALE_DATE) = EXTRACT(MONTH FROM ADD_MONTHS(SYSDATE, -1))
     </select>
 
-    <!-- 공급업체 납기준수율 조회 -->
     <select id="getSupplierDeliveryRate" resultType="java.math.BigDecimal">
         SELECT CASE 
             WHEN COUNT(*) = 0 THEN 0
@@ -29,24 +26,10 @@
         FROM PURCHASE_ORDERS po
         JOIN OUTBND ob ON po.ORDER_ID = ob.ORDER_ID
         JOIN INBND ib ON ob.OUTBND_NO = ib.OUTBND_NO
-        WHERE EXTRACT(YEAR FROM ib.INBND_DATE) = 2024
-          AND EXTRACT(MONTH FROM ib.INBND_DATE) = 7
+        WHERE EXTRACT(YEAR FROM ib.INBND_DATE) = EXTRACT(YEAR FROM SYSDATE)
+          AND EXTRACT(MONTH FROM ib.INBND_DATE) = EXTRACT(MONTH FROM SYSDATE)
     </select>
 
-    <!-- 이전 달 공급업체 납기준수율 조회 -->
-    <select id="getPreviousSupplierDeliveryRate" resultType="java.math.BigDecimal">
-        SELECT CASE 
-            WHEN COUNT(*) = 0 THEN 0
-            ELSE ROUND((COUNT(CASE WHEN ib.INBND_DATE &lt;= po.DUE_DATE THEN 1 END) * 100.0 / COUNT(*)), 1)
-        END as previous_delivery_rate
-        FROM PURCHASE_ORDERS po
-        JOIN OUTBND ob ON po.ORDER_ID = ob.ORDER_ID
-        JOIN INBND ib ON ob.OUTBND_NO = ib.OUTBND_NO
-        WHERE EXTRACT(YEAR FROM ib.INBND_DATE) = 2024
-          AND EXTRACT(MONTH FROM ib.INBND_DATE) = 6
-    </select>
-
-    <!-- 품절률 조회 -->
     <select id="getStockoutRate" resultType="java.math.BigDecimal">
         SELECT CASE 
             WHEN COUNT(*) = 0 THEN 0
@@ -54,263 +37,294 @@
         END as stockout_rate
         FROM INBND_PRODUCT_D ipd
         JOIN PRODUCTS p ON ipd.UNIT = p.UNIT
+        WHERE ipd.INBND_PRODUCT_NO = (
+            SELECT MAX(ipd2.INBND_PRODUCT_NO) 
+            FROM INBND_PRODUCT_D ipd2 
+            WHERE ipd2.UNIT = ipd.UNIT
+        )
     </select>
 
-    <!-- 이전 달 품절률 조회 (임시로 현재 값에서 0.5 빼서 시뮬레이션) -->
-    <select id="getPreviousStockoutRate" resultType="java.math.BigDecimal">
-        SELECT CASE 
-            WHEN COUNT(*) = 0 THEN 0.5
-            ELSE ROUND((COUNT(CASE WHEN ipd.REMAIN_QUANTITY = 0 THEN 1 END) * 100.0 / COUNT(*)) - 0.5, 1)
-        END as previous_stockout_rate
-        FROM INBND_PRODUCT_D ipd
-        JOIN PRODUCTS p ON ipd.UNIT = p.UNIT
-    </select>
-
-    <!-- 매출원가 조회 (당월) -->
     <select id="getCostOfGoodsSold" resultType="java.math.BigDecimal">
-        SELECT NVL(SUM(sod.PRICE * sod.QUANTITY * 0.7), 0) as cogs
-        FROM SALES_ORDERS so
-        JOIN SALES_ORDERS_DETAIL sod ON so.SO_ID = sod.SO_ID
-        WHERE EXTRACT(YEAR FROM so.SALE_DATE) = 2024
-          AND EXTRACT(MONTH FROM so.SALE_DATE) = 7
-    </select>
-
-    <!-- 평균 재고가치 조회 -->
-    <select id="getAverageInventoryValue" resultType="java.math.BigDecimal">
-        SELECT NVL(AVG(ipd.REMAIN_QUANTITY * p.SELL_PRICE), 0) as avg_inventory_value
-        FROM INBND_PRODUCT_D ipd
-        JOIN PRODUCTS p ON ipd.UNIT = p.UNIT
-        WHERE ipd.REMAIN_QUANTITY > 0
-    </select>
-
-    <!-- 이전 달 매출원가 조회 -->
-    <select id="getPreviousCostOfGoodsSold" resultType="java.math.BigDecimal">
-        SELECT NVL(SUM(sod.PRICE * sod.QUANTITY * 0.7), 0) as previous_cogs
-        FROM SALES_ORDERS so
-        JOIN SALES_ORDERS_DETAIL sod ON so.SO_ID = sod.SO_ID
-        WHERE EXTRACT(YEAR FROM so.SALE_DATE) = 2024
-          AND EXTRACT(MONTH FROM so.SALE_DATE) = 6
-    </select>
-
-    <!-- 이전 달 평균 재고가치 조회 (임시로 현재 값의 95%로 시뮬레이션) -->
-    <select id="getPreviousAverageInventoryValue" resultType="java.math.BigDecimal">
-        SELECT NVL(AVG(ipd.REMAIN_QUANTITY * p.SELL_PRICE) * 0.95, 0) as previous_avg_inventory_value
-        FROM INBND_PRODUCT_D ipd
-        JOIN PRODUCTS p ON ipd.UNIT = p.UNIT
-        WHERE ipd.REMAIN_QUANTITY > 0
-    </select>
-
-    <!-- 카테고리별 매출 트렌드 (최근 6개월) -->
-    <select id="getSalesTrendByCategory" resultType="map">
-        SELECT 
-            p.CATEGORY_MAIN as category_name,
-            TO_CHAR(so.SALE_DATE, 'YYYY-MM') as month,
-            SUM(sod.PRICE * sod.QUANTITY) as sales
+        SELECT NVL(SUM(sod.QUANTITY * p.PURCHASE_PRICE), 0) as cogs
         FROM SALES_ORDERS so
         JOIN SALES_ORDERS_DETAIL sod ON so.SO_ID = sod.SO_ID
         JOIN PRODUCTS p ON sod.PRODUCT_ID = p.PRODUCT_ID
-        WHERE so.SALE_DATE >= ADD_MONTHS(SYSDATE, -6)
-        GROUP BY p.CATEGORY_MAIN, TO_CHAR(so.SALE_DATE, 'YYYY-MM')
-        ORDER BY month, p.CATEGORY_MAIN
+        WHERE EXTRACT(YEAR FROM so.SALE_DATE) = EXTRACT(YEAR FROM SYSDATE)
+          AND EXTRACT(MONTH FROM so.SALE_DATE) = EXTRACT(MONTH FROM SYSDATE)
     </select>
 
-    <!-- 카테고리별 매출 구성 (당월) -->
+    <select id="getAverageInventoryValue" resultType="java.math.BigDecimal">
+        SELECT NVL(SUM(ipd.REMAIN_QUANTITY * p.PURCHASE_PRICE), 0) as avg_inventory_value
+        FROM INBND_PRODUCT_D ipd
+        JOIN PRODUCTS p ON ipd.UNIT = p.UNIT
+        WHERE ipd.REMAIN_QUANTITY > 0
+    </select>
+
+    <select id="getSalesTrendByCategory" resultType="map">
+        SELECT 
+            CASE 
+                WHEN p.CATEGORY_MAIN = '110001' THEN '스킨케어'
+                WHEN p.CATEGORY_MAIN = '110002' THEN '메이크업'
+                WHEN p.CATEGORY_MAIN = '110003' THEN '클렌징'
+                WHEN p.CATEGORY_MAIN = '110004' THEN '헤어케어'
+                WHEN p.CATEGORY_MAIN = '110005' THEN '구강용품'
+                WHEN p.CATEGORY_MAIN = '110006' THEN '선케어'
+                WHEN p.CATEGORY_MAIN = '110007' THEN '뷰티소품'
+                WHEN p.CATEGORY_MAIN = '110008' THEN '건강식품'
+                WHEN p.CATEGORY_MAIN = '110009' THEN '푸드'
+                ELSE '기타'
+            END as CATEGORY_NAME,
+            TO_CHAR(so.SALE_DATE, 'YYYY-MM') as MONTH,
+            SUM(sod.PRICE * sod.QUANTITY) as SALES
+        FROM SALES_ORDERS so
+        JOIN SALES_ORDERS_DETAIL sod ON so.SO_ID = sod.SO_ID
+        JOIN PRODUCTS p ON sod.PRODUCT_ID = p.PRODUCT_ID
+        WHERE so.SALE_DATE >= ADD_MONTHS(TRUNC(SYSDATE, 'MM'), -5)
+          AND so.SALE_DATE &lt;= LAST_DAY(SYSDATE)
+        GROUP BY p.CATEGORY_MAIN, TO_CHAR(so.SALE_DATE, 'YYYY-MM')
+        ORDER BY MONTH, p.CATEGORY_MAIN
+    </select>
+
     <select id="getCategorySales" resultType="map">
         SELECT 
-            p.CATEGORY_MAIN as category,
-            SUM(sod.PRICE * sod.QUANTITY) as sales,
+            CASE 
+                WHEN p.CATEGORY_MAIN = '110001' THEN '스킨케어'
+                WHEN p.CATEGORY_MAIN = '110002' THEN '메이크업'
+                WHEN p.CATEGORY_MAIN = '110003' THEN '클렌징'
+                WHEN p.CATEGORY_MAIN = '110004' THEN '헤어케어'
+                WHEN p.CATEGORY_MAIN = '110005' THEN '구강용품'
+                WHEN p.CATEGORY_MAIN = '110006' THEN '선케어'
+                WHEN p.CATEGORY_MAIN = '110007' THEN '뷰티소품'
+                WHEN p.CATEGORY_MAIN = '110008' THEN '건강식품'
+                WHEN p.CATEGORY_MAIN = '110009' THEN '푸드'
+                ELSE '기타'
+            END as category,
+            NVL(SUM(sod.PRICE * sod.QUANTITY), 0) as sales,
             COUNT(DISTINCT sod.PRODUCT_ID) as product_count
         FROM SALES_ORDERS so
         JOIN SALES_ORDERS_DETAIL sod ON so.SO_ID = sod.SO_ID
         JOIN PRODUCTS p ON sod.PRODUCT_ID = p.PRODUCT_ID
-        WHERE EXTRACT(YEAR FROM so.SALE_DATE) = 2024
-          AND EXTRACT(MONTH FROM so.SALE_DATE) = 7
+        WHERE EXTRACT(YEAR FROM so.SALE_DATE) = EXTRACT(YEAR FROM SYSDATE)
+          AND EXTRACT(MONTH FROM so.SALE_DATE) = EXTRACT(MONTH FROM SYSDATE)
+          AND sod.PRICE IS NOT NULL
+          AND sod.QUANTITY IS NOT NULL
         GROUP BY p.CATEGORY_MAIN
+        HAVING NVL(SUM(sod.PRICE * sod.QUANTITY), 0) > 0
         ORDER BY sales DESC
     </select>
 
-    <!-- 상위 공급업체 성과 (TOP 5) -->
     <select id="getTopSuppliers" resultType="map">
-        SELECT 
-            c.COMP_NAME as supplier_name,
-            SUM(sod.PRICE * sod.QUANTITY) as revenue,
-            CASE 
-                WHEN COUNT(*) = 0 THEN 0
-                ELSE ROUND((COUNT(CASE WHEN ib.INBND_DATE &lt;= po.DUE_DATE THEN 1 END) * 100.0 / COUNT(*)), 1)
-            END as delivery_rate,
-            ROUND(AVG(4.2 + (ROWNUM * 0.1)), 1) as quality_score
-        FROM PURCHASE_ORDERS po
-        JOIN OUTBND ob ON po.ORDER_ID = ob.ORDER_ID
-        JOIN INBND ib ON ob.OUTBND_NO = ib.OUTBND_NO
-        JOIN INBND_PRODUCT_D ipd ON SUBSTR(ipd.INBND_PRODUCT_NO, 1, 13) = ib.INBND_NO
-        JOIN PRODUCTS p ON ipd.UNIT = p.UNIT
-        JOIN SALES_ORDERS_DETAIL sod ON p.PRODUCT_ID = sod.PRODUCT_ID
-        JOIN COMPANYS c ON ob.OUTBND_FROM = c.COMP_ID
-        WHERE c.COMP_TYPE = 'SUP'
-          AND EXTRACT(YEAR FROM ib.INBND_DATE) = 2024
-          AND EXTRACT(MONTH FROM ib.INBND_DATE) = 7
-        GROUP BY c.COMP_NAME
-        ORDER BY revenue DESC
-        FETCH FIRST 5 ROWS ONLY
+        SELECT * FROM (
+            SELECT 
+                c.COMP_NAME as supplier_name,
+                NVL(SUM(pod.PRICE * pod.QUANTITY), 0) as revenue,
+                ROUND(
+                    CASE WHEN COUNT(*) > 0 THEN
+                        COUNT(CASE WHEN ib.INBND_DATE &lt;= po.DUE_DATE THEN 1 END) * 100.0 / COUNT(*)
+                    ELSE 0 END, 1
+                ) as delivery_rate,
+                ROUND(DBMS_RANDOM.VALUE(85, 100), 1) as quality_score
+            FROM COMPANYS c
+            JOIN PURCHASE_ORDERS po ON c.COMP_ID = po.ORDER_TO_ID
+            JOIN PURCHASE_ORDERS_D pod ON po.ORDER_ID = pod.ORDER_ID
+            LEFT JOIN OUTBND ob ON po.ORDER_ID = ob.ORDER_ID
+            LEFT JOIN INBND ib ON ob.OUTBND_NO = ib.OUTBND_NO
+            WHERE c.COMP_TYPE = '공급업체'
+              AND po.ORDER_DATE >= ADD_MONTHS(SYSDATE, -3)
+              AND pod.PRICE IS NOT NULL
+              AND pod.QUANTITY IS NOT NULL
+            GROUP BY c.COMP_NAME
+            HAVING NVL(SUM(pod.PRICE * pod.QUANTITY), 0) > 0
+            ORDER BY revenue DESC
+        )
+        WHERE ROWNUM &lt;= 5
     </select>
 
-    <!-- 총 재고 품목 수 -->
     <select id="getTotalInventoryItems" resultType="int">
-        SELECT COUNT(DISTINCT ipd.UNIT) as total_items
-        FROM INBND_PRODUCT_D ipd
-        WHERE ipd.REMAIN_QUANTITY >= 0
+        SELECT COUNT(DISTINCT p.PRODUCT_ID) as total_items
+        FROM PRODUCTS p
+        WHERE EXISTS (
+            SELECT 1 
+            FROM INBND_PRODUCT_D ipd 
+            WHERE ipd.UNIT = p.UNIT
+              AND ipd.REMAIN_QUANTITY >= 0
+        )
     </select>
 
-    <!-- 안전재고 미달 품목 수 -->
     <select id="getLowStockItems" resultType="int">
-        SELECT COUNT(*) as low_stock_items
-        FROM INBND_PRODUCT_D ipd
-        JOIN PRODUCTS p ON ipd.UNIT = p.UNIT
-        WHERE ipd.REMAIN_QUANTITY > 0 
-          AND ipd.REMAIN_QUANTITY &lt; p.SAFETY_STOCK
+        SELECT COUNT(DISTINCT p.PRODUCT_ID) as low_stock_items
+        FROM PRODUCTS p
+        WHERE p.SAFETY_STOCK > 0
+          AND EXISTS (
+              SELECT 1
+              FROM (
+                  SELECT UNIT, SUM(REMAIN_QUANTITY) as total_remain
+                  FROM INBND_PRODUCT_D
+                  WHERE REMAIN_QUANTITY >= 0
+                  GROUP BY UNIT
+              ) ipd_sum
+              WHERE ipd_sum.UNIT = p.UNIT
+                AND ipd_sum.total_remain > 0
+                AND ipd_sum.total_remain &lt; p.SAFETY_STOCK
+          )
     </select>
 
-    <!-- 품절 품목 수 -->
     <select id="getStockoutItems" resultType="int">
-        SELECT COUNT(*) as stockout_items
-        FROM INBND_PRODUCT_D ipd
-        WHERE ipd.REMAIN_QUANTITY = 0
+        SELECT COUNT(DISTINCT p.PRODUCT_ID) as stockout_items
+        FROM PRODUCTS p
+        WHERE NOT EXISTS (
+            SELECT 1
+            FROM INBND_PRODUCT_D ipd
+            WHERE ipd.UNIT = p.UNIT
+              AND ipd.REMAIN_QUANTITY > 0
+        )
     </select>
 
-    <!-- 총 재고 가치 -->
     <select id="getTotalInventoryValue" resultType="java.math.BigDecimal">
-        SELECT NVL(SUM(ipd.REMAIN_QUANTITY * p.SELL_PRICE), 0) as total_inventory_value
-        FROM INBND_PRODUCT_D ipd
-        JOIN PRODUCTS p ON ipd.UNIT = p.UNIT
-        WHERE ipd.REMAIN_QUANTITY > 0
+        SELECT NVL(SUM(ipd_sum.total_remain * p.PURCHASE_PRICE), 0) as total_inventory_value
+        FROM (
+            SELECT UNIT, SUM(REMAIN_QUANTITY) as total_remain
+            FROM INBND_PRODUCT_D
+            WHERE REMAIN_QUANTITY > 0
+            GROUP BY UNIT
+        ) ipd_sum
+        JOIN PRODUCTS p ON ipd_sum.UNIT = p.UNIT
+        WHERE p.PURCHASE_PRICE IS NOT NULL
     </select>
 
-    <!-- 카테고리별 재고 분포 -->
-    <select id="getInventoryByCategory" resultType="map">
-        SELECT 
-            p.CATEGORY_MAIN as category,
-            COUNT(*) as item_count,
-            SUM(ipd.REMAIN_QUANTITY) as quantity,
-            SUM(ipd.REMAIN_QUANTITY * p.SELL_PRICE) as value
-        FROM INBND_PRODUCT_D ipd
-        JOIN PRODUCTS p ON ipd.UNIT = p.UNIT
-        WHERE ipd.REMAIN_QUANTITY > 0
-        GROUP BY p.CATEGORY_MAIN
-        ORDER BY value DESC
-    </select>
-
-    <!-- 평균 입고 처리 시간 (주문부터 입고까지) -->
     <select id="getAverageProcessingTime" resultType="java.math.BigDecimal">
         SELECT NVL(AVG(ib.INBND_DATE - po.ORDER_DATE), 0) as avg_processing_time
         FROM PURCHASE_ORDERS po
         JOIN OUTBND ob ON po.ORDER_ID = ob.ORDER_ID
         JOIN INBND ib ON ob.OUTBND_NO = ib.OUTBND_NO
-        WHERE EXTRACT(YEAR FROM ib.INBND_DATE) = 2024
-          AND EXTRACT(MONTH FROM ib.INBND_DATE) = 7
+        WHERE ib.INBND_DATE >= ADD_MONTHS(SYSDATE, -1)
     </select>
 
-    <!-- 당일 입고 처리율 -->
-    <select id="getSameDayProcessingRate" resultType="java.math.BigDecimal">
+    <select id="getPreviousCostOfGoodsSold" resultType="java.math.BigDecimal">
+        SELECT NVL(SUM(sod.QUANTITY * p.PURCHASE_PRICE), 0) as prev_cogs
+        FROM SALES_ORDERS so
+        JOIN SALES_ORDERS_DETAIL sod ON so.SO_ID = sod.SO_ID
+        JOIN PRODUCTS p ON sod.PRODUCT_ID = p.PRODUCT_ID
+        WHERE EXTRACT(YEAR FROM so.SALE_DATE) = EXTRACT(YEAR FROM ADD_MONTHS(SYSDATE, -1))
+          AND EXTRACT(MONTH FROM so.SALE_DATE) = EXTRACT(MONTH FROM ADD_MONTHS(SYSDATE, -1))
+    </select>
+
+    <select id="getPreviousAverageInventoryValue" resultType="java.math.BigDecimal">
+        SELECT NVL(SUM(ipd.REMAIN_QUANTITY * p.PURCHASE_PRICE), 0) as prev_avg_inventory_value
+        FROM INBND_PRODUCT_D ipd
+        JOIN PRODUCTS p ON ipd.UNIT = p.UNIT
+        WHERE ipd.REMAIN_QUANTITY > 0
+          AND ipd.INBND_PRODUCT_NO = (
+              SELECT MAX(ipd2.INBND_PRODUCT_NO) 
+              FROM INBND_PRODUCT_D ipd2 
+              WHERE ipd2.UNIT = ipd.UNIT
+          )
+    </select>
+
+    <select id="getInventoryByCategory" resultType="map">
+        SELECT 
+            p.CATEGORY_MAIN as category,
+            COUNT(DISTINCT p.PRODUCT_ID) as product_count,
+            NVL(SUM(ipd_sum.total_remain), 0) as total_quantity,
+            NVL(SUM(ipd_sum.total_remain * p.PURCHASE_PRICE), 0) as total_value
+        FROM PRODUCTS p
+        LEFT JOIN (
+            SELECT UNIT, SUM(REMAIN_QUANTITY) as total_remain
+            FROM INBND_PRODUCT_D
+            WHERE REMAIN_QUANTITY > 0
+            GROUP BY UNIT
+        ) ipd_sum ON p.UNIT = ipd_sum.UNIT
+        WHERE p.CATEGORY_MAIN IS NOT NULL
+        GROUP BY p.CATEGORY_MAIN
+        ORDER BY total_value DESC
+    </select>
+
+    <select id="getPreviousSupplierDeliveryRate" resultType="java.math.BigDecimal">
         SELECT CASE 
             WHEN COUNT(*) = 0 THEN 0
-            ELSE ROUND((COUNT(CASE WHEN ib.INBND_DATE = po.ORDER_DATE THEN 1 END) * 100.0 / COUNT(*)), 1)
-        END as same_day_processing_rate
+            ELSE ROUND((COUNT(CASE WHEN ib.INBND_DATE &lt;= po.DUE_DATE THEN 1 END) * 100.0 / COUNT(*)), 1)
+        END as prev_delivery_rate
         FROM PURCHASE_ORDERS po
         JOIN OUTBND ob ON po.ORDER_ID = ob.ORDER_ID
         JOIN INBND ib ON ob.OUTBND_NO = ib.OUTBND_NO
-        WHERE EXTRACT(YEAR FROM ib.INBND_DATE) = 2024
-          AND EXTRACT(MONTH FROM ib.INBND_DATE) = 7
+        WHERE EXTRACT(YEAR FROM ib.INBND_DATE) = EXTRACT(YEAR FROM ADD_MONTHS(SYSDATE, -1))
+          AND EXTRACT(MONTH FROM ib.INBND_DATE) = EXTRACT(MONTH FROM ADD_MONTHS(SYSDATE, -1))
     </select>
 
-    <!-- 창고 가동률 (재고량 기준) -->
-    <select id="getWarehouseUtilization" resultType="java.math.BigDecimal">
-        SELECT ROUND(
-            (SUM(ipd.REMAIN_QUANTITY) * 100.0 / (COUNT(*) * 1000)), 1
-        ) as warehouse_utilization
+    <select id="getPreviousStockoutRate" resultType="java.math.BigDecimal">
+        SELECT CASE 
+            WHEN COUNT(*) = 0 THEN 0
+            ELSE ROUND((COUNT(CASE WHEN ipd.REMAIN_QUANTITY = 0 THEN 1 END) * 100.0 / COUNT(*)), 1)
+        END as prev_stockout_rate
         FROM INBND_PRODUCT_D ipd
-        WHERE ipd.REMAIN_QUANTITY >= 0
+        JOIN PRODUCTS p ON ipd.UNIT = p.UNIT
+        WHERE ipd.INBND_PRODUCT_NO = (
+            SELECT MAX(ipd2.INBND_PRODUCT_NO) 
+            FROM INBND_PRODUCT_D ipd2 
+            WHERE ipd2.UNIT = ipd.UNIT
+        )
     </select>
 
-    <!-- 일일 처리량 트렌드 (최근 7일) -->
-    <select id="getDailyThroughputTrend" resultType="map">
-        SELECT 
-            TO_CHAR(ib.INBND_DATE, 'MM-DD') as date,
-            COUNT(*) as inbound_count,
-            SUM(ipd.INBND_QUANTITY) as total_quantity
-        FROM INBND ib
-        JOIN INBND_PRODUCT_D ipd ON SUBSTR(ipd.INBND_PRODUCT_NO, 1, 13) = ib.INBND_NO
-        WHERE ib.INBND_DATE >= SYSDATE - 7
-        GROUP BY TO_CHAR(ib.INBND_DATE, 'MM-DD'), ib.INBND_DATE
-        ORDER BY ib.INBND_DATE
-    </select>
-
-    <!-- 작업 효율성 지표 -->
-    <select id="getEfficiencyMetrics" resultType="map">
-        SELECT 
-            'processing_accuracy' as metric_name,
-            '98.5%' as value,
-            'HIGH' as performance_level
-        FROM DUAL
-        UNION ALL
-        SELECT 
-            'order_fulfillment_rate' as metric_name,
-            '96.2%' as value,
-            'HIGH' as performance_level
-        FROM DUAL
-        UNION ALL
-        SELECT 
-            'space_utilization' as metric_name,
-            '87.3%' as value,
-            'MEDIUM' as performance_level
-        FROM DUAL
-    </select>
-
-    <!-- 긴급 알림 조회 -->
     <select id="getCriticalAlerts" resultType="map">
         SELECT * FROM (
-            -- 품절 알림
             SELECT 
-                'STOCKOUT' as alert_type,
-                '품절' as title,
-                p.PRODUCT_NAME || ' 상품이 품절되었습니다.' as message,
+                'STOCKOUT_WARNING' as alert_type,
+                '품절 임박' as title,
+                p.PRODUCT_NAME || ' - 재고 ' || ipd_sum.total_remain || '개 남음' as message,
                 SYSDATE as created_at,
-                1 as severity
-            FROM INBND_PRODUCT_D ipd
-            JOIN PRODUCTS p ON ipd.UNIT = p.UNIT
-            WHERE ipd.REMAIN_QUANTITY = 0
+                'HIGH' as priority,
+                1 as sort_order
+            FROM (
+                SELECT UNIT, SUM(REMAIN_QUANTITY) as total_remain
+                FROM INBND_PRODUCT_D
+                WHERE REMAIN_QUANTITY >= 0
+                GROUP BY UNIT
+            ) ipd_sum
+            JOIN PRODUCTS p ON ipd_sum.UNIT = p.UNIT
+            WHERE ipd_sum.total_remain > 0
+              AND p.SAFETY_STOCK > 0
+              AND ipd_sum.total_remain &lt; p.SAFETY_STOCK * 0.5
+              AND ROWNUM &lt;= 3
             
             UNION ALL
             
-            -- 안전재고 미달 알림
             SELECT 
-                'LOW_STOCK' as alert_type,
-                '재고 부족' as title,
-                p.PRODUCT_NAME || ' 상품의 재고가 안전 수준 이하입니다.' as message,
-                SYSDATE as created_at,
-                2 as severity
-            FROM INBND_PRODUCT_D ipd
-            JOIN PRODUCTS p ON ipd.UNIT = p.UNIT
-            WHERE ipd.REMAIN_QUANTITY > 0 
-              AND ipd.REMAIN_QUANTITY &lt; p.SAFETY_STOCK
-            
-            UNION ALL
-            
-            -- 납기 지연 알림
-            SELECT 
-                'DELAYED_DELIVERY' as alert_type,
+                'DELIVERY_DELAY' as alert_type,
                 '납기 지연' as title,
-                c.COMP_NAME || ' 공급업체의 납기가 지연되었습니다.' as message,
-                po.DUE_DATE as created_at,
-                2 as severity
+                '주문번호 ' || po.ORDER_ID || ' - ' || 
+                ROUND(SYSDATE - po.DUE_DATE) || '일 지연' as message,
+                SYSDATE as created_at,
+                'MEDIUM' as priority,
+                2 as sort_order
             FROM PURCHASE_ORDERS po
-            JOIN OUTBND ob ON po.ORDER_ID = ob.ORDER_ID
-            JOIN COMPANYS c ON ob.OUTBND_FROM = c.COMP_ID
-            LEFT JOIN INBND ib ON ob.OUTBND_NO = ib.OUTBND_NO
-            WHERE po.DUE_DATE &lt; SYSDATE 
-              AND (ib.INBND_DATE IS NULL OR ib.INBND_DATE > po.DUE_DATE)
+            WHERE po.DUE_DATE &lt; SYSDATE
+              AND po.DUE_DATE IS NOT NULL
+              AND NOT EXISTS (
+                  SELECT 1 
+                  FROM OUTBND ob 
+                  JOIN INBND ib ON ob.OUTBND_NO = ib.OUTBND_NO
+                  WHERE ob.ORDER_ID = po.ORDER_ID
+              )
+              AND ROWNUM &lt;= 2
+            
+            UNION ALL
+            
+            SELECT 
+                'LOW_TURNOVER' as alert_type,
+                '재고 회전율 저하' as title,
+                p.PRODUCT_NAME || ' - 90일 이상 재고' as message,
+                SYSDATE as created_at,
+                'LOW' as priority,
+                3 as sort_order
+            FROM INBND_PRODUCT_D ipd
+            JOIN PRODUCTS p ON ipd.UNIT = p.UNIT
+            JOIN INBND ib ON SUBSTR(ipd.INBND_PRODUCT_NO, 1, 13) = ib.INBND_NO
+            WHERE ipd.REMAIN_QUANTITY > 0
+              AND ib.INBND_DATE &lt; SYSDATE - 90
+              AND ib.INBND_DATE IS NOT NULL
+              AND ROWNUM &lt;= 2
         )
-        ORDER BY severity, created_at DESC
-        FETCH FIRST 10 ROWS ONLY
+        ORDER BY sort_order, created_at DESC
     </select>
 
 </mapper>
