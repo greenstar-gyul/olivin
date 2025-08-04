@@ -23,7 +23,7 @@ public interface DeptMapper {
   int checkDeptId(String deptId);
 
   // 부서 코드 자동생성
-  // String selectLastDept(@Param("deptId") String DeptId);
+  String selectLastDept(@Param("deptId") String deptId);
 
   
 }

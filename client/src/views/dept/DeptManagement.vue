@@ -21,10 +21,10 @@ const baseUrl = computed(() => {
 const filters = ref({
   title: '조회 조건',
   filters: [
-    { type: 'text', label: '회사코드', value: '', name: 'name' },
-    { type: 'text', label: '회사명', value: '', name: 'category' },
-    { type: 'text', label: '부서명', value: '', name: 'store' },
-    { type: 'text', label: '부서정보', value: '', name: 'publisher' }
+    { type: 'text', label: '회사코드', value: '', name: 'compId' },
+    { type: 'text', label: '회사명', value: '', name: 'compName' },
+    { type: 'text', label: '부서코드', value: '', name: 'departmentId' },
+    { type: 'text', label: '부서명', value: '', name: 'deptName' }
   ]
 });
 
@@ -34,8 +34,8 @@ const selectDeptId = ref('');
 const header = ref({
   title: '조회 결과',
   header: {
-    compId: '회사명',
-    compName: '직급',
+    compId: '회사코드',
+    compName: '회사명',
     departmentId: '부서코드',
     deptName: '부서명',
     position: '직책'

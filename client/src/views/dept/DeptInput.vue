@@ -168,9 +168,7 @@ export default {
       onRowSelect,
       onRowUnselect,
       filters, // 외부에 선언된 설정 객체도 template에서 사용하려면 반환해야 함
-      items: props.items, // props.items는 template에서 직접 사용 가능하지만 명시적으로 반환
-      //header,
-      inputs
+      inputs // 로컬 input을 반환
     };
   }
 };

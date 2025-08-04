@@ -4,9 +4,10 @@ import SearchForm from '@/components/inputForm/SearchForm.vue';
 import BasicTable from '@/components/table/BasicTable.vue';
 import InputForm from '@/components/inputForm/InputForm.vue';
 import Button from 'primevue/button';
+import { Password } from 'primevue';
 
 // URL
-const API_BASE_URL = '/api/emps';
+const API_BASE_URL = '/api/depts';
 
 export default {
   name: 'StandardInput',
@@ -50,8 +51,13 @@ export default {
       compName: '',
       departmentId: '',
       deptName: '',
+      employeeId: '',
+      empName: '',
+      empType: '',
+      email: '',
+      password: '',
+      phone: '',
       position: '',
-      phone: ''
     });
 
     const selectedDept = ref(null);
@@ -70,63 +76,56 @@ export default {
       ]
     });
 
-    // 테이블 헤더
-    const header = ref({
-      title: '조회 결과',
-      header: {
-        id: '회사명',
-        name: '직급',
-        category: '사원이름',
-        publisher: '아이디',
-        store: '비밀번호',
-        size: '규격',
-        quantity: '현재 재고',
-        safe: '안전 재고'
-      },
-      rightAligned: ['quantity', 'safe']
-    });
-
-    // 테이블 아이템 예시데이터
-    // const items = ref([
-    //   { id: 1, name: '제품 A', category: '카테고리 1', publisher: '공급사 A', store: '지점 A', size: '규격 A', quantity: 100, safe: 50 },
-    //   { id: 2, name: '제품 B', category: '카테고리 2', publisher: '공급사 B', store: '지점 B', size: '규격 B', quantity: 200, safe: 100 },
-    //   { id: 3, name: '제품 C', category: '카테고리 3', publisher: '공급사 C', store: '지점 C', size: '규격 C', quantity: 300, safe: 150 }
-    // ]);
-
     // 입력필드
     const inputs = ref({
       title: '입력 폼',
       inputs: [
-        { type: 'text', label: '회사ID', value: '', name: 'compId' },
+        { type: 'text', label: '회사코드', value: '', name: 'compId' },
         { type: 'text', label: '회사명', value: '', name: 'compName' },
+        { type: 'text', label: '사원번호', value: '', name: 'employeeId' },
+        {
+          type: 'select',
+          label: '고용형태',
+          value: '',
+          name: 'empType',
+          options: [
+            { name: '정규직', value: '정규직' },
+            { name: '비정규직', value: '비정규직' }
+          ]
+        },
+        { type: 'text', label: '이메일', value: '', name: 'email' },
+        { type: 'text', label: '비밀번호', value: '', name: 'password' },
+        { type: 'text', label: '연락처', value: '', name: 'phone' },
         {
           type: 'select',
           label: '부서명',
           value: '',
-          name: 'select1',
+          name: 'deptName',
           options: [
-            { name: '부서 1', value: '부서 1' },
-            { name: '부서 2', value: '부서 2' },
-            { name: '부서 3', value: '부서 3' }
-          ]
-        },
-        {
-          type: 'select',
-          label: '직급',
-          value: '',
-          name: 'select2',
-          options: [
-            { name: '직급 1', value: '직급 1' },
-            { name: '직급 2', value: '직급 2' },
-            { name: '직급 3', value: '직급 3' }
-          ]
-        },
-        { type: 'text', label: '등록사원', value: '', name: 'empName' },
-        { type: 'text', label: '연락처', value: '', name: 'phone' },
-        { type: 'text', label: '기타', value: '', name: 'password' },
-        { type: 'textarea', label: '비고', value: '', name: 'note' }
-      ]
-    });
+            { name: '경영지원팀', value: '경영지원팀' },
+            { name: '영업팀', value: '영업팀' },
+            { name: '물류팀', value: '물류팀' },
+            { name: '구매팀', value: '구매팀' },
+            { name: '회계팀', value: '회계팀' },
+            { name: '마케팅팀', value: '마케팅팀' },
+            { name: '품질관리팀', value: '품질관리팀' },
+            { name: '연구개발팀', value: '연구개발팀' },
+            { name: '고객서비스팀', value: '고객서비스팀' },
+            { name: 'IT팀', value: 'IT팀' },
+            { name: '전략기획팀', value: '전략기획팀' },
+            { name: '인사팀', value: '인사팀' },
+            { name: '법무팀', value: '법무팀' },
+            { name: '감사팀', value: '감사팀' },
+            { name: '해외사업팀', value: '해외사업팀' },
+            { name: '디지털마케팅팀', value: '디지털마케팅팀' },
+            { name: '브랜드팀', value: '브랜드팀' },
+            { name: '상품기획팀', value: '상품기획팀' },
+            { name: '교육팀', value: '교육팀' },
+            { name: '안전관리팀', value: '안전관리팀' },
+          ]},
+          { type: 'text', label: '직책', value: '', name: 'position' },
+        ]
+      });
 
     const searchData = (searchOptions) => {
       emit('searchData', searchOptions);
@@ -175,8 +174,6 @@ export default {
       onRowSelect,
       onRowUnselect,
       filters, // 외부에 선언된 설정 객체도 template에서 사용하려면 반환해야 함
-      items: props.items, // props.items는 template에서 직접 사용 가능하지만 명시적으로 반환
-      header,
       inputs
     };
   }
