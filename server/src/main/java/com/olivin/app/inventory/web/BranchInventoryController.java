@@ -19,19 +19,20 @@ import lombok.RequiredArgsConstructor;
  * 작성일: 2025.07.31
  * 수정이력:
  * 2025.07.31 : 최초 작성
+ * 2025.08.05 : 권한 제한 추가
  */
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/api/inventory/branchStock")
 @RequiredArgsConstructor
 public class BranchInventoryController {
     private final BranchInventoryService branchInventoryService;
 
-    @GetMapping("/inventory/branchStock/all")
+    @GetMapping("/all")
     public List<BranchInventoryVO> getAllBranchInventory() {
         return branchInventoryService.selectAllBranchInventory();
     }
 
-    @GetMapping("/inventory/branchStock/search")
+    @GetMapping("/search")
     public List<BranchInventoryVO> searchBranchInventory(BranchInventoryVO branchInventoryVO) {
         return branchInventoryService.selectBranchInventoryList(branchInventoryVO);
     }
