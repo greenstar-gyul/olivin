@@ -4,6 +4,10 @@ import { onMounted, ref } from 'vue';
 import SearchTable from '../../components/common/SearchTable.vue';
 import axios from '@/service/axios';
 import DialogModal from '@/components/overray/DialogModal.vue';
+import { useAuth } from '@/composables/useAuth';
+
+// 사용자 인증 정보 가져오기
+const { user } = useAuth();
 
 // 조회 폼의 헤더 정보 (조회 테이블 컬럼 이름)
 const header = ref({
@@ -82,11 +86,20 @@ const storeItems = ref([]);
 
 const loadStockData = async () => {
   try {
-    // 서버에서 재고 데이터를 가져오기
+    // 모든 재고 데이터를 가져오기 (제한 없음)
     const response = await axios.get('/api/inventory/branchStock/all');
-    items.value = await response.data; // 서버에서 받은 데이터를 items에 저장
-
+    
+    items.value = response.data;
     console.log('Stock data loaded:', items.value);
+    
+    // 지점 직원이면 검색폼에 자신의 지점명을 기본값으로 설정
+    if (user.value && user.value.compId && user.value.compId !== 'COM10001') {
+      setTimeout(() => {
+        if (searchFormRef.value?.searchFormRef?.searchOptions) {
+          searchFormRef.value.searchFormRef.searchOptions.store = user.value.compName || user.value.compId;
+        }
+      }, 100);
+    }
     
   } catch (error) {
     console.error('Error loading stock data:', error);
@@ -289,15 +302,19 @@ const searchPublishers = async (searchValue) => {
 const searchStocks = async (searchOptions) => {
   try {
     console.log('Searching stocks with options:', searchOptions);
+    
+    // 검색 조건 설정 (지점 제한 없음)
+    const params = {
+      productName: searchOptions.productModal || '',
+      categorySub: searchOptions.productType || '',
+      vendorName: searchOptions.publisher || '',
+      compName: searchOptions.store || ''
+    };
+    
     const response = await axios.get('/api/inventory/branchStock/search', {
-      params: {
-        productName: searchOptions.productModal || '',
-        categorySub: searchOptions.productType || '',
-        vendorName: searchOptions.publisher || '',
-        compName: searchOptions.store || ''
-      }
+      params: params
     });
-    items.value = await response.data; // 서버에서 받은 데이터를 items에 저장
+    items.value = response.data;
     console.log('Stocks searched:', items.value);
   } catch (error) {
     console.error('Error searching stocks:', error);
@@ -308,7 +325,17 @@ const resetList = () => {
   loadStockData();
 }
 
+// 사용자 권한에 따른 필터 설정
+const setupFilters = () => {
+  // 모든 사용자가 모든 필터를 사용할 수 있도록 설정
+  // 지점 직원도 다른 지점의 재고를 조회할 수 있음
+  console.log('Setting up filters for user:', user.value);
+}
+
 onMounted(() => {
+  // 사용자 권한에 따른 필터 설정
+  setupFilters();
+  // 재고 데이터 로드
   loadStockData();
 });
 
