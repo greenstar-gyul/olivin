@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.olivin.app.plan.service.SalesPlanService;
 import com.olivin.app.plan.service.SalesPlanVO;
+import com.olivin.app.plan.service.SearchSalesPlanVO;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,8 +29,8 @@ import lombok.extern.slf4j.Slf4j;
 public class SalesPlanController {
 	private final SalesPlanService salesPlanService;
 	
-	@GetMapping("/salesPlan")
-	public List<SalesPlanVO> ordersList(@ModelAttribute SalesPlanVO search) {
+	@GetMapping("/salesPlans")
+	public List<SalesPlanVO> ordersList(@ModelAttribute SearchSalesPlanVO search) {
 		log.debug("salesPlan = {}", search);
 		return salesPlanService.getAllSalesPlans(search);
 	}

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.olivin.app.plan.mapper.SalesPlanMapper">
-    <select id="selectAllList" resultType="SalesPlanVO" parameterType="SalesPlanVO">
+    <select id="selectAllList" resultType="SalesPlanVO" parameterType="SearchSalesPlanVO">
         SELECT
             p.plan_id,
             p.year,
@@ -10,12 +10,49 @@
             c.comp_name,
             p.target_amount,
             p.reg_user,
+            r.emp_name as reg_user_name,
             p.reg_date,
             p.update_user,
+            u.emp_name as update_user_name,
             p.update_date,
             p.reason
         FROM
-            sales_plan p JOIN companys c ON (p.comp_id = c.comp_id)
-        ORDER BY p.plan_id DESC
+            sales_plan p
+        JOIN companys c ON (p.comp_id = c.comp_id)
+        JOIN employees r ON (p.reg_user = r.employee_id)
+        JOIN employees u ON (p.update_user = u.employee_id)
+        <where>
+            <if test="planId != null and planId != ''">
+                AND plan_id LIKE '%'||#{planId}||'%'
+            </if>
+            <if test="year != null and year != ''">
+                AND year = #{year}
+            </if>
+            <if test="quarter != null and quarter != ''">
+                AND quarter = #{quarter}
+            </if>
+            <if test="regUserName != null and regUserName != ''">
+                AND r.emp_name LIKE '%'||#{regUserName}||'%'
+            </if>
+            <if test="compName != null and compName != ''">
+                AND c.comp_name LIKE '%'||#{compName}||'%'
+            </if>
+            <if test="reason != null and reason != ''">
+                AND p.reason LIKE '%'||#{reason}||'%'
+            </if>
+            <if test="regDateFrom != null">
+                AND p.reg_date &gt;= #{regDateFrom}
+            </if>
+            <if test="regDateTo != null">
+                AND p.reg_date &lt;= #{regDateTo}
+            </if>
+            <if test="updateDateFrom != null">
+                AND p.update_date &gt;= #{updateDateFrom}
+            </if>
+            <if test="updateDateTo != null">
+                AND p.update_date &lt;= #{updateDateTo}
+            </if>
+        </where>
+        ORDER BY p.year DESC, p.quarter DESC
     </select>
 </mapper>

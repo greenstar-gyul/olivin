@@ -33,12 +33,10 @@ const formSchema = ref([
   { type: 'data', label: '등록자', id: 'creatorName', data: 'text' },
   { type: 'date', label: '납기예정일', id: 'dueDate', placeholder: '납기예정일을 선택하세요.' },
   { type: 'data', label: '지점명', id: 'orderFrom', data: 'text' },
-  { type: 'text', label: '비고', id: 'remark', placeholder: '비고를 입력하세요.'},
+  { type: 'text', label: '비고', id: 'note', placeholder: '비고를 입력하세요.'},
   { type: 'data', label: '발주요청일', id: 'orderDate', data: 'date' },
   { type: 'data', label: '총 가격', id: 'totalAmount', data: 'text' }
 ]);
-
-// TODO : 폼 총 가격 출력
 
 /* Input Table */
 
@@ -193,7 +191,7 @@ const saveFormHandler = async (formData, tableData) => {
 
   for (const form in formData) {
     if (!formData[form]) {
-      if (form == 'remark') continue;
+      if (form == 'note') continue;
       // TODO : 다른 alert() 함수를 사용하면 변경
       alert("폼에 정보에 비어있는 데이터가 있습니다.");
       return;

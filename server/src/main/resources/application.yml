@@ -76,9 +76,12 @@ mybatis:
     default-fetch-size: 100
     safe-row-bounds-enabled: false
     local-cache-scope: session
-    jdbc-type-for-null: other
+    jdbc-type-for-null: VARCHAR
     lazy-load-trigger-methods: equals,clone,hashCode,toString
     log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
+    # Oracle 추가 설정
+    call-setters-on-nulls: true
+    return-instance-for-empty-row: false
 
 # 업로드 디렉토리 설정 (선택사항)
 app:

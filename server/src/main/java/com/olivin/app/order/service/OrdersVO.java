@@ -56,5 +56,5 @@ public class OrdersVO {
   @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
 	private Date dueDate;
   
-	private String remark;
+	private String note;
 }

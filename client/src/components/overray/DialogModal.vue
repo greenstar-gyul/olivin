@@ -108,12 +108,12 @@ watch(() => props.display, (newValue) => {
     <div class="flex flex-col gap-4">
         <!-- Item Search -->
         <InputGroup class="flex-1">
-          <InputText :id="'filter-' + rowIndex + '-' + filterIndex" v-model="searchValue" :placeholder="placeholder || 'Enter item name...'" />
+          <InputText :id="'filter'" v-model="searchValue" :placeholder="placeholder || 'Enter item name...'" />
           <Button icon="pi pi-search" class="p-button-outlined" @click="searchModal(searchValue)" />
         </InputGroup>
 
       <DataTable v-model:selection="selectedItems" :value="props.items" :selectionMode="props.selectionMode"
-        :paginator="false" :rows="5" @row-select="onProductSelect" scrollable="true" scrollHeight="400px">
+        :paginator="false" :rows="5" @row-select="onProductSelect" :scrollable="true" scrollHeight="400px">
         <Column v-for="col in props.headers" :key="col.field" :field="col.field" :header="col.header">
           <template #body="slotProps">
             {{ slotProps.data[col.field] }}

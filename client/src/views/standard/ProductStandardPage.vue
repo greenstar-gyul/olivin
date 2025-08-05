@@ -11,6 +11,7 @@ import axios from '@/service/axios';
 // 현재 로그인한 사용자 정보
 const currentUser = ref({
   empId: '',
+  employeeId: '',
   empName: ''
 });
 
@@ -23,7 +24,7 @@ const currentUserName = computed(() => {
   return currentUser.value?.empName || '사용자';
 });
 
-// 개선된 getCurrentUser 함수 - 더 강력한 사용자 정보 파싱
+// 수정된 getCurrentUser 함수 - employeeId 기반
 const getCurrentUser = async () => {
   try {
     const response = await axios.get('/api/auth/me');
@@ -33,7 +34,7 @@ const getCurrentUser = async () => {
       const userData = response.data.data;
       console.log('userData 구조:', JSON.stringify(userData, null, 2));
       
-      let empId = 'olivin10001';
+      let employeeId = 'olivin10001';
       let empName = '김홍인';
       
       // 다양한 경우에 대한 더 포괄적인 처리
@@ -50,63 +51,53 @@ const getCurrentUser = async () => {
           console.log('처리 중인 userSource:', typeof userSource, userSource);
           
           if (typeof userSource === 'object' && userSource !== null) {
-            // 객체인 경우 - 다양한 필드명 시도
-            const possibleEmpIds = [
-              userSource.empId,
-              userSource.emp_id, 
-              userSource.EMPLOYEE_ID,
-              userSource.employeeId,
-              userSource.id,
-              userSource.userId,
-              userSource.user_id,
-              userSource.USER_ID
+            // 객체인 경우 - employeeId 우선 검색
+            const possibleEmployeeIds = [
+              userSource.employeeId,        // employeeId 우선
+              userSource.employee_id,       // employee_id
+              userSource.EMPLOYEE_ID,       // EMPLOYEE_ID (DB 컬럼명)
             ];
             
             const possibleEmpNames = [
               userSource.empName,
               userSource.emp_name,
               userSource.EMP_NAME,
-              userSource.name,
-              userSource.userName,
-              userSource.user_name,
-              userSource.USER_NAME,
-              userSource.fullName,
-              userSource.displayName
             ];
             
             // 첫 번째로 유효한 값 찾기
-            const foundEmpId = possibleEmpIds.find(id => id && id !== 'olivin10001' && String(id).trim() !== '');
+            const foundEmployeeId = possibleEmployeeIds.find(id => id && id !== 'olivin10001' && String(id).trim() !== '');
             const foundEmpName = possibleEmpNames.find(name => name && name !== '김홍인' && String(name).trim() !== '');
             
-            if (foundEmpId) {
-              empId = String(foundEmpId).trim();
+            if (foundEmployeeId) {
+              employeeId = String(foundEmployeeId).trim();
             }
             if (foundEmpName) {
               empName = String(foundEmpName).trim();
             }
             
             // 유효한 사용자 정보를 찾았으면 중단
-            if (foundEmpId && foundEmpName) {
+            if (foundEmployeeId && foundEmpName) {
               break;
             }
           } else if (typeof userSource === 'string' && userSource.trim() !== '') {
             // 문자열인 경우
             empName = userSource.trim();
-            empId = userSource.trim();
+            employeeId = userSource.trim();
             break;
           }
         }
       }
       
       currentUser.value = {
-        empId: empId,
+        empId: employeeId,          // 호환성을 위해 empId로도 저장
+        employeeId: employeeId,     // employeeId 추가
         empName: empName
       };
       
       console.log('최종 설정된 사용자 정보:', currentUser.value);
       
       // 사용자 정보가 기본값이면 경고 로그
-      if (empId === 'olivin10001' && empName === '김홍인') {
+      if (employeeId === 'olivin10001' && empName === '김홍인') {
         console.warn('사용자 정보를 찾지 못해 기본값을 사용합니다. API 응답 구조를 확인해주세요.');
       }
       
@@ -121,6 +112,7 @@ const getCurrentUser = async () => {
     // API 실패 시 기본값 사용
     currentUser.value = {
       empId: 'olivin10001',
+      employeeId: 'olivin10001',
       empName: '김홍인'
     };
     
@@ -339,7 +331,7 @@ const formData = ref({
   safetyStock: '',
   purchasePrice: '',
   sellPrice: '',
-  regUser: '', // 현재 로그인한 사용자의 empId로 자동 설정
+  regUser: '', // employeeId 값으로 설정
   regUserName: '', // 백엔드에서 조인된 등록자 이름
   regDate: '',
   note: ''
@@ -567,9 +559,88 @@ const loadProducts = async () => {
   }
 };
 
-// 개선된 saveData 함수 - 수정자 정보 제대로 설정
+// 삭제 기능 추가
+const deleteData = async () => {
+  if (!selectedProduct.value || !selectedProductId.value) {
+    toast.add({ 
+      severity: 'warn', 
+      summary: '선택 필요', 
+      detail: '삭제할 제품을 선택해주세요.', 
+      life: 3000 
+    });
+    return;
+  }
+
+  // 삭제 확인
+  const confirmDelete = confirm(
+    `제품 "${selectedProduct.value.productName}"을(를) 정말 삭제하시겠습니까?\n\n이 작업은 되돌릴 수 없습니다.`
+  );
+  
+  if (!confirmDelete) {
+    return;
+  }
+
+  try {
+    console.log('제품 삭제 시작:', selectedProductId.value);
+    
+    const response = await axios.delete(`${API_BASE_URL}/${selectedProductId.value}`);
+    
+    console.log('삭제 응답:', response.data);
+    
+    if (response.data.success) {
+      toast.add({ 
+        severity: 'success', 
+        summary: '삭제 완료', 
+        detail: `제품 "${selectedProduct.value.productName}"이(가) 성공적으로 삭제되었습니다.`, 
+        life: 3000 
+      });
+      
+      // 폼 초기화 및 목록 새로고침
+      clearForm();
+      await loadProducts();
+    } else {
+      toast.add({ 
+        severity: 'error', 
+        summary: '삭제 실패', 
+        detail: response.data.message || '삭제 중 오류가 발생했습니다.', 
+        life: 5000 
+      });
+    }
+    
+  } catch (error) {
+    console.error('제품 삭제 실패:', error);
+    
+    let errorMessage = '삭제 중 오류가 발생했습니다.';
+    
+    if (error.code === 'ERR_NETWORK') {
+      errorMessage = '네트워크 오류: 서버 연결을 확인해주세요.';
+    } else if (error.response?.status === 404) {
+      errorMessage = '삭제할 제품을 찾을 수 없습니다.';
+    } else if (error.response?.status === 409) {
+      errorMessage = '다른 데이터에서 참조 중인 제품은 삭제할 수 없습니다.';
+    } else if (error.response?.data?.message) {
+      errorMessage = error.response.data.message;
+    } else if (error.message) {
+      errorMessage = error.message;
+    }
+    
+    toast.add({ 
+      severity: 'error', 
+      summary: '삭제 실패', 
+      detail: errorMessage, 
+      life: 5000 
+    });
+  }
+};
+
+// 개선된 saveData 함수 - 강화된 디버깅 버전
 const saveData = async () => {
   try {
+    console.log('=== 저장 시작 ===');
+    console.log('현재 formData:', formData.value);
+    console.log('selectedProduct:', selectedProduct.value);
+    console.log('selectedProductId:', selectedProductId.value);
+    
     // 필수 필드 검증
     const requiredFields = [
       { field: 'productName', label: '제품명' },
@@ -599,7 +670,6 @@ const saveData = async () => {
         imageUrl = await uploadProductImage(selectedImageFile.value);
         uploadedImageUrl.value = imageUrl;
       } catch (error) {
-        // 사용자에게 선택권 제공
         const continueWithoutImage = confirm(`이미지 업로드에 실패했습니다.\n오류: ${error.message}\n\n이미지 없이 제품을 등록하시겠습니까?`);
         if (!continueWithoutImage) {
           return;
@@ -608,93 +678,123 @@ const saveData = async () => {
       }
     }
     
-    // 등록일 처리 (날짜 문자열을 Date 객체로 변환)
-    let regDate = null;
-    if (formData.value.regDate && formData.value.regDate.trim() !== '') {
-      try {
-        // "2024-01-01" 형식을 Date 객체로 변환
-        const dateStr = formData.value.regDate.trim();
-        regDate = new Date(dateStr + 'T00:00:00'); // 시간은 00:00:00으로 설정
-        
-        // 유효한 날짜인지 확인
-        if (isNaN(regDate.getTime())) {
-          throw new Error('유효하지 않은 날짜 형식');
-        }
-      } catch (error) {
-        toast.add({ 
-          severity: 'error', 
-          summary: '검증 오류', 
-          detail: '등록일 형식이 올바르지 않습니다. (예: 2024-01-01)', 
-          life: 3000 
-        });
-        return;
-      }
-    }
-    
-    // 현재 사용자 정보를 저장 전에 다시 확인
+    // 현재 사용자 정보 확인
     const currentUserData = await getCurrentUser();
     console.log('저장 시점의 현재 사용자 정보:', currentUserData);
     
-    // 선택된 제품이 있으면 수정 모드, 없으면 신규 등록
-    const isUpdateMode = selectedProduct.value && selectedProductId.value;
-    
-    // 기본 제품 데이터 구성
-    const productData = {
-      ...formData.value,
-      productImage: imageUrl || null,
-      status: '040002' // 등록 대기 상태 (6자리 코드)
-    };
+    // 등록/수정 모드 판별 (더 엄격하게)
+    const isUpdateMode = selectedProduct.value && selectedProductId.value && selectedProductId.value.trim() !== '';
+    console.log('업데이트 모드:', isUpdateMode);
     
     let response;
     
     if (isUpdateMode) {
-      // 수정 모드 - 수정자 정보 명확히 설정
-      const now = new Date();
+      // === 수정 모드 ===
+      console.log('=== 수정 모드 실행 ===');
       
-      productData.productId = selectedProductId.value;
-      productData.updateUser = currentUserData.empId; // 수정자 ID - 현재 로그인한 사용자
-      productData.updateDate = now; // 수정일시
-      productData.regDate = regDate; // 등록일은 기존 값 유지
+      // 등록일 처리 (수정 모드에서는 기존 값 유지 또는 새로 설정)
+      let regDate = null;
+      if (formData.value.regDate && formData.value.regDate.trim() !== '') {
+        try {
+          const dateStr = formData.value.regDate.trim();
+          regDate = new Date(dateStr + 'T00:00:00');
+          if (isNaN(regDate.getTime())) {
+            throw new Error('유효하지 않은 날짜 형식');
+          }
+        } catch (error) {
+          toast.add({ 
+            severity: 'error', 
+            summary: '검증 오류', 
+            detail: '등록일 형식이 올바르지 않습니다. (예: 2024-01-01)', 
+            life: 3000 
+          });
+          return;
+        }
+      }
       
-      console.log('수정 모드 - 전송할 데이터:', {
-        productId: productData.productId,
-        updateUser: productData.updateUser,
-        updateDate: productData.updateDate,
-        regUser: productData.regUser,
-        regDate: productData.regDate
-      });
+      const updateData = {
+        ...formData.value,
+        productId: selectedProductId.value,
+        updateUser: currentUserData.employeeId,
+        updateDate: new Date(),
+        regDate: regDate,
+        productImage: imageUrl || null,
+        // 기존 등록자 정보는 유지
+        regUser: selectedProduct.value.regUserCode || formData.value.regUser
+      };
       
-      response = await axios.put(`${API_BASE_URL}/${selectedProductId.value}`, productData);
+      console.log('수정 데이터:', updateData);
+      response = await axios.put(`${API_BASE_URL}/${selectedProductId.value}`, updateData);
+      
     } else {
-      // 신규 등록 모드 - 서버에서 제품 ID 자동 생성
-      productData.regUser = currentUserData.empId; // 등록자 ID - 현재 로그인한 사용자
-      productData.regDate = regDate; // 등록일
-      delete productData.productId; // 백엔드에서 자동 생성
+      // === 신규 등록 모드 ===
+      console.log('=== 신규 등록 모드 실행 ===');
       
-      console.log('등록 모드 - 전송할 데이터:', {
-        regUser: productData.regUser,
-        regDate: productData.regDate,
-        status: productData.status
-      });
+      // 등록일 처리 (신규 등록)
+      let regDate = null;
+      if (formData.value.regDate && formData.value.regDate.trim() !== '') {
+        try {
+          const dateStr = formData.value.regDate.trim();
+          regDate = new Date(dateStr + 'T00:00:00');
+          if (isNaN(regDate.getTime())) {
+            throw new Error('유효하지 않은 날짜 형식');
+          }
+        } catch (error) {
+          toast.add({ 
+            severity: 'error', 
+            summary: '검증 오류', 
+            detail: '등록일 형식이 올바르지 않습니다. (예: 2024-01-01)', 
+            life: 3000 
+          });
+          return;
+        }
+      } else {
+        // 등록일이 비어있으면 현재 날짜로 설정
+        regDate = new Date();
+      }
       
-      response = await axios.post(API_BASE_URL, productData);
+      const newProductData = {
+        // 백엔드에서 자동 생성되므로 productId는 제외
+        compId: formData.value.compId,
+        productName: formData.value.productName,
+        categoryMain: formData.value.categoryMain,
+        categorySub: formData.value.categorySub || null,
+        vendorName: formData.value.vendorName,
+        productSpec: formData.value.productSpec || null,
+        unit: formData.value.unit,
+        packQty: formData.value.packQty ? parseInt(formData.value.packQty) : null,
+        safetyStock: formData.value.safetyStock ? parseInt(formData.value.safetyStock) : null,
+        purchasePrice: formData.value.purchasePrice ? parseFloat(formData.value.purchasePrice) : null,
+        sellPrice: formData.value.sellPrice ? parseFloat(formData.value.sellPrice) : null,
+        regUser: currentUserData.employeeId,
+        regDate: regDate,
+        status: '040002', // 승인 대기 상태
+        productImage: imageUrl || null,
+        note: formData.value.note || null
+      };
+      
+      console.log('신규 등록 데이터:', newProductData);
+      response = await axios.post(API_BASE_URL, newProductData);
     }
     
-    // ProductController의 응답 구조에 맞춰 처리
     console.log('서버 응답:', response.data);
     
     if (response.data.success) {
+      const successMessage = isUpdateMode ? 
+        `제품이 성공적으로 수정되었습니다. (수정자: ${currentUserData.empName})` : 
+        `제품이 성공적으로 등록되었습니다. (등록자: ${currentUserData.empName}${response.data.productId ? ', 제품ID: ' + response.data.productId : ''})`;
+      
       toast.add({ 
         severity: 'success', 
         summary: '성공', 
-        detail: isUpdateMode ? 
-          `제품이 성공적으로 수정되었습니다. (수정자: ${currentUserData.empName})` : 
-          `제품이 성공적으로 등록되었습니다. (등록자: ${currentUserData.empName}, 제품ID: ${response.data.productId})`, 
+        detail: successMessage, 
         life: 3000 
       });
+      
       clearForm();
       await loadProducts();
     } else {
+      console.error('저장 실패:', response.data);
       toast.add({ 
         severity: 'error', 
         summary: '저장 실패', 
@@ -704,18 +804,21 @@ const saveData = async () => {
     }
     
   } catch (error) {
-    console.error('제품 저장 실패:', error);
-    console.error('에러 상세:', {
-      code: error.code,
-      status: error.response?.status,
-      statusText: error.response?.statusText,
-      data: error.response?.data
-    });
+    console.error('=== 저장 오류 상세 정보 ===');
+    console.error('Error object:', error);
+    console.error('Error code:', error.code);
+    console.error('Error response status:', error.response?.status);
+    console.error('Error response data:', error.response?.data);
+    console.error('Error message:', error.message);
     
     let errorMessage = '저장 중 오류가 발생했습니다.';
     
     if (error.code === 'ERR_NETWORK') {
       errorMessage = '네트워크 오류: 서버 연결을 확인해주세요.';
+    } else if (error.response?.status === 400) {
+      errorMessage = error.response?.data?.message || '잘못된 요청입니다.';
+    } else if (error.response?.status === 500) {
+      errorMessage = '서버 내부 오류가 발생했습니다.';
     } else if (error.response?.data?.message) {
       errorMessage = error.response.data.message;
     } else if (error.message) {
@@ -808,8 +911,8 @@ onMounted(async () => {
     // 사용자 정보 설정 후 폼 초기화
     await getCurrentUser();
     
-    // 현재 로그인한 사용자 정보 설정 (empId를 저장)
-    formData.value.regUser = currentUser.value.empId;
+    // 현재 로그인한 사용자 정보 설정 (employeeId를 저장)
+    formData.value.regUser = currentUser.value.employeeId; // employeeId 사용
     
     // 현재 날짜를 YYYY-MM-DD 형식으로 설정
     const now = new Date();
@@ -961,7 +1064,7 @@ const clearForm = async () => {
   // formData 초기화
   Object.keys(formData.value).forEach(key => {
     if (key === 'regUser') {
-      formData.value[key] = user.empId; // empId를 저장하되 화면에는 empName 표시
+      formData.value[key] = user.employeeId; // employeeId 사용
     } else if (key === 'regDate') {
       // 현재 날짜를 YYYY-MM-DD 형식으로 설정
       const now = new Date();
@@ -1041,6 +1144,7 @@ const searchData = async (searchOptions) => {
     items.value = [];
   }
 };
+
 </script>
 
 <template>
@@ -1209,6 +1313,14 @@ const searchData = async (searchOptions) => {
               severity="secondary"
               icon="pi pi-refresh"
               size="small"
+            />
+            <Button 
+              label="삭제" 
+              @click="deleteData"
+              severity="danger"
+              icon="pi pi-trash"
+              size="small"
+              :disabled="!selectedProductId"
             />
             <Button 
               label="저장" 

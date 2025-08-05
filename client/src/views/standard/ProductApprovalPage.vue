@@ -140,13 +140,31 @@ const categorySubOptions = {
 // 검색 필터
 const selectedCategoryMain = ref('');
 
+// 조회용 세부카테고리 옵션 - computed로 반응형 처리
+const filteredSearchCategorySubOptions = computed(() => {
+  const categoryMainFilter = filters.value.find(f => f.name === 'categoryMain');
+  const selectedMainCategory = categoryMainFilter?.value;
+  
+  console.log('승인페이지 - filteredSearchCategorySubOptions computed 실행됨:', selectedMainCategory);
+  
+  if (!selectedMainCategory) {
+    return [];
+  }
+  
+  const subOptions = categorySubOptions[selectedMainCategory] || [];
+  console.log('승인페이지 - 조회용 세부카테고리 옵션:', subOptions);
+  
+  return subOptions;
+});
+
 const filters = ref([
   { type: 'text', label: '제품명', value: '', placeholder: '제품명을 입력하세요', name: 'productName' },
   { type: 'text', label: '브랜드', value: '', placeholder: '브랜드명을 입력하세요', name: 'vendorName' },
   { type: 'select', label: '카테고리', value: '', placeholder: '카테고리를 선택하세요', name: 'categoryMain', options: categoryMainOptions },
   { type: 'select', label: '세부카테고리', value: '', placeholder: '세부카테고리를 선택하세요', name: 'categorySub', options: [] },
-  { type: 'numberRange', label: '입수량', value: '', placeholder: '입수량 범위를 입력하세요', name: 'packQtyRange' },
-  { type: 'dateRange', label: '등록일 범위', value: '', placeholder: '등록일 범위를 선택하세요', name: 'regDateRange' }
+  { type: 'number', label: '입수량', value: '', placeholder: '입수량을 입력하세요', name: 'packQty' },
+  { type: 'text', label: '등록자', value: '', placeholder: '등록자를 입력하세요', name: 'regUser' },
+  { type: 'dateRange', label: '등록일 범위', value: ['', ''], placeholder: '등록일 범위를 선택하세요', name: 'regDateRange' }
 ]);
 
 const items = ref([]);
@@ -213,6 +231,61 @@ const getCategoryMainName = (code) => {
   return categoryMap[code] || code;
 };
 
+// 날짜 포맷 함수 - 시간 표시 제거
+const formatDate = (dateString) => {
+  if (!dateString) return '';
+  try {
+    const date = new Date(dateString);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    
+    return `${year}.${month}.${day}`;
+  } catch (error) {
+    console.error('날짜 포맷 오류:', error);
+    return dateString;
+  }
+};
+
+// 날짜시간 포맷 함수 (필요시 사용)
+const formatDateTime = (dateString) => {
+  if (!dateString) return '';
+  try {
+    const date = new Date(dateString);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    
+    return `${year}.${month}.${day} ${hours}:${minutes}`;
+  } catch (error) {
+    console.error('날짜시간 포맷 오류:', error);
+    return dateString;
+  }
+};
+
+// 입력용 날짜 포맷 함수
+const formatDateTimeForInput = (dateString) => {
+  if (!dateString) return '';
+  
+  try {
+    const date = new Date(dateString);
+    
+    if (isNaN(date.getTime())) {
+      return dateString;
+    }
+    
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    
+    return `${year}-${month}-${day}`;
+  } catch (error) {
+    return dateString;
+  }
+};
+
 // 폼 데이터 관리
 const formData = ref({
   productId: '',
@@ -255,6 +328,23 @@ const inputs = computed(() => ({
 
 // 제품 데이터 변환 함수 - 백엔드 조인된 데이터 그대로 사용
 const filterProductData = (product) => {
+  // 날짜 처리 - 확실하게 시간 제거
+  let formattedRegDate = '';
+  if (product.regDate) {
+    try {
+      const date = new Date(product.regDate);
+      if (!isNaN(date.getTime())) {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        formattedRegDate = `${year}.${month}.${day}`;
+      }
+    } catch (error) {
+      console.error('날짜 변환 오류:', error);
+      formattedRegDate = '';
+    }
+  }
+
   return {
     productId: product.productId,
     productName: product.productName,
@@ -271,7 +361,7 @@ const filterProductData = (product) => {
     unit: getUnitName(product.unit),
     status: getStatusName(product.status),
     regUserName: product.regUserName || product.regUser, // 백엔드에서 조인된 이름 우선 사용
-    regDate: product.regDate ? formatDate(product.regDate) : '',
+    regDate: formattedRegDate, // 확실하게 시간이 제거된 날짜
     // 원본 코드값 (폼 데이터용)
     categoryMainCode: product.categoryMain,
     categorySubCode: product.categorySub,
@@ -309,22 +399,23 @@ const loadPendingProducts = async () => {
   }
 };
 
-// 검색 기능
+// 검색 기능 - 카테고리 변경 처리 개선
 const searchData = async (searchOptions) => {
   try {
     console.log('검색 옵션:', searchOptions);
     
-    // 카테고리 변경 처리
+    // 카테고리 변경 처리 개선
     if (searchOptions.categoryMain !== selectedCategoryMain.value) {
       selectedCategoryMain.value = searchOptions.categoryMain || '';
       
       const categorySubFilter = filters.value.find(f => f.name === 'categorySub');
       if (categorySubFilter) {
-        categorySubFilter.options = categorySubOptions[searchOptions.categoryMain] || [];
+        categorySubFilter.options = searchOptions.categoryMain ? (categorySubOptions[searchOptions.categoryMain] || []) : [];
         if (!searchOptions.categoryMain) {
           categorySubFilter.value = '';
           searchOptions.categorySub = '';
         }
+        console.log('세부카테고리 옵션 업데이트됨:', categorySubFilter.options);
       }
     }
     
@@ -358,6 +449,32 @@ const searchData = async (searchOptions) => {
   }
   
   resetForm();
+};
+
+// 카테고리 변경 처리 함수 개선
+const onCategoryMainChange = (selectedCategoryMain) => {
+  console.log('승인 페이지 - 카테고리 변경됨:', selectedCategoryMain);
+  
+  const categorySubFilter = filters.value.find(f => f.name === 'categorySub');
+  if (categorySubFilter) {
+    // 세부카테고리 값 초기화
+    categorySubFilter.value = '';
+    
+    console.log('승인 페이지 - 세부카테고리 값 초기화됨');
+    console.log('승인 페이지 - 사용 가능한 세부카테고리 옵션:', categorySubOptions[selectedCategoryMain] || []);
+  }
+  
+  // Vue의 반응성을 강제로 트리거
+  filters.value = [...filters.value];
+};
+
+// 필터 변경 처리 함수 추가
+const handleFilterChange = (filter) => {
+  console.log('승인 페이지 - 필터 변경됨:', filter.name, filter.value);
+  
+  if (filter.name === 'categoryMain') {
+    onCategoryMainChange(filter.value);
+  }
 };
 
 // 제품 선택 처리
@@ -519,22 +636,7 @@ const saveData = (inputData) => {
   });
 };
 
-// 날짜 포맷 함수
-const formatDate = (dateString) => {
-  if (!dateString) return '';
-  try {
-    return new Date(dateString).toLocaleDateString('ko-KR', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit'
-    });
-  } catch (error) {
-    console.error('날짜 포맷 오류:', error);
-    return dateString;
-  }
-};
-
-// 컴포넌트 마운트 - 매우 간단해진 버전
+// 컴포넌트 마운트 - 세부카테고리 옵션 초기화 추가
 onMounted(async () => {
   console.log('🚀 ProductApprovalPage 마운트 시작');
   
@@ -542,6 +644,13 @@ onMounted(async () => {
     // 사용자 정보 로드
     await getCurrentUser();
     console.log('✅ 사용자 정보:', currentUser.value);
+    
+    // 세부카테고리 필터 초기화
+    const categorySubFilter = filters.value.find(f => f.name === 'categorySub');
+    if (categorySubFilter) {
+      categorySubFilter.options = [];
+      console.log('✅ 세부카테고리 필터 초기화됨');
+    }
     
     // 제품 목록 로드 (백엔드에서 직원 이름 조인 포함)
     await loadPendingProducts();
