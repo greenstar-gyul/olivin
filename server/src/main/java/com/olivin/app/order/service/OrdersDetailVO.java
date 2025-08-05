@@ -25,7 +25,10 @@ public class OrdersDetailVO {
 	private String productName;
 	private Integer quantity;
 	private String unit;
+	private String unitName;
+	private Integer packQty;
 	private String category;
+	private String categoryName;
 	private String vendorId;
 	private String vendorName;
 	private Double price;

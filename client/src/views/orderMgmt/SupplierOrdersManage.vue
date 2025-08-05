@@ -146,7 +146,7 @@ const saveFormHandler = async (formData, tableData) => {
 
   for (const form in formData) {
     if (!formData[form]) {
-      if (form == 'remark') break;
+      if (form == 'remark') continue;
       // TODO : 다른 alert() 함수를 사용하면 변경
       alert("폼에 정보에 비어있는 데이터가 있습니다.");
       return;

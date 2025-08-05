@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.olivin.app.plan.mapper.SalesPlanMapper">
+    <select id="selectAllList" resultType="SalesPlanVO" parameterType="SalesPlanVO">
+        SELECT
+            p.plan_id,
+            p.year,
+            p.quarter,
+            p.comp_id,
+            c.comp_name,
+            p.target_amount,
+            p.reg_user,
+            p.reg_date,
+            p.update_user,
+            p.update_date,
+            p.reason
+        FROM
+            sales_plan p JOIN companys c ON (p.comp_id = c.comp_id)
+        ORDER BY p.plan_id DESC
+    </select>
+</mapper>
