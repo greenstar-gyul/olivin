@@ -5,7 +5,7 @@
     <!-- Interface의 메서드를 통해 실행할 쿼리 정의 -->
     <select id="selectAllList" resultType="DeptVO">
         SELECT department_id,
-                dept_name
+               dept_name
         FROM departments
     </select>
 </mapper>

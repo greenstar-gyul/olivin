@@ -20,7 +20,7 @@ public class DeptSearchController {
 
   // 전체 목록을 조회하는 API 엔드포인트를 정의합니다.
   // 클라이언트에서 요청한 전체 목록을 반환합니다.
-  @GetMapping("/public/search/depts/all")
+  @GetMapping("/depts")
   public List<DeptVO> selectAllDepts(){
       return deptService.selectAllDepts();
   }

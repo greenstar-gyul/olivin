@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.olivin.app.example.mapper.EmpMapper">
+
+  <!-- Interface의 메서드를 통해 실행할 쿼리 정의 -->
+   <select id="selectAllList" resultType="EmpVO">
+    SELECT  c.comp_id,
+            c.comp_name,
+            d.department_id,
+            e.employee_id,
+            e.emp_name,
+            e.emp_type,
+            e.email,
+            e.password,
+            e.phone,
+            e.position
+    FROM    employees e
+    JOIN companys c ON e.comp_id = c.comp_id
+    JOIN departments d ON e.department_id = d.department_id
+   </select>
+
+   <!-- <insert id="insertEmp" resultType="EmpVO">
+    INSERT INTO
+    VALUES 
+   </insert> -->
+
+</mapper>

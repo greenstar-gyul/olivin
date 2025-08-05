@@ -8,7 +8,7 @@ import { useToast } from 'primevue/usetoast';
 import axios from '@/service/axios';
 
 const items = ref([]);
-const API_BASE_URL = '/api/Emps';
+const API_BASE_URL = '/api/emps';
 const toast = useToast();
 const fileUploadRef = ref();
 
