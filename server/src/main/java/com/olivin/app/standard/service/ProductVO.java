@@ -41,6 +41,10 @@ public class ProductVO {
     private String productImage;
     private String note;
     
+    // 조인으로 가져올 직원 이름 필드 추가
+    private String regUserName;      // 등록자 이름 (employees.EMP_NAME)
+    private String updateUserName;   // 수정자 이름 (employees.EMP_NAME)
+    
     @Override
     public String toString() {
         return "ProductVO{" +
@@ -53,7 +57,10 @@ public class ProductVO {
                 ", sellPrice=" + sellPrice +
                 ", status='" + status + '\'' +
                 ", compId='" + compId + '\'' +
+                ", regUser='" + regUser + '\'' +
+                ", regUserName='" + regUserName + '\'' +
+                ", updateUser='" + updateUser + '\'' +
+                ", updateUserName='" + updateUserName + '\'' +
                 '}';
     }
-    
 }

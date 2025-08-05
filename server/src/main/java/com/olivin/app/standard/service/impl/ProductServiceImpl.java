@@ -27,7 +27,7 @@ public class ProductServiceImpl implements ProductService {
     private static final String STATUS_REJECTED = "040003";  // 반려 (승인반려)
 
     /**
-     * 모든 제품 조회
+     * 모든 제품 조회 - 직원 이름 조인 포함
      */
     @Override
     public List<ProductVO> getAllProducts() {
@@ -35,17 +35,23 @@ public class ProductServiceImpl implements ProductService {
     }
     
     /**
-     * 승인된 제품만 조회
+     * 승인된 제품만 조회 - 직원 이름 조인 포함
      */
     @Override
     public List<ProductVO> getApprovedProducts() {
-        ProductVO searchVO = new ProductVO();
-        searchVO.setStatus(STATUS_APPROVED);
-        return productMapper.selectProductList(searchVO);
+        return productMapper.selectApprovedProducts();
     }
     
     /**
-     * 조건에 따른 제품 목록 조회
+     * 승인 대기 제품 조회 - 직원 이름 조인 포함
+     */
+    @Override
+    public List<ProductVO> getPendingProducts() {
+        return productMapper.selectPendingProducts();
+    }
+    
+    /**
+     * 조건에 따른 제품 목록 조회 - 직원 이름 조인 포함
      */
     @Override
     public List<ProductVO> getProductList(ProductVO productVO) {
@@ -53,7 +59,7 @@ public class ProductServiceImpl implements ProductService {
     }
     
     /**
-     * 제품 ID로 단일 제품 조회
+     * 제품 ID로 단일 제품 조회 - 직원 이름 조인 포함
      */
     @Override
     public ProductVO getProduct(String productId) {
@@ -113,7 +119,7 @@ public class ProductServiceImpl implements ProductService {
     }
     
     /**
-     * 검색 조건에 따른 제품 조회
+     * 검색 조건에 따른 제품 조회 - 직원 이름 조인 포함
      */
     @Override
     public List<ProductVO> searchProducts(Map<String, Object> searchParams) {
@@ -208,13 +214,6 @@ public class ProductServiceImpl implements ProductService {
             // 오류 발생 시 기본값 반환
             return prefix + "00001"; // 5자리: 00001
         }
-    }
-    
-    /**
-     * 기본 제품 ID 생성 메서드 (fallback용)
-     */
-    private String generateProductId() {
-        return "PROD" + String.format("%05d", (int)(System.currentTimeMillis() % 100000));
     }
     
     /**

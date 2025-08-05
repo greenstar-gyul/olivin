@@ -11,16 +11,23 @@ import com.olivin.app.standard.service.ProductVO;
 @Mapper
 public interface ProductMapper {
     
+    // 기본 조회 메서드들 - 모두 조인 포함
     List<ProductVO> selectAllList();
     List<ProductVO> selectProductList(ProductVO productVO);
     ProductVO selectProduct(String productId);
+    List<ProductVO> selectProductsByCondition(Map<String, Object> params);
+    
+    // 승인 관련 조회 - 조인 포함
+    List<ProductVO> selectPendingProducts();
+    List<ProductVO> selectApprovedProducts();
+    
+    // 데이터 변경 메서드들
     int insertProduct(ProductVO productVO);
     int updateProduct(ProductVO productVO);
     int deleteProduct(String productId);
-    List<ProductVO> selectProductsByCondition(Map<String, Object> params);
     int checkProductId(String productId);
     
-    // 제품 ID 자동생성을 위한 메서드 (5자리 패턴)
+    // 제품 ID 자동생성을 위한 메서드
     String selectLastProductIdByCategory(@Param("prefix") String prefix);
     
     // 상태 전용 업데이트 메서드들
@@ -31,8 +38,6 @@ public interface ProductMapper {
     int updateProductApprovalStatus(Map<String, Object> params);
     int updateProductSimpleApproval(Map<String, Object> params);
     
-    // 조회 메서드들
+    // 단순 조회 메서드들
     String selectProductStatus(String productId);
-    List<ProductVO> selectPendingProducts();
-    List<ProductVO> selectApprovedProducts();
 }

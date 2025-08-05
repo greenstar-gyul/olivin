@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
 <mapper namespace="com.olivin.app.standard.mapper.ProductMapper">
-    
-    <!-- ResultMap 정의 -->
-    <resultMap id="ProductResultMap" type="com.olivin.app.standard.service.ProductVO">
+
+    <!-- 기본 Result Map - 직원 이름 조인 포함 -->
+    <resultMap id="ProductResultMap" type="ProductVO">
         <id property="productId" column="PRODUCT_ID"/>
         <result property="compId" column="COMP_ID"/>
         <result property="productName" column="PRODUCT_NAME"/>
@@ -23,230 +24,228 @@
         <result property="status" column="STATUS"/>
         <result property="productImage" column="PRODUCT_IMAGE"/>
         <result property="note" column="NOTE"/>
+        <!-- 조인으로 가져온 직원 이름들 -->
+        <result property="regUserName" column="REG_USER_NAME"/>
+        <result property="updateUserName" column="UPDATE_USER_NAME"/>
     </resultMap>
 
-    <!-- 모든 제품 목록 조회 -->
+    <!-- 공통 SELECT 절 - employees 테이블과 조인 -->
+    <sql id="selectProductWithEmployeeNames">
+        SELECT 
+            p.PRODUCT_ID,
+            p.COMP_ID,
+            p.PRODUCT_NAME,
+            p.CATEGORY_MAIN,
+            p.CATEGORY_SUB,
+            p.VENDOR_NAME,
+            p.PRODUCT_SPEC,
+            p.UNIT,
+            p.PACK_QTY,
+            p.SAFETY_STOCK,
+            p.PURCHASE_PRICE,
+            p.SELL_PRICE,
+            p.REG_USER,
+            p.REG_DATE,
+            p.UPDATE_USER,
+            p.UPDATE_DATE,
+            p.STATUS,
+            p.PRODUCT_IMAGE,
+            p.NOTE,
+            e1.EMP_NAME as REG_USER_NAME,
+            e2.EMP_NAME as UPDATE_USER_NAME
+        FROM products p
+        LEFT JOIN employees e1 ON p.REG_USER = e1.EMPLOYEE_ID
+        LEFT JOIN employees e2 ON p.UPDATE_USER = e2.EMPLOYEE_ID
+    </sql>
+
+    <!-- 모든 제품 조회 -->
     <select id="selectAllList" resultMap="ProductResultMap">
-        SELECT PRODUCT_ID, COMP_ID, PRODUCT_NAME, CATEGORY_MAIN, CATEGORY_SUB,
-               VENDOR_NAME, PRODUCT_SPEC, UNIT, PACK_QTY, SAFETY_STOCK,
-               PURCHASE_PRICE, SELL_PRICE, REG_USER, REG_DATE,
-               UPDATE_USER, UPDATE_DATE, STATUS, PRODUCT_IMAGE, NOTE
-        FROM   PRODUCTS
-        ORDER BY PRODUCT_ID ASC
+        <include refid="selectProductWithEmployeeNames"/>
+        ORDER BY p.REG_DATE DESC, p.PRODUCT_ID DESC
     </select>
 
-    <!-- 카테고리별 마지막 제품 ID 조회 (5자리 숫자 패턴) -->
-    <select id="selectLastProductIdByCategory" parameterType="String" resultType="String">
-        SELECT MAX(PRODUCT_ID)
-        FROM   PRODUCTS
-        WHERE  PRODUCT_ID LIKE #{prefix} || '%'
-          AND  LENGTH(PRODUCT_ID) = LENGTH(#{prefix}) + 5
-          AND  REGEXP_LIKE(SUBSTR(PRODUCT_ID, LENGTH(#{prefix}) + 1), '^[0-9]{5}$')
+    <!-- 조건부 제품 목록 조회 -->
+    <select id="selectProductList" parameterType="ProductVO" resultMap="ProductResultMap">
+        <include refid="selectProductWithEmployeeNames"/>
+        <where>
+            <if test="productId != null and productId != ''">
+                AND p.PRODUCT_ID = #{productId}
+            </if>
+            <if test="productName != null and productName != ''">
+                AND p.PRODUCT_NAME LIKE '%'||#{productName}||'%'
+            </if>
+            <if test="vendorName != null and vendorName != ''">
+                AND p.VENDOR_NAME LIKE '%'||#{vendorName}||'%'
+            </if>
+            <if test="categoryMain != null and categoryMain != ''">
+                AND p.CATEGORY_MAIN = #{categoryMain}
+            </if>
+            <if test="categorySub != null and categorySub != ''">
+                AND p.CATEGORY_SUB = #{categorySub}
+            </if>
+            <if test="status != null and status != ''">
+                AND p.STATUS = #{status}
+            </if>
+            <if test="compId != null and compId != ''">
+                AND p.COMP_ID = #{compId}
+            </if>
+        </where>
+        ORDER BY p.REG_DATE DESC, p.PRODUCT_ID DESC
     </select>
 
-    <!-- 조건별 제품 목록 조회 -->
-    <select id="selectProductList" parameterType="com.olivin.app.standard.service.ProductVO" resultMap="ProductResultMap">
-        SELECT PRODUCT_ID, COMP_ID, PRODUCT_NAME, CATEGORY_MAIN, CATEGORY_SUB,
-               VENDOR_NAME, PRODUCT_SPEC, UNIT, PACK_QTY, SAFETY_STOCK,
-               PURCHASE_PRICE, SELL_PRICE, REG_USER, REG_DATE,
-               UPDATE_USER, UPDATE_DATE, STATUS, PRODUCT_IMAGE, NOTE
-        FROM   PRODUCTS
-        WHERE  1=1
-        <if test="productName != null and productName != ''">
-            AND PRODUCT_NAME LIKE '%' || #{productName} || '%'
-        </if>
-        <if test="categoryMain != null and categoryMain != ''">
-            AND CATEGORY_MAIN LIKE '%' || #{categoryMain} || '%'
-        </if>
-        <if test="categorySub != null and categorySub != ''">
-            AND CATEGORY_SUB LIKE '%' || #{categorySub} || '%'
-        </if>
-        <if test="vendorName != null and vendorName != ''">
-            AND VENDOR_NAME LIKE '%' || #{vendorName} || '%'
-        </if>
-        <if test="compId != null and compId != ''">
-            AND COMP_ID LIKE '%' || #{compId} || '%'
-        </if>
-        <if test="packQty != null">
-            AND PACK_QTY = #{packQty}
-        </if>
-        <if test="status != null and status != ''">
-            AND STATUS = #{status}
-        </if>
-        ORDER BY PRODUCT_ID ASC
+    <!-- 단일 제품 조회 -->
+    <select id="selectProduct" parameterType="string" resultMap="ProductResultMap">
+        <include refid="selectProductWithEmployeeNames"/>
+        WHERE p.PRODUCT_ID = #{productId}
     </select>
 
-    <!-- 특정 제품 조회 -->
-    <select id="selectProduct" parameterType="String" resultMap="ProductResultMap">
-        SELECT PRODUCT_ID, COMP_ID, PRODUCT_NAME, CATEGORY_MAIN, CATEGORY_SUB,
-               VENDOR_NAME, PRODUCT_SPEC, UNIT, PACK_QTY, SAFETY_STOCK,
-               PURCHASE_PRICE, SELL_PRICE, REG_USER, REG_DATE,
-               UPDATE_USER, UPDATE_DATE, STATUS, PRODUCT_IMAGE, NOTE
-        FROM   PRODUCTS
-        WHERE  PRODUCT_ID = #{productId}
+    <!-- 검색 조건에 따른 제품 조회 - XML 엔티티 사용 -->
+    <select id="selectProductsByCondition" parameterType="map" resultMap="ProductResultMap">
+        <include refid="selectProductWithEmployeeNames"/>
+        <where>
+            <if test="productName != null and productName != ''">
+                AND p.PRODUCT_NAME LIKE '%'||#{productName}||'%'
+            </if>
+            <if test="vendorName != null and vendorName != ''">
+                AND p.VENDOR_NAME LIKE '%'||#{vendorName}||'%'
+            </if>
+            <if test="categoryMain != null and categoryMain != ''">
+                AND p.CATEGORY_MAIN = #{categoryMain}
+            </if>
+            <if test="categorySub != null and categorySub != ''">
+                AND p.CATEGORY_SUB = #{categorySub}
+            </if>
+            <if test="status != null and status != ''">
+                AND p.STATUS = #{status}
+            </if>
+            <if test="compId != null and compId != ''">
+                AND p.COMP_ID = #{compId}
+            </if>
+            <if test="regUser != null and regUser != ''">
+                AND p.REG_USER = #{regUser}
+            </if>
+            <if test="packQty != null">
+                AND p.PACK_QTY = #{packQty}
+            </if>
+            <if test="regDateFrom != null and regDateFrom != ''">
+                <![CDATA[
+                AND p.REG_DATE >= TO_DATE(#{regDateFrom}, 'YYYY-MM-DD')
+                ]]>
+            </if>
+            <if test="regDateTo != null and regDateTo != ''">
+                <![CDATA[
+                AND p.REG_DATE <= TO_DATE(#{regDateTo}, 'YYYY-MM-DD') + INTERVAL '1' DAY - INTERVAL '1' SECOND
+                ]]>
+            </if>
+        </where>
+        ORDER BY p.REG_DATE DESC, p.PRODUCT_ID DESC
     </select>
 
-    <!-- 검색 조건에 따른 제품 목록 조회 -->
-    <select id="selectProductsByCondition" parameterType="Map" resultMap="ProductResultMap">
-        SELECT PRODUCT_ID, COMP_ID, PRODUCT_NAME, CATEGORY_MAIN, CATEGORY_SUB,
-               VENDOR_NAME, PRODUCT_SPEC, UNIT, PACK_QTY, SAFETY_STOCK,
-               PURCHASE_PRICE, SELL_PRICE, REG_USER, REG_DATE,
-               UPDATE_USER, UPDATE_DATE, STATUS, PRODUCT_IMAGE, NOTE
-        FROM   PRODUCTS
-        WHERE  1=1
-        <if test="productName != null and productName != ''">
-            AND PRODUCT_NAME LIKE '%' || #{productName} || '%'
-        </if>
-        <if test="categoryMain != null and categoryMain != ''">
-            AND CATEGORY_MAIN LIKE '%' || #{categoryMain} || '%'
-        </if>
-        <if test="categorySub != null and categorySub != ''">
-            AND CATEGORY_SUB LIKE '%' || #{categorySub} || '%'
-        </if>
-        <if test="vendorName != null and vendorName != ''">
-            AND VENDOR_NAME LIKE '%' || #{vendorName} || '%'
-        </if>
-        <if test="compId != null and compId != ''">
-            AND COMP_ID LIKE '%' || #{compId} || '%'
-        </if>
-        <if test="packQtyFrom != null and packQtyFrom != ''">
-            <![CDATA[
-                AND PACK_QTY >= #{packQtyFrom}
-            ]]>
-        </if>
-        <if test="packQtyTo != null and packQtyTo != ''">
-            <![CDATA[
-                AND PACK_QTY <= #{packQtyTo}
-            ]]>
-        </if>
-        <if test="regDateFrom != null and regDateFrom != ''">
-            <![CDATA[
-                AND REG_DATE >= TO_DATE(#{regDateFrom}, 'YYYY-MM-DD')
-            ]]>
-        </if>
-        <if test="regDateTo != null and regDateTo != ''">
-            <![CDATA[
-                AND REG_DATE <= TO_DATE(#{regDateTo}, 'YYYY-MM-DD') + INTERVAL '1' DAY - INTERVAL '1' SECOND
-            ]]>
-        </if>
-        <if test="status != null and status != ''">
-            AND STATUS = #{status}
-        </if>
-        ORDER BY PRODUCT_ID ASC
+    <!-- 승인 대기 제품 조회 -->
+    <select id="selectPendingProducts" resultMap="ProductResultMap">
+        <include refid="selectProductWithEmployeeNames"/>
+        WHERE p.STATUS = '040002'
+        ORDER BY p.REG_DATE DESC, p.PRODUCT_ID DESC
+    </select>
+
+    <!-- 승인된 제품 조회 -->
+    <select id="selectApprovedProducts" resultMap="ProductResultMap">
+        <include refid="selectProductWithEmployeeNames"/>
+        WHERE p.STATUS = '040001'
+        ORDER BY p.REG_DATE DESC, p.PRODUCT_ID DESC
     </select>
 
     <!-- 제품 등록 -->
-    <insert id="insertProduct" parameterType="com.olivin.app.standard.service.ProductVO">
-        INSERT INTO PRODUCTS (
+    <insert id="insertProduct" parameterType="ProductVO">
+        INSERT INTO products (
             PRODUCT_ID, COMP_ID, PRODUCT_NAME, CATEGORY_MAIN, CATEGORY_SUB,
             VENDOR_NAME, PRODUCT_SPEC, UNIT, PACK_QTY, SAFETY_STOCK,
-            PURCHASE_PRICE, SELL_PRICE, REG_USER, REG_DATE, STATUS, 
+            PURCHASE_PRICE, SELL_PRICE, REG_USER, REG_DATE, STATUS,
             PRODUCT_IMAGE, NOTE
         ) VALUES (
             #{productId}, #{compId}, #{productName}, #{categoryMain}, #{categorySub},
             #{vendorName}, #{productSpec}, #{unit}, #{packQty}, #{safetyStock},
-            #{purchasePrice}, #{sellPrice}, #{regUser}, #{regDate}, 
-            NVL(#{status}, '040002'), #{productImage}, #{note}
+            #{purchasePrice}, #{sellPrice}, #{regUser}, #{regDate}, #{status},
+            #{productImage}, #{note}
         )
     </insert>
 
-    <!-- 제품 정보 수정 (NULL 안전 처리) -->
-    <update id="updateProduct" parameterType="com.olivin.app.standard.service.ProductVO">
-        UPDATE PRODUCTS 
-        SET    
-               COMP_ID = NVL(#{compId}, COMP_ID),
-               PRODUCT_NAME = NVL(#{productName}, PRODUCT_NAME),
-               CATEGORY_MAIN = NVL(#{categoryMain}, CATEGORY_MAIN),
-               CATEGORY_SUB = NVL(#{categorySub}, CATEGORY_SUB),
-               VENDOR_NAME = NVL(#{vendorName}, VENDOR_NAME),
-               PRODUCT_SPEC = NVL(#{productSpec}, PRODUCT_SPEC),
-               UNIT = NVL(#{unit}, UNIT),
-               PACK_QTY = NVL(#{packQty}, PACK_QTY),
-               SAFETY_STOCK = NVL(#{safetyStock}, SAFETY_STOCK),
-               PURCHASE_PRICE = NVL(#{purchasePrice}, PURCHASE_PRICE),
-               SELL_PRICE = NVL(#{sellPrice}, SELL_PRICE),
-               UPDATE_USER = NVL(#{updateUser}, UPDATE_USER),
-               UPDATE_DATE = NVL(#{updateDate}, SYSDATE),
-               STATUS = NVL(#{status}, STATUS),
-               PRODUCT_IMAGE = NVL(#{productImage}, PRODUCT_IMAGE),
-               NOTE = NVL(#{note}, NOTE)
-        WHERE  PRODUCT_ID = #{productId}
-    </update>
-
-    <!-- 상태 전용 업데이트 (승인/반려 처리용) -->
-    <update id="updateProductStatus" parameterType="map">
-        UPDATE PRODUCTS 
-        SET STATUS = #{status},
+    <!-- 제품 수정 -->
+    <update id="updateProduct" parameterType="ProductVO">
+        UPDATE products SET
+            COMP_ID = #{compId},
+            PRODUCT_NAME = #{productName},
+            CATEGORY_MAIN = #{categoryMain},
+            CATEGORY_SUB = #{categorySub},
+            VENDOR_NAME = #{vendorName},
+            PRODUCT_SPEC = #{productSpec},
+            UNIT = #{unit},
+            PACK_QTY = #{packQty},
+            SAFETY_STOCK = #{safetyStock},
+            PURCHASE_PRICE = #{purchasePrice},
+            SELL_PRICE = #{sellPrice},
             UPDATE_USER = #{updateUser},
-            UPDATE_DATE = SYSDATE
+            UPDATE_DATE = #{updateDate},
+            STATUS = #{status},
+            PRODUCT_IMAGE = #{productImage},
+            NOTE = #{note}
         WHERE PRODUCT_ID = #{productId}
-    </update>
-
-    <!-- 승인/반려 전용 업데이트 (사유 포함) -->
-    <update id="updateProductApprovalStatus" parameterType="map">
-        UPDATE PRODUCTS 
-        SET    STATUS = #{status},
-               UPDATE_USER = #{updateUser},
-               UPDATE_DATE = SYSDATE
-               <if test="note != null and note != ''">
-                   , NOTE = CASE 
-                       WHEN NOTE IS NULL OR LENGTH(TRIM(NOTE)) = 0 THEN #{note}
-                       ELSE NOTE || CHR(10) || #{note}
-                   END
-               </if>
-        WHERE  PRODUCT_ID = #{productId}
-          AND  STATUS = '040002'  <!-- 승인 대기 상태인 경우만 업데이트 -->
-    </update>
-
-    <!-- 간단한 승인 전용 업데이트 -->
-    <update id="updateProductSimpleApproval" parameterType="map">
-        UPDATE PRODUCTS 
-        SET STATUS = #{status},
-            UPDATE_USER = #{updateUser},
-            UPDATE_DATE = SYSDATE
-        WHERE PRODUCT_ID = #{productId}
-          AND STATUS = '040002'
     </update>
 
     <!-- 제품 삭제 -->
-    <delete id="deleteProduct" parameterType="String">
-        DELETE FROM PRODUCTS 
-        WHERE  PRODUCT_ID = #{productId}
+    <delete id="deleteProduct" parameterType="string">
+        DELETE FROM products WHERE PRODUCT_ID = #{productId}
     </delete>
 
-    <!-- 제품 ID 존재 여부 확인 -->
-    <select id="checkProductId" parameterType="String" resultType="int">
-        SELECT COUNT(*)
-        FROM   PRODUCTS
-        WHERE  PRODUCT_ID = #{productId}
+    <!-- 제품 ID 중복 확인 -->
+    <select id="checkProductId" parameterType="string" resultType="int">
+        SELECT COUNT(*) FROM products WHERE PRODUCT_ID = #{productId}
     </select>
+
+    <!-- 카테고리별 마지막 제품 ID 조회 -->
+    <select id="selectLastProductIdByCategory" parameterType="string" resultType="string">
+        <![CDATA[
+        SELECT PRODUCT_ID 
+        FROM products 
+        WHERE PRODUCT_ID LIKE #{prefix}||'%'
+        ORDER BY PRODUCT_ID DESC
+        FETCH FIRST 1 ROWS ONLY
+        ]]>
+    </select>
+
+    <!-- 제품 상태만 업데이트 -->
+    <update id="updateProductStatus">
+        UPDATE products SET
+            STATUS = #{status},
+            UPDATE_USER = #{updateUser},
+            UPDATE_DATE = SYSDATE
+        WHERE PRODUCT_ID = #{productId}
+    </update>
+
+    <!-- 승인 처리용 업데이트 -->
+    <update id="updateProductApprovalStatus" parameterType="map">
+        UPDATE products SET
+            STATUS = #{status},
+            UPDATE_USER = #{updateUser},
+            UPDATE_DATE = SYSDATE
+            <if test="note != null and note != ''">
+                , NOTE = #{note}
+            </if>
+        WHERE PRODUCT_ID = #{productId}
+    </update>
+
+    <!-- 간단 승인 업데이트 -->
+    <update id="updateProductSimpleApproval" parameterType="map">
+        UPDATE products SET
+            STATUS = #{status},
+            UPDATE_USER = #{updateUser},
+            UPDATE_DATE = SYSDATE
+        WHERE PRODUCT_ID = #{productId}
+    </update>
 
     <!-- 제품 상태 조회 -->
-    <select id="selectProductStatus" parameterType="String" resultType="String">
-        SELECT STATUS 
-        FROM   PRODUCTS 
-        WHERE  PRODUCT_ID = #{productId}
+    <select id="selectProductStatus" parameterType="string" resultType="string">
+        SELECT STATUS FROM products WHERE PRODUCT_ID = #{productId}
     </select>
 
-    <!-- 승인 대기 상태 제품만 조회 -->
-    <select id="selectPendingProducts" resultMap="ProductResultMap">
-        SELECT PRODUCT_ID, COMP_ID, PRODUCT_NAME, CATEGORY_MAIN, CATEGORY_SUB,
-               VENDOR_NAME, PRODUCT_SPEC, UNIT, PACK_QTY, SAFETY_STOCK,
-               PURCHASE_PRICE, SELL_PRICE, REG_USER, REG_DATE,
-               UPDATE_USER, UPDATE_DATE, STATUS, PRODUCT_IMAGE, NOTE
-        FROM   PRODUCTS
-        WHERE  STATUS = '040002'  <!-- 승인 대기 -->
-        ORDER BY REG_DATE DESC
-    </select>
-
-    <!-- 승인 완료 상태 제품만 조회 -->
-    <select id="selectApprovedProducts" resultMap="ProductResultMap">
-        SELECT PRODUCT_ID, COMP_ID, PRODUCT_NAME, CATEGORY_MAIN, CATEGORY_SUB,
-               VENDOR_NAME, PRODUCT_SPEC, UNIT, PACK_QTY, SAFETY_STOCK,
-               PURCHASE_PRICE, SELL_PRICE, REG_USER, REG_DATE,
-               UPDATE_USER, UPDATE_DATE, STATUS, PRODUCT_IMAGE, NOTE
-        FROM   PRODUCTS
-        WHERE  STATUS = '040001'  <!-- 승인 완료 -->
-        ORDER BY REG_DATE DESC
-    </select>
 </mapper>
