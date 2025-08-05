@@ -51,7 +51,7 @@ instance.interceptors.response.use(
         case 401:
           // 토큰 만료 또는 유효하지 않음 - 자동 로그아웃
           console.warn('🔒 인증 만료, 자동 로그아웃')
-          localStorage.removeItem('token')
+          localStorage.removeItem('auth')
           delete instance.defaults.headers.common['Authorization']
           
           // 로그인 페이지가 아니면 리다이렉트

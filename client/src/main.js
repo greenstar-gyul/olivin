@@ -37,6 +37,8 @@ app.use(router);
 const initializeApp = async () => {
     try {
         const authStore = useAuthStore()
+
+        window.authStore = authStore; // 전역으로 authStore 접근 가능
         
         // 토큰이 있으면 사용자 정보 복구 시도
         if (authStore.token) {
