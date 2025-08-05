@@ -38,7 +38,7 @@
             approval_date,
             total_amount,
             due_date,
-            remark,
+            note,
             order_to_id,
             order_to,
             order_from
@@ -113,7 +113,7 @@
             approval_date,
             total_amount,
             due_date,
-            remark,
+            note,
             order_to_id,
             order_to,
             order_from
@@ -185,7 +185,7 @@
            order_status,
            total_amount,
            due_date,
-           remark
+           note
         ) VALUES (
             #{orderId},
             #{orderTitle},
@@ -201,7 +201,7 @@
             #{orderStatus},
             #{totalAmount},
             #{dueDate},
-            #{remark}
+            #{note}
         )
     </insert>
 

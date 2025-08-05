@@ -3,6 +3,7 @@ package com.olivin.app.plan.mapper;
 import java.util.List;
 
 import com.olivin.app.plan.service.SalesPlanVO;
+import com.olivin.app.plan.service.SearchSalesPlanVO;
 
 /**
  * 매출계획에 관련된 mapper를 저장되는 인터페이스<br>
@@ -13,5 +14,5 @@ import com.olivin.app.plan.service.SalesPlanVO;
  * - 2025.08.04 : 최초 작성<br>
  */
 public interface SalesPlanMapper {
-	List<SalesPlanVO> selectAllList(SalesPlanVO salesPlanVO);
+	List<SalesPlanVO> selectAllList(SearchSalesPlanVO salesPlanVO);
 }

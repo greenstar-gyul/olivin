@@ -10,6 +10,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 
 import com.olivin.app.plan.service.SalesPlanService;
 import com.olivin.app.plan.service.SalesPlanVO;
+import com.olivin.app.plan.service.SearchSalesPlanVO;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -21,7 +22,7 @@ public class SelectPlanTest {
 	
 	@Test
 	void allSelect() {
-		List<SalesPlanVO> list = salesPlanService.getAllSalesPlans(SalesPlanVO.builder().build());
+		List<SalesPlanVO> list = salesPlanService.getAllSalesPlans(SearchSalesPlanVO.builder().build());
 		
 		int c = 0;
 		for (SalesPlanVO vo : list) {

@@ -193,32 +193,38 @@ const router = createRouter({
                 {
                     path: '/orders/head',
                     name: 'HeadOrdersManage',
-                    component: () => import('@/views/orderMgmt/HeadOrdersManage.vue')
+                    component: () => import('@/views/orderMgmt/HeadOrdersManage.vue'),
+                    meta: { roles: ['system_admin'] }
                 },
                 {
                     path: '/orders/head/view',
                     name: 'HeadOrdersView',
-                    component: () => import('@/views/orderMgmt/HeadOrdersView.vue')
+                    component: () => import('@/views/orderMgmt/HeadOrdersView.vue'),
+                    meta: { roles: ['ROLE_SUPPLIER', 'system_admin'] }
                 },
                 {
                     path: '/orders/branch',
                     name: 'BranchOrdersManage',
-                    component: () => import('@/views/orderMgmt/BranchOrdersManage.vue')
+                    component: () => import('@/views/orderMgmt/BranchOrdersManage.vue'),
+                    meta: { roles: ['ROLE_STORE_MANAGER', 'system_admin'] }
                 },
                 {
                     path: '/orders/branch/view',
                     name: 'BranchOrdersView',
-                    component: () => import('@/views/orderMgmt/BranchOrdersView.vue')
+                    component: () => import('@/views/orderMgmt/BranchOrdersView.vue'),
+                    meta: { roles: ['ROLE_STORE_MANAGER', 'system_admin'] }
                 },
                 {
                     path: '/orders/supplier',
                     name: 'SupplierOrdersManage',
-                    component: () => import('@/views/orderMgmt/SupplierOrdersManage.vue')
+                    component: () => import('@/views/orderMgmt/SupplierOrdersManage.vue'),
+                    meta: { roles: ['ROLE_SUPPLIER'] }
                 },
                 {
                     path: '/orders/supplier/view',
                     name: 'SupplierOrdersView',
-                    component: () => import('@/views/orderMgmt/SupplierOrdersView.vue')
+                    component: () => import('@/views/orderMgmt/SupplierOrdersView.vue'),
+                    meta: { roles: ['ROLE_SUPPLIER', 'system_admin'] }
                 },
                 {
                     path: '/orders/view/:orderId',
@@ -236,6 +242,19 @@ const router = createRouter({
                     name: 'branchStock',
                     component: () => import('@/views/inventory/BranchStockPage.vue')
                 },
+                /* sales */
+                {
+                    path: '/sales/plan',
+                    name: 'salesPlan',
+                    component: () => import('@/views/sales/SalesPlanPage.vue')
+                },
+                {
+                    path: '/sales/orders',
+                    name: 'salesOrders',
+                    component: () => import('@/views/sales/SalesOrdersPage.vue'),
+                    meta: { roles: ['ROLE_STORE_MANAGER'] }
+                },
+                /* end of sales */
             ]
         },
         // 로그인 불필요 페이지들

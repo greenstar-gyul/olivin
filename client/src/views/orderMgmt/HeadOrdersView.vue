@@ -7,6 +7,8 @@ import axios from '@/service/axios';
 
 const router = useRouter();
 
+const searchDetailTableRef = ref(null);
+
 const header = ref({
   title: '발주서 조회',
   header: {
@@ -52,7 +54,7 @@ filters.value.filters = [
       { name: '행사상품 발주', value: '140006' }
     ]
   },
-  { type: 'dateRange', label: '납기예정일', value: '', name: 'dueDate',
+  { type: 'dateRange', label: '납기예정일', value: '2025-07-01', name: 'dueDate',
     fromPlaceholder: '예: 2025-07-01', toPlaceholder: '예: 2025-07-31' },
   { type: 'text', label: '공급업체명', value: '', placeholder: '공급업체명을 입력하세요.', name: 'orderTo' },
 
@@ -78,7 +80,7 @@ const getOrdersData = async (options) => {
     }
   });
   items.value = viewData;
-  console.log(req);
+  // console.log(req);
 }
 
 const actionHandler = (rowData) => {
@@ -86,9 +88,16 @@ const actionHandler = (rowData) => {
 }
 
 onMounted(() => {
-  getOrdersData();
+  // 1년 전부터 조회하기 위해 기본 날짜 설정
+  const searchOptions = searchDetailTableRef.value.searchFormRef.searchOptions;
+  if (searchOptions) {
+    const defaultOrderDateFrom = new Date();
+    defaultOrderDateFrom.setFullYear(defaultOrderDateFrom.getFullYear() - 1);
+    searchOptions.orderDateFrom = defaultOrderDateFrom;
+    getOrdersData(searchOptions);
+  }
 });
 </script>
 <template>
-  <SearchDetailTable :filters="filters" :items="items" :header="header" @searchData="searchData" @actionHandler="actionHandler"></SearchDetailTable>
+  <SearchDetailTable ref="searchDetailTableRef" :filters="filters" :items="items" :header="header" @searchData="searchData" @actionHandler="actionHandler"></SearchDetailTable>
 </template>
