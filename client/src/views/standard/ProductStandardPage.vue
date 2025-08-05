@@ -3,18 +3,107 @@ import StandardInput from '@/components/common/StandardInput.vue';
 import FileUpload from 'primevue/fileupload';
 import Toast from 'primevue/toast';
 import Button from 'primevue/button';
+import DialogModal from '@/components/overray/DialogModal.vue';
 import { ref, onMounted, nextTick, computed } from 'vue';
 import { useToast } from 'primevue/usetoast';
 import axios from '@/service/axios';
+
+// 현재 로그인한 사용자 정보
+const currentUser = ref({
+  empId: '',
+  empName: ''
+});
 
 const API_BASE_URL = '/api/products';
 const toast = useToast();
 const fileUploadRef = ref();
 
+// 현재 로그인한 사용자 정보 가져오기
+const getCurrentUser = async () => {
+  try {
+    const response = await axios.get('/api/auth/me');
+    
+    if (response.data.success && response.data.data) {
+      const userData = response.data.data;
+      
+      currentUser.value = {
+        empId: userData.employeeId || userData.empId || userData.emp_id || 'olivin10001',
+        empName: userData.empName || userData.emp_name || userData.name || userData.userName || '김홍인'
+      };
+      
+      return currentUser.value;
+    } else {
+      throw new Error('API 응답에 사용자 데이터가 없습니다');
+    }
+  } catch (error) {
+    // API 실패 시 기본값 사용
+    currentUser.value = {
+      empId: 'olivin10001',
+      empName: '김홍인'
+    };
+    return currentUser.value;
+  }
+};
+
 // window.location.origin을 computed로 처리
 const baseUrl = computed(() => {
   return typeof window !== 'undefined' ? window.location.origin : '';
 });
+
+/* Modal functions */
+
+// 회사코드 모달의 visible 상태를 관리하는 ref 변수
+const companyModalVisible = ref(false);
+
+// 회사코드 모달창의 테이블 헤더 정보 (공급업체 기준정보와 동일하게)
+const companyModalHeaders = ref([
+  { field: 'compId', header: '업체ID' },
+  { field: 'compName', header: '업체명' },
+  { field: 'bizNumber', header: '사업자번호' },
+  { field: 'ceoName', header: 'CEO명' },
+  { field: 'phoneNumber', header: '전화번호' },
+  { field: 'address', header: '주소' },
+]);
+
+// 모달창의 데이터 아이템
+const companyModalItems = ref([]);
+
+// 모달창 닫기 함수
+const closeCompanyModal = () => {
+  companyModalVisible.value = false;
+};
+
+// 회사코드 모달창 확인 버튼 클릭 시 호출되는 함수
+const confirmCompanyModal = async (selectedItems) => {
+  // 선택된 회사 정보를 폼 데이터에 반영
+  if (selectedItems && selectedItems.compId) {
+    // COMP_ID 설정
+    formData.value.compId = selectedItems.compId;
+    
+    // VENDOR_NAME 설정 (COMP_NAME을 브랜드명으로 사용)
+    formData.value.vendorName = selectedItems.compName;
+    
+    toast.add({ 
+      severity: 'success', 
+      summary: '성공', 
+      detail: `회사 "${selectedItems.compName}" 선택 완료`, 
+      life: 3000 
+    });
+  }
+  
+  companyModalVisible.value = false;
+};
+
+// 회사코드 모달을 열 때 호출되는 함수
+const loadCompanyOnClick = () => {
+  companyModalVisible.value = true;
+};
+
+const searchModal = (searchValue) => {
+  // 검색 로직 구현
+};
+
+/* end of Modal functions */
 
 // 카테고리 옵션 (6자리 데이터베이스 코드 기준)
 const categoryMainOptions = [
@@ -110,38 +199,6 @@ const unitOptions = [
   { name: 'pack', value: '130005' }
 ];
 
-// 백엔드에서 실제 다음 제품 ID를 가져오는 함수
-const getNextProductIdFromServer = async (categoryMain) => {
-  try {
-    console.log('백엔드에서 제품 ID 요청:', categoryMain);
-    const response = await axios.get(`${API_BASE_URL}/next-id/${categoryMain}`);
-    
-    console.log('백엔드 응답:', response.data);
-    
-    if (response.data.success) {
-      return response.data.nextProductId;
-    } else {
-      console.error('제품 ID 생성 실패:', response.data.message);
-      toast.add({ 
-        severity: 'error', 
-        summary: '오류', 
-        detail: response.data.message || '제품 ID 생성에 실패했습니다.', 
-        life: 3000 
-      });
-      return '';
-    }
-  } catch (error) {
-    console.error('제품 ID 생성 API 호출 실패:', error);
-    toast.add({ 
-      severity: 'error', 
-      summary: '오류', 
-      detail: '제품 ID 생성 중 서버 오류가 발생했습니다.', 
-      life: 3000 
-    });
-    return '';
-  }
-};
-
 const filters = ref({
   title: '조회 조건',
   filters: [
@@ -149,7 +206,6 @@ const filters = ref({
     { type: 'text', label: '브랜드', value: '', placeholder: '브랜드명을 입력하세요', name: 'vendorName' },
     { type: 'select', label: '카테고리', value: '', placeholder: '카테고리를 선택하세요', name: 'categoryMain', options: categoryMainOptions },
     { type: 'select', label: '세부카테고리', value: '', placeholder: '세부카테고리를 선택하세요', name: 'categorySub', options: [] },
-    { type: 'text', label: '회사코드', value: '', placeholder: 'OY001, OY002 등', name: 'compId' },
     { type: 'number', label: '입수량', value: '', placeholder: '입수량을 입력하세요', name: 'packQty' },
     { type: 'text', label: '등록자', value: '', placeholder: '등록자를 입력하세요', name: 'regUser' },
     { type: 'dateRange', label: '등록일', value: ['', ''], placeholder: '등록일 범위를 선택하세요', name: 'regDateRange' }
@@ -164,11 +220,11 @@ const header = ref({
   title: '제품 기준정보 관리',
   header: {
     productId: '제품ID',
-    compId: '회사코드', 
     productName: '제품명', 
+    compId: '회사코드', 
+    vendorName: '브랜드',
     categoryMain: '카테고리', 
     categorySub: '세부카테고리',
-    vendorName: '브랜드',
     productSpec: '용량/규격',
     unit: '단위',
     packQty: '입수량',
@@ -198,7 +254,7 @@ const formData = ref({
   safetyStock: '',
   purchasePrice: '',
   sellPrice: '',
-  regUser: 'admin',
+  regUser: '', // 현재 로그인한 사용자의 empId로 자동 설정
   regDate: '',
   note: ''
 });
@@ -206,10 +262,10 @@ const formData = ref({
 const inputs = ref({
   title: '제품 등록/수정',
   inputs: [
-    { type: 'text', label: '제품ID', placeholder: '카테고리 선택 시 자동생성', name: 'productId', readonly: true },
+    { type: 'text', label: '제품ID', placeholder: '등록 시 자동생성됩니다', name: 'productId', readonly: true },
     { type: 'text', label: '제품명', placeholder: '제품명을 입력하세요', name: 'productName', required: true },
-    { type: 'text', label: '회사코드', placeholder: 'OY001, OY002 등', name: 'compId', required: true },
-    { type: 'text', label: '브랜드', placeholder: '브랜드명을 입력하세요', name: 'vendorName', required: true },
+    { type: 'text', label: '회사코드', placeholder: '회사선택 필수', name: 'compId', required: true, readonly: true },
+    { type: 'text-with-button', label: '브랜드', placeholder: '회사 선택시 자동 입력', name: 'vendorName', required: true, readonly: true, buttonLabel: '회사선택', buttonAction: 'loadCompany' },
     { type: 'select', label: '카테고리', placeholder: '카테고리를 선택하세요', name: 'categoryMain', required: true, options: categoryMainOptions },
     { type: 'select', label: '세부카테고리', placeholder: '세부카테고리를 선택하세요', name: 'categorySub', options: [] },
     { type: 'text', label: '용량/규격', placeholder: '50ml, 30포, 7.5g 등', name: 'productSpec' },
@@ -218,8 +274,8 @@ const inputs = ref({
     { type: 'number', label: '안전재고', placeholder: '최소 재고량', name: 'safetyStock' },
     { type: 'number', label: '구매가격', placeholder: '원가 (원)', name: 'purchasePrice' },
     { type: 'number', label: '판매가격', placeholder: '소비자가격 (원)', name: 'sellPrice' },
-    { type: 'text', label: '등록자', placeholder: '등록자 ID', name: 'regUser' },
-    { type: 'datetime-local', label: '등록일시', placeholder: '등록일시', name: 'regDate' },
+    { type: 'text', label: '등록자', placeholder: '현재 로그인 사용자 자동 설정', name: 'regUser', readonly: true },
+    { type: 'text', label: '등록일', placeholder: '2024-01-01 형식으로 입력하세요', name: 'regDate' },
     { type: 'textarea', label: '비고', placeholder: '제품 설명, 특징, 주의사항 등을 상세히 입력하세요', name: 'note' }
   ]
 });
@@ -239,43 +295,13 @@ const filteredSearchCategorySubOptions = computed(() => {
   return categorySubOptions[categoryMainFilter?.value] || [];
 });
 
-// 카테고리 변경 시 제품 ID 자동생성 및 세부카테고리 초기화
-const onCategoryMainChange = async () => {
-  console.log('카테고리 변경됨:', formData.value.categoryMain);
-  
+// 카테고리 변경 시 세부카테고리 초기화만 (제품 ID는 등록 시에만 생성)
+const onCategoryMainChange = () => {
   // 세부카테고리 초기화
   formData.value.categorySub = '';
   
-  // 제품 ID 자동생성
-  if (formData.value.categoryMain && formData.value.categoryMain.trim() !== '') {
-    try {
-      // 로딩 상태 표시
-      formData.value.productId = '생성 중...';
-      
-      // 백엔드에서 실제 다음 제품 ID 가져오기
-      const nextProductId = await getNextProductIdFromServer(formData.value.categoryMain);
-      
-      if (nextProductId && nextProductId.trim() !== '') {
-        formData.value.productId = nextProductId;
-        console.log('생성된 제품 ID:', nextProductId);
-        
-        toast.add({ 
-          severity: 'success', 
-          summary: '성공', 
-          detail: `제품 ID가 생성되었습니다: ${nextProductId}`, 
-          life: 2000 
-        });
-      } else {
-        formData.value.productId = '';
-      }
-    } catch (error) {
-      console.error('제품 ID 생성 중 오류:', error);
-      formData.value.productId = '';
-    }
-  } else {
-    // 카테고리가 선택되지 않은 경우
-    formData.value.productId = '';
-  }
+  // 제품 ID는 등록 버튼 클릭 시에만 생성되므로 여기서는 처리하지 않음
+  formData.value.productId = '';
 };
 
 // 조회 조건의 카테고리 변경 시 세부카테고리 초기화
@@ -283,6 +309,17 @@ const onSearchCategoryMainChange = () => {
   const categorySubFilter = filters.value.filters.find(f => f.name === 'categorySub');
   if (categorySubFilter) {
     categorySubFilter.value = '';
+  }
+};
+
+// 버튼 액션 핸들러
+const handleButtonAction = (action) => {
+  switch(action) {
+    case 'loadCompany':
+      loadCompanyOnClick();
+      break;
+    default:
+      break;
   }
 };
 
@@ -339,7 +376,7 @@ const updateFormData = async (productData) => {
       if (key in productData) {
         let value = productData[key] || '';
         
-        // datetime-local 타입을 위한 포맷팅
+        // regDate는 문자열로 처리 (입력형)
         if ((key === 'regDate' || key === 'updateDate') && value) {
           value = formatDateTimeForInput(value);
         }
@@ -379,9 +416,47 @@ const loadProducts = async () => {
       updateDate: product.updateDate ? product.updateDate : null
     }));
   } catch (error) {
-    console.error('제품 목록 조회 실패:', error);
-    alert('제품 목록을 불러오는데 실패했습니다.');
+    toast.add({ 
+      severity: 'error', 
+      summary: '오류', 
+      detail: '제품 목록을 불러오는데 실패했습니다.', 
+      life: 3000 
+    });
     items.value = [];
+  }
+};
+
+// 회사 목록 로드
+const loadCompanyData = async () => {
+  try {
+    const result = await axios.get('/api/companies');
+    
+    // API 응답에서 data 필드 추출
+    const companies = result.data.data || result.data;
+    
+    // 공급업체만 필터링 (compType이 '100003'인 것만)
+    const suppliers = companies.filter(item => item.compType === '100003');
+    
+    companyModalItems.value = suppliers.map((item) => {
+      return {
+        ...item,
+        // DB 컬럼명에 맞춰 매핑 (COMP_ID, COMP_NAME)
+        compId: item.compId || item.comp_id || item.COMP_ID,
+        compName: item.compName || item.comp_name || item.COMP_NAME,
+        phoneNumber: item.phoneNumber || item.phone_number || item.phone || item.telNumber || '',
+        address: item.address || item.addr || item.compAddress || '',
+        compType: item.compType || item.comp_type || item.type || '',
+        bizNumber: item.bizNumber || item.biz_number || '',
+        ceoName: item.ceoName || item.ceo_name || '',
+      }
+    });
+  } catch (e) {
+    toast.add({ 
+      severity: 'error', 
+      summary: '오류', 
+      detail: '공급업체 데이터를 불러오는데 실패했습니다.', 
+      life: 3000 
+    });
   }
 };
 
@@ -393,20 +468,30 @@ const uploadProductImage = async (file) => {
     const formData = new FormData();
     formData.append('file', file);
     
+    // 백엔드 API 호출
     const response = await axios.post(`${API_BASE_URL}/upload-image`, formData, {
       headers: {
         'Content-Type': 'multipart/form-data'
       }
     });
     
-    if (response.data.success) {
+    // ProductController의 응답 구조에 맞춰 처리
+    if (response.data.success && response.data.imageUrl) {
       return response.data.imageUrl;
     } else {
-      throw new Error(response.data.message);
+      throw new Error(response.data.message || '이미지 업로드 실패');
     }
   } catch (error) {
-    console.error('이미지 업로드 실패:', error);
-    throw error;
+    // 구체적인 에러 메시지
+    if (error.response?.status === 404) {
+      throw new Error('이미지 업로드 API를 찾을 수 없습니다.');
+    } else if (error.response?.status === 413) {
+      throw new Error('파일 크기가 너무 큽니다. 10MB 이하의 파일을 선택해주세요.');
+    } else if (error.response?.data?.message) {
+      throw new Error(error.response.data.message);
+    } else {
+      throw new Error('이미지 업로드 중 오류가 발생했습니다.');
+    }
   }
 };
 
@@ -424,6 +509,7 @@ const onFileUpload = async () => {
     try {
       const imageUrl = await uploadProductImage(selectedImageFile.value);
       uploadedImageUrl.value = imageUrl;
+      
       toast.add({ 
         severity: 'success', 
         summary: '성공', 
@@ -434,7 +520,7 @@ const onFileUpload = async () => {
       toast.add({ 
         severity: 'error', 
         summary: '오류', 
-        detail: '이미지 업로드에 실패했습니다.', 
+        detail: '이미지 업로드에 실패했습니다: ' + error.message, 
         life: 3000 
       });
     }
@@ -463,22 +549,24 @@ const onFileClear = () => {
 };
 
 // 폼 초기화
-const clearForm = () => {
+const clearForm = async () => {
   selectedProduct.value = null;
   selectedProductId.value = '';
+  
+  // 현재 사용자 정보 가져오기
+  const user = await getCurrentUser();
   
   // formData 초기화
   Object.keys(formData.value).forEach(key => {
     if (key === 'regUser') {
-      formData.value[key] = 'admin';
+      formData.value[key] = user.empId; // empId를 저장하되 화면에는 empName 표시
     } else if (key === 'regDate') {
+      // 현재 날짜를 YYYY-MM-DD 형식으로 설정
       const now = new Date();
       const year = now.getFullYear();
       const month = String(now.getMonth() + 1).padStart(2, '0');
       const day = String(now.getDate()).padStart(2, '0');
-      const hours = String(now.getHours()).padStart(2, '0');
-      const minutes = String(now.getMinutes()).padStart(2, '0');
-      formData.value[key] = `${year}-${month}-${day}T${hours}:${minutes}`;
+      formData.value[key] = `${year}-${month}-${day}`;
     } else {
       formData.value[key] = '';
     }
@@ -540,12 +628,16 @@ const searchData = async (searchOptions) => {
     }));
     
   } catch (error) {
-    console.error('검색 실패:', error);
-    alert('검색에 실패했습니다.');
+    toast.add({ 
+      severity: 'error', 
+      summary: '오류', 
+      detail: '검색에 실패했습니다.', 
+      life: 3000 
+    });
   }
 };
 
-// 데이터 저장
+// 데이터 저장 (등록 버튼 클릭 시 제품 ID 자동 생성)
 const saveData = async () => {
   try {
     // 필수 필드 검증
@@ -559,20 +651,26 @@ const saveData = async () => {
     
     for (const req of requiredFields) {
       if (!formData.value[req.field] || formData.value[req.field].trim() === '') {
-        alert(`${req.label}은(는) 필수입력 항목입니다.`);
+        toast.add({ 
+          severity: 'error', 
+          summary: '검증 오류', 
+          detail: `${req.label}은(는) 필수입력 항목입니다.`, 
+          life: 3000 
+        });
         return;
       }
     }
     
     let imageUrl = uploadedImageUrl.value;
     
-    // 이미지 업로드 처리
+    // 이미지 업로드 처리 (선택사항)
     if (selectedImageFile.value && !uploadedImageUrl.value) {
       try {
         imageUrl = await uploadProductImage(selectedImageFile.value);
         uploadedImageUrl.value = imageUrl;
       } catch (error) {
-        const continueWithoutImage = confirm('이미지 업로드에 실패했습니다. 이미지 없이 등록하시겠습니까?');
+        // 사용자에게 선택권 제공
+        const continueWithoutImage = confirm(`이미지 업로드에 실패했습니다.\n오류: ${error.message}\n\n이미지 없이 제품을 등록하시겠습니까?`);
         if (!continueWithoutImage) {
           return;
         }
@@ -580,38 +678,96 @@ const saveData = async () => {
       }
     }
     
+    // 등록일 처리 (날짜 문자열을 Date 객체로 변환)
+    let regDate = null;
+    if (formData.value.regDate && formData.value.regDate.trim() !== '') {
+      try {
+        // "2024-01-01" 형식을 Date 객체로 변환
+        const dateStr = formData.value.regDate.trim();
+        regDate = new Date(dateStr + 'T00:00:00'); // 시간은 00:00:00으로 설정
+        
+        // 유효한 날짜인지 확인
+        if (isNaN(regDate.getTime())) {
+          throw new Error('유효하지 않은 날짜 형식');
+        }
+      } catch (error) {
+        toast.add({ 
+          severity: 'error', 
+          summary: '검증 오류', 
+          detail: '등록일 형식이 올바르지 않습니다. (예: 2024-01-01)', 
+          life: 3000 
+        });
+        return;
+      }
+    }
+    
+    // 선택된 제품이 있으면 수정 모드, 없으면 신규 등록
+    const isUpdateMode = selectedProduct.value && selectedProductId.value;
+    
+    // 기본 제품 데이터 구성
     const productData = {
       ...formData.value,
-      productImage: imageUrl,
+      productImage: imageUrl || null,
       status: '040002' // 등록 대기 상태 (6자리 코드)
     };
     
-    // 제품 ID가 있으면 수정 모드, 없으면 신규 등록
-    if (formData.value.productId && formData.value.productId.trim() !== '') {
-      // 수정 시에는 제품 ID를 유지
+    let response;
+    
+    if (isUpdateMode) {
+      // 수정 모드 - update_user와 update_date 추가
+      const currentUserData = await getCurrentUser();
+      const now = new Date();
+      
+      productData.productId = selectedProductId.value;
+      productData.updateUser = currentUserData.empId; // 수정자 ID
+      productData.updateDate = now; // 수정일시
+      productData.regDate = regDate; // 등록일은 기존 값 유지
+      
+      response = await axios.put(`${API_BASE_URL}/${selectedProductId.value}`, productData);
     } else {
-      // 신규 등록 시에는 제품 ID 제거 (백엔드에서 생성)
-      delete productData.productId;
+      // 신규 등록 모드 - 서버에서 제품 ID 자동 생성
+      productData.regDate = regDate; // 등록일
+      delete productData.productId; // 백엔드에서 자동 생성
+      
+      response = await axios.post(API_BASE_URL, productData);
     }
     
-    const response = await axios.post(API_BASE_URL, productData);
-    
+    // ProductController의 응답 구조에 맞춰 처리
     if (response.data.success) {
-      alert('제품이 승인 대기 상태로 등록되었습니다.\n승인 페이지에서 확인해주세요.');
+      toast.add({ 
+        severity: 'success', 
+        summary: '성공', 
+        detail: isUpdateMode ? '제품이 성공적으로 수정되었습니다.' : `제품이 성공적으로 등록되었습니다. (제품ID: ${response.data.productId})`, 
+        life: 3000 
+      });
       clearForm();
       await loadProducts();
     } else {
-      alert('등록 실패: ' + (response.data.message || '알 수 없는 오류'));
+      toast.add({ 
+        severity: 'error', 
+        summary: '저장 실패', 
+        detail: response.data.message || '알 수 없는 오류가 발생했습니다.', 
+        life: 5000 
+      });
     }
     
   } catch (error) {
-    console.error('저장 실패:', error);
+    let errorMessage = '저장 중 오류가 발생했습니다.';
     
     if (error.code === 'ERR_NETWORK') {
-      alert('네트워크 오류: 백엔드 서버가 실행되고 있는지 확인해주세요.');
-    } else {
-      alert('등록 실패: ' + (error.response?.data?.message || error.message));
+      errorMessage = '네트워크 오류: 서버 연결을 확인해주세요.';
+    } else if (error.response?.data?.message) {
+      errorMessage = error.response.data.message;
+    } else if (error.message) {
+      errorMessage = error.message;
     }
+    
+    toast.add({ 
+      severity: 'error', 
+      summary: '저장 실패', 
+      detail: errorMessage, 
+      life: 5000 
+    });
   }
 };
 
@@ -659,30 +815,41 @@ const formatDateTimeForInput = (dateString) => {
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
-    const hours = String(date.getHours()).padStart(2, '0');
-    const minutes = String(date.getMinutes()).padStart(2, '0');
     
-    return `${year}-${month}-${day}T${hours}:${minutes}`;
+    return `${year}-${month}-${day}`;
   } catch (error) {
-    console.error('날짜 포맷 오류:', error);
     return dateString;
   }
 };
 
 // 컴포넌트 마운트 시 초기화
-onMounted(() => {
-  loadProducts();
-  
-  // 초기 폼 데이터 설정
-  formData.value.regUser = 'admin';
-  
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, '0');
-  const day = String(now.getDate()).padStart(2, '0');
-  const hours = String(now.getHours()).padStart(2, '0');
-  const minutes = String(now.getMinutes()).padStart(2, '0');
-  formData.value.regDate = `${year}-${month}-${day}T${hours}:${minutes}`;
+onMounted(async () => {
+  try {
+    // 병렬로 초기 데이터 로드
+    await Promise.all([
+      loadProducts(),
+      loadCompanyData(),
+      getCurrentUser()
+    ]);
+    
+    // 현재 로그인한 사용자 정보 설정 (empId를 저장)
+    formData.value.regUser = currentUser.value.empId;
+    
+    // 현재 날짜를 YYYY-MM-DD 형식으로 설정
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    formData.value.regDate = `${year}-${month}-${day}`;
+    
+  } catch (error) {
+    toast.add({ 
+      severity: 'error', 
+      summary: '초기화 오류', 
+      detail: '페이지 초기화 중 오류가 발생했습니다.', 
+      life: 3000 
+    });
+  }
 });
 
 </script>
@@ -777,7 +944,7 @@ onMounted(() => {
       <!-- 좌측: 제품 목록 -->
       <div class="card p-6">
         <div class="font-semibold text-xl mb-4">{{ header.title }}</div>
-        <div class="overflow-x-auto">
+        <div class="overflow-auto max-h-[1000px] border border-gray-200 rounded">
           <div class="min-w-max">
             <table class="w-full border-collapse border border-gray-300">
               <thead>
@@ -825,7 +992,7 @@ onMounted(() => {
                       {{ item[key] ? item[key].toLocaleString() : '' }}원
                     </span>
                     <span v-else-if="key === 'regDate'">
-                      {{ item[key] ? formatDateTime(item[key]) : '-' }}
+                      {{ item[key] ? formatDate(item[key]) : '-' }}
                     </span>
                     <span v-else>
                       {{ item[key] || '' }}
@@ -852,7 +1019,7 @@ onMounted(() => {
               size="small"
             />
             <Button 
-              label="등록" 
+              label="저장" 
               @click="saveData"
               severity="success"
               icon="pi pi-save"
@@ -889,9 +1056,39 @@ onMounted(() => {
                 </option>
               </select>
               
+              <!-- 버튼이 있는 텍스트 입력 필드 -->
+              <div v-else-if="input.type === 'text-with-button'" class="flex gap-2">
+                <input
+                  v-model="formData[input.name]"
+                  type="text"
+                  :placeholder="input.placeholder"
+                  :readonly="input.readonly"
+                  class="flex-1 p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  :class="{ 'bg-gray-100': input.readonly }"
+                />
+                <Button 
+                  :label="input.buttonLabel" 
+                  @click="handleButtonAction(input.buttonAction)"
+                  severity="info"
+                  size="small"
+                  class="min-w-fit whitespace-nowrap"
+                  outlined
+                />
+              </div>
+              
+              <!-- 등록자 필드 - 특별 처리 (사용자명만 표시) -->
+              <input
+                v-else-if="input.name === 'regUser'"
+                :value="currentUser.empName || '사용자'"
+                type="text"
+                :placeholder="input.placeholder"
+                readonly
+                class="p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-100"
+              />
+              
               <!-- 일반 입력 필드들 -->
               <input
-                v-else-if="input.type === 'text' || input.type === 'number' || input.type === 'datetime-local'"
+                v-else
                 v-model="formData[input.name]"
                 :type="input.type"
                 :placeholder="input.placeholder"
@@ -981,5 +1178,17 @@ onMounted(() => {
         </div>
       </div>
     </div>
+
+    <!-- 회사코드 선택 모달 -->
+    <DialogModal 
+      title="공급업체 검색" 
+      :display="companyModalVisible" 
+      :headers="companyModalHeaders" 
+      :items="companyModalItems" 
+      :selectionMode="'single'" 
+      @close="closeCompanyModal" 
+      @confirm="confirmCompanyModal" 
+      @search-modal="searchModal"
+    />
   </div>
 </template>

@@ -19,4 +19,9 @@ public class OutbndServiceImpl implements OutbndService {
     public List<OutbndVO> getAllOutbnd() {
         return outbndMapper.selectAllList();
     } // end of getAllOutbnd()
+
+    @Override
+    public String getCodeForUpdate() {
+        return outbndMapper.selectCodeForUpdate();
+    } // end of getCodeForUpdate()
 } // end of class

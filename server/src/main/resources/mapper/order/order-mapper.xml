@@ -75,17 +75,20 @@
             <if test="orderStatus != null and orderStatus != ''">
                 AND order_status = #{orderStatus}
             </if>
-	        <if test="orderDateStart != null and orderDateStart != ''">
-	            AND order_date &gt;= #{orderDateStart}
+            <if test="reason != null and reason != ''">
+            	AND reason = #{reason}
+            </if>
+	        <if test="orderDateFrom != null">
+	            AND order_date &gt;= #{orderDateFrom}
 	        </if>
-	        <if test="orderDateEnd != null and orderDateEnd != ''">
-	            AND order_date &lt;= #{orderDateEnd}
+	        <if test="orderDateTo != null">
+	            AND order_date &lt;= #{orderDateTo}
 	        </if>
-	        <if test="dueDateStart != null and dueDateStart != ''">
-	            AND due_date &gt;= #{dueDateStart}
+	        <if test="dueDateFrom != null">
+	            AND due_date &gt;= #{dueDateFrom}
 	        </if>
-	        <if test="dueDateEnd != null and dueDateEnd != ''">
-	            AND due_date &lt;= #{dueDateEnd}
+	        <if test="dueDateTo != null">
+	            AND due_date &lt;= #{dueDateTo}
 	        </if>
         </where>
         ORDER BY order_id DESC
@@ -122,20 +125,23 @@
     
     <select id="selectDetailsByOrderId" resultType="OrdersDetailVO" parameterType="string">
         SELECT
-            po_id,
-            order_id,
-            product_id,
-            product_name,
-            quantity,
-            get_datacode_name(unit) as unit,
-            category,
-            vendor_id,
-            vendor_name,
-            price
+            o.po_id,
+            o.order_id,
+            o.product_id,
+            o.product_name,
+            o.quantity,
+            o.unit,
+            get_datacode_name(o.unit) as unit_name,
+            p.pack_qty,
+            o.category,
+            get_datacode_name(o.category) as category_name,
+            o.vendor_id,
+            o.vendor_name,
+            o.price
         FROM
-            purchase_orders_d
+            purchase_orders_d o JOIN products p ON (o.product_id = p.product_id)
         WHERE
-            order_id = #{orderId}
+            o.order_id = #{orderId}
     </select>
     <!-- 
     <select id="SelectDetailList" resultType="map" parameterType="string">

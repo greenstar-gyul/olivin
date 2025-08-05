@@ -81,24 +81,24 @@ const approve = (source = 'bulk') => {
   emit('approve', approvalData);
 };
 
-// ✅ 반려 함수 개선 - 일괄반료와 개별반료 구분
+// ✅ 반려 함수 개선 - 일괄반려와 개별반려 구분
 const reject = (source = 'bulk') => {
-  console.log(`❌ StandardApproval - 반료 버튼 클릭 (${source})`);
+  console.log(`❌ StandardApproval - 반려 버튼 클릭 (${source})`);
   console.log('📋 현재 formData:', formData.value);
   console.log('🎯 선택된 아이템:', selectedItems.value);
   
   if (!selectedItems.value) {
-    alert('반료할 항목을 선택해주세요.');
+    alert('반려할 항목을 선택해주세요.');
     return;
   }
   
-  // 반료 시 사유 필수 체크
+  // 반려 시 사유 필수 체크
   if (!formData.value.note || formData.value.note.trim() === '') {
-    alert('반료 사유를 입력해주세요.');
+    alert('반려 사유를 입력해주세요.');
     return;
   }
   
-  // 부모 컴포넌트로 반료 이벤트 전달 (formData + 선택된 아이템 정보)
+  // 부모 컴포넌트로 반려 이벤트 전달 (formData + 선택된 아이템 정보)
   const rejectionData = {
     ...formData.value,
     selectedItem: selectedItems.value,
@@ -236,7 +236,7 @@ const handleTableEvent = (data) => {
   onRowSelect(data);
 };
 
-// ✅ InputForm에서 발생하는 승인/반료 이벤트 핸들러
+// ✅ InputForm에서 발생하는 승인/반려 이벤트 핸들러
 const handleInputFormApprove = (data) => {
   console.log('✅ StandardApproval - InputForm 승인 이벤트:', data);
   // formData 업데이트 후 승인 처리
@@ -245,8 +245,8 @@ const handleInputFormApprove = (data) => {
 };
 
 const handleInputFormReject = (data) => {
-  console.log('❌ StandardApproval - InputForm 반료 이벤트:', data);
-  // formData 업데이트 후 반료 처리
+  console.log('❌ StandardApproval - InputForm 반려 이벤트:', data);
+  // formData 업데이트 후 반려 처리
   formData.value = { ...data };
   reject('individual');
 };
@@ -306,7 +306,7 @@ const formatDateTime = (dateString) => {
               @click="() => approve('bulk')"
             />
             <Button 
-              label="일괄반료" 
+              label="일괄반려" 
               severity="danger" 
               class="min-w-fit whitespace-nowrap" 
               outlined 
