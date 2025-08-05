@@ -73,9 +73,29 @@ export const useAuthStore = defineStore('auth', () => {
     token.value = null
     userRole.value = null
     userPermissions.value = []
-    // localStorage 수동 제거 불필요 (persistence가 자동 처리)
+
+    // localStorage에 저장된 persist 항목 제거
+    localStorage.removeItem('auth')
+
+    // axios 헤더에서 Authorization 제거
+    delete axios.defaults.headers.common['Authorization']
+
+    // 로그인 페이지로 강제 이동
+    window.location.href = '/auth/login'
+
     console.log('👋 로그아웃 완료')
   }
+
+  function isJwtExpired(token) {
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]))
+      const now = Math.floor(Date.now() / 1000)
+      return payload.exp && payload.exp < now
+    } catch (e) {
+      return true
+    }
+  }
+
 
   // 📍 사용자 정보 및 권한 복구
   const initializeAuth = async () => {
@@ -83,26 +103,25 @@ export const useAuthStore = defineStore('auth', () => {
     if (loading.value) return
     
     if (token.value) {
+      if (isJwtExpired(token.value)) {
+        console.warn('🚨 만료된 토큰 → 로그아웃 처리')
+        logout()
+        return false
+      }
+
       try {
         const res = await axios.get('/api/auth/me')
-        
         user.value = res.data.data.user
         userRole.value = res.data.data.role
         userPermissions.value = res.data.data.permissions
-        
-        console.log('🔄 인증 상태 복구 완료:', {
-          user: res.data.data.user.empName,
-          role: res.data.data.role.roleName,
-          permissions: res.data.data.permissions.map(p => p.permName)
-        })
-        
         return true
       } catch (err) {
-        console.warn('⚠️ 토큰이 유효하지 않음, 로그아웃 처리')
+        console.warn('⚠️ 토큰 유효하지 않음, 로그아웃 처리')
         logout()
         return false
       }
     }
+
     return false
   }
 
