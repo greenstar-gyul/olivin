@@ -11,5 +11,5 @@ import java.util.List;
  * - 2025.08.04 : 최초 작성<br>
  */
 public interface SalesPlanService {
-	List<SalesPlanVO> getAllSalesPlans(SalesPlanVO salesPlanVO);
+	List<SalesPlanVO> getAllSalesPlans(SearchSalesPlanVO salesPlanVO);
 }

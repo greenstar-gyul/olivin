@@ -7,6 +7,8 @@ import axios from '@/service/axios';
 
 const router = useRouter();
 
+const searchDetailTableRef = ref(null);
+
 const header = ref({
   title: '발주서 조회',
   header: {
@@ -78,17 +80,24 @@ const getOrdersData = async (options) => {
     }
   });
   items.value = viewData;
-  console.log(req);
+  // console.log(req);
 }
 
 const actionHandler = (rowData) => {
   router.push(`/orders/view/${rowData.orderId}`);
 }
 
-onMounted(async () => {
-  getOrdersData();
+onMounted(() => {
+  // 1년 전부터 조회하기 위해 기본 날짜 설정
+  const searchOptions = searchDetailTableRef.value.searchFormRef.searchOptions;
+  if (searchOptions) {
+    const defaultOrderDateFrom = new Date();
+    defaultOrderDateFrom.setFullYear(defaultOrderDateFrom.getFullYear() - 1);
+    searchOptions.orderDateFrom = defaultOrderDateFrom;
+    getOrdersData(searchOptions);
+  }
 });
 </script>
 <template>
-  <SearchDetailTable :filters="filters" :items="items" :header="header" @searchData="searchData" @actionHandler="actionHandler"></SearchDetailTable>
+  <SearchDetailTable ref="searchDetailTableRef" :filters="filters" :items="items" :header="header" @searchData="searchData" @actionHandler="actionHandler"></SearchDetailTable>
 </template>

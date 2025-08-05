@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import com.olivin.app.plan.mapper.SalesPlanMapper;
 import com.olivin.app.plan.service.SalesPlanService;
 import com.olivin.app.plan.service.SalesPlanVO;
+import com.olivin.app.plan.service.SearchSalesPlanVO;
 
 import lombok.RequiredArgsConstructor;
 
@@ -25,7 +26,7 @@ public class SalesPlanServiceImpl implements SalesPlanService {
 	private final SalesPlanMapper salesPlanMapper;
 	
 	@Override
-	public List<SalesPlanVO> getAllSalesPlans(SalesPlanVO salesPlanVO) {
+	public List<SalesPlanVO> getAllSalesPlans(SearchSalesPlanVO salesPlanVO) {
 		return salesPlanMapper.selectAllList(salesPlanVO);
 	}
 }

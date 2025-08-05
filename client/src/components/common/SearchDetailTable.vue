@@ -1,11 +1,12 @@
 <script setup>
 import SearchForm from '@/components/inputForm/SearchForm.vue';
 import { ref } from 'vue';
+import DetailTable from '../table/DetailTable.vue';
 
 const emit = defineEmits(['searchData', 'openSearchModal', 'resetSearchOptions', 'actionHandler']);
 const props = defineProps({
   filters: {
-    type: Array,
+    type: Object,
     required: true
   },
   items: {
@@ -45,5 +46,5 @@ defineExpose({
 </script>
 <template>
   <SearchForm ref="searchFormRef" :filters="props.filters" @searchData="searchData" @openSearchModal="openSearchModal" @resetSearchOptions="resetSearchOptions" ></SearchForm>
-  <DetailTable :data="props.items" :header="props.header" :isAction="true" :actionName="'보기'" @detailClick="handleDetail" @actionHandler="actionHandler"></DetailTable>
+  <DetailTable :data="props.items" :header="props.header" :isAction="true" :actionName="'보기'" @actionHandler="actionHandler"></DetailTable>
 </template>
