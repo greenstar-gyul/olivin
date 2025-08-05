@@ -4,7 +4,7 @@ import { onMounted, ref } from 'vue';
 import { convertDate } from '@/utils/dateUtils'; 
 import axios from '@/service/axios';
 import DialogModal from '@/components/overray/DialogModal.vue';
-
+import moment from "moment";
 
 // 테스트 데이터
 const items = ref([]);
@@ -35,21 +35,28 @@ const closeModal = () => {
 // 모달창 확인 버튼 클릭 시 호출되는 함수
 // 필요한 로직 작성
 const confirmModal = async (selectedItems) => {
-  console.log('Selected items from modal:', selectedItems);
-  // 필요한 로직 작성
-  formData.value = selectedItems;
-  const outbndCode = await axios.get('/api/hqOutnbndCode');
-  console.log('기본키 테스트', outbndCode);
-  formData.value.outbndNo = outbndCode.data;
+  // console.log('Selected items from modal:', selectedItems);
+  // console.log('확인용:', selectedItems.orderTitle);
   
-
+  /* 출고 기본키 생성 */
+  const outbndCode = await axios.get('/api/hqOutnbndCode');
+  /* 출고일 : 오늘 날짜로 설정 */ 
+  const today = moment().format("YY/MM/DD");
+  
+  // 선택한 발주정보를 formData로 전달
+  formData.value.orderId = selectedItems.orderId;
+  formData.value.outbndNo = outbndCode.data;
+  formData.value.orderTitle = selectedItems.orderTitle;
+  formData.value.outbndFrom = selectedItems.orderTo;
+  formData.value.inbndTo = selectedItems.orderFrom;
+  formData.value.outbndDate = today;
+  // console.log('테에스으트', formData.value);
+  
+  /* 제품 상세정보 불러오기 */
   const selOrderId = formData.value.orderId;
-  console.log('테에스으트', formData.value);
   // console.log('id값 확인', selOrderId);
   const res = await axios.get(`/api/orders/${selOrderId}`)
-  // console.log('상세값확인', res.data.detail);
-  // tableData.value = res.data.detail;
-
+  console.log('상세값확인', res.data.detail);
   const details = res.data.detail;
 
   for (let id = 0; id < details.length; id++) {
@@ -57,8 +64,7 @@ const confirmModal = async (selectedItems) => {
   }
 
   tableData.value = details;
-  console.log('전달값확인', tableData.value)
-  // 
+  // console.log('전달값확인', tableData.value)
   orderModalVisible.value = false;
 };
 
@@ -83,10 +89,10 @@ const formData = ref({});
 // 폼 스키마
 const formSchema = [
   { type: 'data', label: '출고번호', id: 'outbndNo' ,data: 'text'},
-  { type: 'text', label: '발주명', id: 'orderTitle' },
-  { type: 'text', label: '출고지', id: 'outbndFrom' },
-  { type: 'text', label: '입고지', id: 'inbndTo' },
-  { type: 'date', label: '출고일', id: 'outbndDate'}, 
+  { type: 'data', label: '발주명', id: 'orderTitle' ,data: 'text' },
+  { type: 'data', label: '출고지', id: 'outbndFrom' ,data: 'text'},
+  { type: 'data', label: '입고지', id: 'inbndTo' ,data: 'text'},
+  { type: 'data', label: '출고일', id: 'outbndDate', data: 'text'}, 
   
   // { type: 'text', label: '출고상태', id: 'outbndStatus',
   //   // options: [
@@ -105,7 +111,7 @@ const tableHeader = {
     productName: '제품명',
     totalOutbndQuantity  : '출고수량',
     quantity: '발주수량',
-    unit: '단위',
+    unitName: '단위',
     // outbndStatus: '출고상태',
   },
   rightAligned: ['price']
@@ -171,11 +177,11 @@ const getOrderData = async () => {
     } catch (e) {
       console.error('출고 데이터 불러오기 실패:', e)
     }
-  };
+};
   
-  const exportHandler = () => {
-    console.log('출고 처리');
-  };
+const exportHandler = () => {
+  console.log('출고 처리');
+};
 
   
 onMounted(() => {  
