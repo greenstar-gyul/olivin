@@ -1,6 +1,6 @@
 <script setup>
 import Button from 'primevue/button';
-import { ref, onMounted, nextTick } from 'vue';
+import { ref, onMounted, nextTick, computed } from 'vue';
 import axios from '@/service/axios';
 
 const API_BASE_URL = '/api/companies';
@@ -18,28 +18,113 @@ const currentUser = ref({
   empName: ''
 });
 
-// 현재 로그인한 사용자 정보 가져오기
+// 현재 로그인한 사용자명을 computed로 처리
+const currentUserName = computed(() => {
+  return currentUser.value?.empName || '관리자';
+});
+
+// 개선된 getCurrentUser 함수 - 더 강력한 사용자 정보 파싱
 const getCurrentUser = async () => {
   try {
     const response = await axios.get('/api/auth/me');
+    console.log('사용자 API 전체 응답:', JSON.stringify(response.data, null, 2));
     
     if (response.data.success && response.data.data) {
       const userData = response.data.data;
+      console.log('userData 구조:', JSON.stringify(userData, null, 2));
+      
+      let empId = 'admin';
+      let empName = '관리자';
+      
+      // 다양한 경우에 대한 더 포괄적인 처리
+      const possibleUserSources = [
+        userData.user,           // user 객체
+        userData,               // userData 직접
+        userData.employee,      // employee 객체
+        userData.userInfo,      // userInfo 객체
+        userData.loginUser      // loginUser 객체
+      ];
+      
+      for (const userSource of possibleUserSources) {
+        if (userSource) {
+          console.log('처리 중인 userSource:', typeof userSource, userSource);
+          
+          if (typeof userSource === 'object' && userSource !== null) {
+            // 객체인 경우 - 다양한 필드명 시도
+            const possibleEmpIds = [
+              userSource.empId,
+              userSource.emp_id, 
+              userSource.EMPLOYEE_ID,
+              userSource.employeeId,
+              userSource.id,
+              userSource.userId,
+              userSource.user_id,
+              userSource.USER_ID
+            ];
+            
+            const possibleEmpNames = [
+              userSource.empName,
+              userSource.emp_name,
+              userSource.EMP_NAME,
+              userSource.name,
+              userSource.userName,
+              userSource.user_name,
+              userSource.USER_NAME,
+              userSource.fullName,
+              userSource.displayName
+            ];
+            
+            // 첫 번째로 유효한 값 찾기
+            const foundEmpId = possibleEmpIds.find(id => id && id !== 'admin' && String(id).trim() !== '');
+            const foundEmpName = possibleEmpNames.find(name => name && name !== '관리자' && String(name).trim() !== '');
+            
+            if (foundEmpId) {
+              empId = String(foundEmpId).trim();
+            }
+            if (foundEmpName) {
+              empName = String(foundEmpName).trim();
+            }
+            
+            // 유효한 사용자 정보를 찾았으면 중단
+            if (foundEmpId && foundEmpName) {
+              break;
+            }
+          } else if (typeof userSource === 'string' && userSource.trim() !== '') {
+            // 문자열인 경우
+            empName = userSource.trim();
+            empId = userSource.trim();
+            break;
+          }
+        }
+      }
       
       currentUser.value = {
-        empId: userData.employeeId || userData.empId || userData.emp_id || 'admin',
-        empName: userData.empName || userData.emp_name || userData.name || userData.userName || '관리자'
+        empId: empId,
+        empName: empName
       };
       
+      console.log('최종 설정된 사용자 정보:', currentUser.value);
+      
+      // 사용자 정보가 기본값이면 경고 로그
+      if (empId === 'admin' && empName === '관리자') {
+        console.warn('사용자 정보를 찾지 못해 기본값을 사용합니다. API 응답 구조를 확인해주세요.');
+      }
+      
       return currentUser.value;
+    } else {
+      console.warn('API 응답에 사용자 데이터가 없음:', response.data);
       throw new Error('API 응답에 사용자 데이터가 없습니다');
     }
   } catch (error) {
+    console.error('사용자 정보 가져오기 실패:', error);
+    
     // API 실패 시 기본값 사용
     currentUser.value = {
       empId: 'admin',
       empName: '관리자'
     };
+    
+    console.warn('사용자 정보 API 실패로 기본값 사용:', currentUser.value);
     return currentUser.value;
   }
 };
@@ -119,19 +204,37 @@ const formData = ref({
 
 // 컴포넌트 마운트 시 데이터 로드
 onMounted(async () => {
+  // 사용자 정보 디버깅
+  try {
+    const response = await axios.get('/api/auth/me');
+    console.log('=== 사용자 API 디버깅 ===');
+    console.log('전체 응답:', JSON.stringify(response.data, null, 2));
+    console.log('response.data.data:', JSON.stringify(response.data.data, null, 2));
+    if (response.data.data?.user) {
+      console.log('user 객체:', JSON.stringify(response.data.data.user, null, 2));
+    }
+    console.log('========================');
+  } catch (error) {
+    console.error('디버깅 중 오류:', error);
+  }
+  
   await loadSuppliers();
-  await getCurrentUser();
-  initializeFormData();
+  await initializeFormData();
 });
 
 // 폼 데이터 초기화
-const initializeFormData = () => {
-  formData.value.regUser = currentUser.value.empId;
+const initializeFormData = async () => {
+  // getCurrentUser가 완료될 때까지 기다림
+  const user = await getCurrentUser();
+  console.log('폼 초기화 시 사용자 정보:', user);
+  
+  formData.value.regUser = user.empId;
   const now = new Date();
   const year = now.getFullYear();
   const month = String(now.getMonth() + 1).padStart(2, '0');
   const day = String(now.getDate()).padStart(2, '0');
   formData.value.regDate = `${year}-${month}-${day}`;
+  console.log('초기화된 formData.regUser:', formData.value.regUser);
 };
 
 // 공급업체 목록 조회 - 제품 방식과 동일하게 처리
@@ -324,7 +427,7 @@ const searchData = async (searchOptions) => {
   await loadSuppliers(searchParams);
 };
 
-// 공급업체 등록/수정 (제품 방식과 동일하게 수정)
+// 개선된 saveData 함수 - 수정자 정보 제대로 설정
 const saveData = async () => {
   try {
     console.log('저장할 공급업체 데이터:', formData.value);
@@ -343,12 +446,12 @@ const saveData = async () => {
       }
     }
     
-    // 등록일 처리 (날짜 문자열을 Date 객체로 변환)
+    // 등록일 처리
     let regDate = null;
     if (formData.value.regDate && formData.value.regDate.trim() !== '') {
       try {
         const dateStr = formData.value.regDate.trim();
-        regDate = new Date(dateStr + 'T00:00:00'); // 시간은 00:00:00으로 설정
+        regDate = new Date(dateStr + 'T00:00:00');
         
         if (isNaN(regDate.getTime())) {
           throw new Error('유효하지 않은 날짜 형식');
@@ -358,6 +461,10 @@ const saveData = async () => {
         return;
       }
     }
+    
+    // 현재 사용자 정보를 저장 전에 다시 확인
+    const currentUserData = await getCurrentUser();
+    console.log('저장 시점의 현재 사용자 정보:', currentUserData);
     
     // 선택된 공급업체가 있으면 수정 모드, 없으면 신규 등록
     const isUpdateMode = selectedSupplier.value && selectedSupplierId.value;
@@ -371,27 +478,46 @@ const saveData = async () => {
     let response;
     
     if (isUpdateMode) {
-      // 수정 모드 - update_user와 update_date 추가
-      const currentUserData = await getCurrentUser();
+      // 수정 모드 - 수정자 정보 명확히 설정
       const now = new Date();
       
       supplierData.compId = selectedSupplierId.value;
-      supplierData.updateUser = currentUserData.empId; // 수정자 ID
+      supplierData.updateUser = currentUserData.empId; // 수정자 ID - 현재 로그인한 사용자
       supplierData.updateDate = now; // 수정일시
-      supplierData.regDate = regDate; // 등록일은 기존 값 유지
+      supplierData.regDate = regDate; // 등록일은 기존 값 유지 또는 입력된 값
+      
+      console.log('수정 모드 - 전송할 데이터:', {
+        compId: supplierData.compId,
+        updateUser: supplierData.updateUser,
+        updateDate: supplierData.updateDate,
+        regUser: supplierData.regUser,
+        regDate: supplierData.regDate
+      });
       
       response = await axios.put(`${API_BASE_URL}/${selectedSupplierId.value}`, supplierData);
     } else {
       // 신규 등록 모드
+      supplierData.regUser = currentUserData.empId; // 등록자 ID - 현재 로그인한 사용자
       supplierData.regDate = regDate; // 등록일
       delete supplierData.compId; // 백엔드에서 자동 생성
+      
+      console.log('등록 모드 - 전송할 데이터:', {
+        regUser: supplierData.regUser,
+        regDate: supplierData.regDate,
+        compType: supplierData.compType
+      });
       
       response = await axios.post(API_BASE_URL, supplierData);
     }
     
-    // 응답 처리 (제품 방식과 동일한 구조)
+    // 응답 처리
+    console.log('서버 응답:', response.data);
+    
     if (response.data.result_code === 'SUCCESS') {
-      alert(isUpdateMode ? '공급업체가 성공적으로 수정되었습니다.' : '공급업체가 성공적으로 등록되었습니다.');
+      alert(isUpdateMode ? 
+        `공급업체가 성공적으로 수정되었습니다. (수정자: ${currentUserData.empName})` : 
+        `공급업체가 성공적으로 등록되었습니다. (등록자: ${currentUserData.empName})`
+      );
       clearForm();
       await loadSuppliers();
     } else {
@@ -400,6 +526,12 @@ const saveData = async () => {
     
   } catch (error) {
     console.error('공급업체 저장 실패:', error);
+    console.error('에러 상세:', {
+      code: error.code,
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      data: error.response?.data
+    });
     
     if (error.code === 'ERR_NETWORK') {
       alert('네트워크 오류: 백엔드 서버가 실행되고 있는지 확인해주세요.');
@@ -585,7 +717,7 @@ const saveData = async () => {
               <!-- 등록자 필드 - 특별 처리 (사용자명만 표시) -->
               <input
                 v-else-if="input.name === 'regUser'"
-                :value="currentUser.empName || '관리자'"
+                :value="currentUserName"
                 type="text"
                 :placeholder="input.placeholder"
                 readonly
