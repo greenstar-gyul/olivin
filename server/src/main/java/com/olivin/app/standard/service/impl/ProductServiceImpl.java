@@ -67,38 +67,79 @@ public class ProductServiceImpl implements ProductService {
     }
     
     /**
-     * 제품 저장 (신규 등록) - 등록 시점에 제품 ID 자동 생성
+     * 제품 저장 (신규 등록) - 등록 시점에 제품 ID 자동 생성 (강화된 디버깅 버전)
      */
     @Override
     public int saveProduct(ProductVO productVO) {
+        System.out.println("=== saveProduct 시작 ===");
+        System.out.println("입력된 ProductVO: " + productVO.toString());
+        
         // 제품 ID 자동 생성 (카테고리 기반)
         if (productVO.getCategoryMain() != null && !productVO.getCategoryMain().isEmpty()) {
+            System.out.println("🔄 제품 ID 자동 생성 시작...");
             String newProductId = getNextProductId(productVO.getCategoryMain());
+            
             if (newProductId != null && !newProductId.isEmpty()) {
                 productVO.setProductId(newProductId);
+                
+                // 생성된 ID 로깅
+                System.out.println("✅ 생성된 제품 ID: " + newProductId);
+                
+                // 중복 확인
+                try {
+                    boolean exists = productMapper.checkProductId(newProductId) > 0;
+                    if (exists) {
+                        System.err.println("❌ 경고: 생성된 제품 ID가 이미 존재합니다: " + newProductId);
+                        throw new RuntimeException("제품 ID 생성 중 중복이 발생했습니다. 다시 시도해주세요.");
+                    }
+                    System.out.println("✅ 중복 확인 완료: " + newProductId);
+                } catch (Exception e) {
+                    System.err.println("❌ 중복 확인 중 오류: " + e.getMessage());
+                    throw new RuntimeException("제품 ID 중복 확인 중 오류가 발생했습니다.", e);
+                }
             } else {
+                System.err.println("❌ 제품 ID 생성 실패");
                 throw new RuntimeException("제품 ID 생성에 실패했습니다. 카테고리를 확인해주세요.");
             }
         } else {
+            System.err.println("❌ 카테고리가 없음");
             throw new RuntimeException("카테고리는 필수입니다.");
         }
         
         // 상태가 없으면 승인 대기로 설정
         if (productVO.getStatus() == null || productVO.getStatus().isEmpty()) {
             productVO.setStatus(STATUS_PENDING);
+            System.out.println("📝 상태를 승인 대기로 설정: " + STATUS_PENDING);
         }
         
         // 등록일 설정 (사용자가 입력한 값이 없으면 현재 시간)
         if (productVO.getRegDate() == null) {
             productVO.setRegDate(new Date());
+            System.out.println("📅 등록일을 현재 시간으로 설정");
         }
         
         // 등록자가 없으면 기본값 설정
         if (productVO.getRegUser() == null || productVO.getRegUser().isEmpty()) {
             productVO.setRegUser("SYSTEM");
+            System.out.println("👤 등록자를 SYSTEM으로 설정");
         }
         
-        return productMapper.insertProduct(productVO);
+        System.out.println("=== 최종 저장 데이터 ===");
+        System.out.println("제품ID: " + productVO.getProductId());
+        System.out.println("제품명: " + productVO.getProductName());
+        System.out.println("카테고리: " + productVO.getCategoryMain());
+        System.out.println("등록자: " + productVO.getRegUser());
+        System.out.println("상태: " + productVO.getStatus());
+        
+        try {
+            int result = productMapper.insertProduct(productVO);
+            System.out.println("💾 데이터베이스 저장 결과: " + result);
+            return result;
+        } catch (Exception e) {
+            System.err.println("❌ 데이터베이스 저장 실패:");
+            e.printStackTrace();
+            throw e;
+        }
     }
     
     /**
@@ -135,12 +176,14 @@ public class ProductServiceImpl implements ProductService {
     }
     
     /**
-     * 카테고리별 다음 제품 ID 생성 (5자리 숫자 패턴)
+     * 카테고리별 다음 제품 ID 생성 (5자리 숫자 패턴) - 강화된 디버깅 버전
      * 예: PRD100001, PRD200001, PRD300001...
-     * 이제 등록 버튼 클릭 시에만 호출됨
      */
     @Override
     public String getNextProductId(String categoryMain) {
+        System.out.println("=== getNextProductId 호출 시작 ===");
+        System.out.println("입력 카테고리: " + categoryMain);
+        
         // 6자리 카테고리 코드별 접두어 매핑
         Map<String, String> categoryPrefixMap = new HashMap<>();
         categoryPrefixMap.put("110001", "PRD1"); // 스킨케어 -> PRD1xxxxx
@@ -155,64 +198,146 @@ public class ProductServiceImpl implements ProductService {
         
         String prefix = categoryPrefixMap.get(categoryMain);
         if (prefix == null) {
+            System.err.println("❌ 지원하지 않는 카테고리: " + categoryMain);
+            System.err.println("사용 가능한 카테고리: " + categoryPrefixMap.keySet());
             return null;
         }
         
+        System.out.println("✅ 카테고리 매핑 성공: " + categoryMain + " -> " + prefix);
+        
         try {
             // 해당 카테고리의 마지막 제품 ID 조회
-            String lastProductId = productMapper.selectLastProductIdByCategory(prefix);
+            System.out.println("💾 데이터베이스에서 마지막 제품 ID 조회 시작...");
+            System.out.println("검색할 접두어: " + prefix);
             
-            String nextProductId;
-            
-            if (lastProductId != null && !lastProductId.isEmpty()) {
-                // 마지막 ID에서 숫자 부분 추출 (5자리)
-                String numberPart = lastProductId.substring(prefix.length());
+            String lastProductId = null;
+            try {
+                lastProductId = productMapper.selectLastProductIdByCategory(prefix);
+                System.out.println("🔍 매퍼 쿼리 실행 결과: " + lastProductId);
+            } catch (Exception mapperException) {
+                System.err.println("💥 매퍼 쿼리 실행 실패:");
+                mapperException.printStackTrace();
                 
-                try {
-                    int lastNumber = Integer.parseInt(numberPart);
-                    int nextNumber = lastNumber + 1;
-                    
-                    // 5자리로 포맷팅 (예: 00001, 00002, 00003...)
-                    String formattedNumber = String.format("%05d", nextNumber);
-                    nextProductId = prefix + formattedNumber;
-                    
-                    // 생성된 ID가 이미 존재하는지 재확인
-                    boolean exists = productMapper.checkProductId(nextProductId) > 0;
-                    
-                    if (exists) {
-                        // 중복이면 계속 증가시켜서 찾기
-                        int attempts = 0;
-                        while (exists && attempts < 99999) { // 5자리 최대값까지
-                            nextNumber++;
-                            if (nextNumber > 99999) {
-                                return null; // 5자리 초과시 null 반환
-                            }
-                            formattedNumber = String.format("%05d", nextNumber);
-                            nextProductId = prefix + formattedNumber;
-                            exists = productMapper.checkProductId(nextProductId) > 0;
-                            attempts++;
-                        }
-                        
-                        if (exists) {
-                            return null;
-                        }
-                    }
-                    
-                } catch (NumberFormatException e) {
-                    // 파싱 오류 시 해당 카테고리의 첫 번째 번호로 설정
-                    nextProductId = prefix + "00001"; // 5자리: 00001
-                }
-                
-            } else {
-                // 해당 카테고리의 첫 번째 제품인 경우
-                nextProductId = prefix + "00001"; // 5자리: 00001
+                // 매퍼 오류 시 폴백: 기본값으로 시작
+                System.out.println("🔄 매퍼 오류로 인한 폴백 처리");
+                lastProductId = null;
             }
             
-            return nextProductId;
+            int nextNumber = 1; // 기본값
+            
+            if (lastProductId != null && !lastProductId.isEmpty()) {
+                try {
+                    // 마지막 ID에서 숫자 부분 추출 (5자리)
+                    System.out.println("🔢 숫자 부분 추출 시작...");
+                    System.out.println("전체 ID: " + lastProductId);
+                    System.out.println("접두어 길이: " + prefix.length());
+                    
+                    if (lastProductId.length() <= prefix.length()) {
+                        System.err.println("❌ 제품 ID 길이가 접두어보다 짧음");
+                        throw new StringIndexOutOfBoundsException("ID 길이 부족");
+                    }
+                    
+                    String numberPart = lastProductId.substring(prefix.length());
+                    System.out.println("추출된 숫자 부분: '" + numberPart + "'");
+                    
+                    if (numberPart.trim().isEmpty()) {
+                        System.err.println("❌ 숫자 부분이 비어있음");
+                        throw new NumberFormatException("숫자 부분 없음");
+                    }
+                    
+                    int lastNumber = Integer.parseInt(numberPart.trim());
+                    nextNumber = lastNumber + 1;
+                    
+                    System.out.println("✅ 파싱 성공 - 마지막 번호: " + lastNumber + ", 다음 번호: " + nextNumber);
+                    
+                } catch (NumberFormatException | StringIndexOutOfBoundsException e) {
+                    System.err.println("❌ 제품 ID 파싱 오류: " + lastProductId);
+                    System.err.println("오류 세부사항: " + e.getMessage());
+                    e.printStackTrace();
+                    nextNumber = 1; // 파싱 실패 시 1부터 시작
+                    System.out.println("🔄 파싱 실패로 인해 1부터 시작");
+                }
+            } else {
+                System.out.println("📝 마지막 제품 ID가 없음 - 1부터 시작");
+            }
+            
+            // 중복 방지를 위한 반복 검사
+            String nextProductId;
+            int attempts = 0;
+            int maxAttempts = 100; // 최대 100번 시도
+            
+            System.out.println("🔄 중복 확인 루프 시작...");
+            
+            do {
+                // 5자리로 포맷팅 (예: 00001, 00002, 00003...)
+                String formattedNumber = String.format("%05d", nextNumber);
+                nextProductId = prefix + formattedNumber;
+                
+                System.out.println("시도 " + (attempts + 1) + ": 생성된 제품 ID = " + nextProductId);
+                
+                // 중복 확인
+                boolean exists = false;
+                try {
+                    exists = productMapper.checkProductId(nextProductId) > 0;
+                    System.out.println("중복 확인 결과: " + (exists ? "중복됨" : "사용 가능"));
+                } catch (Exception checkException) {
+                    System.err.println("💥 중복 확인 중 오류:");
+                    checkException.printStackTrace();
+                    // 중복 확인 실패 시 안전하게 다음 번호로
+                    exists = true;
+                }
+                
+                if (!exists) {
+                    // 중복이 아니면 사용 가능
+                    System.out.println("✅ 사용 가능한 제품 ID 찾음: " + nextProductId);
+                    System.out.println("=== getNextProductId 성공 종료 ===");
+                    return nextProductId;
+                }
+                
+                System.out.println("❌ 중복된 제품 ID: " + nextProductId + ", 다음 번호로 시도");
+                nextNumber++;
+                attempts++;
+                
+                // 5자리 최대값 초과 체크
+                if (nextNumber > 99999) {
+                    System.err.println("💥 카테고리 " + prefix + "의 모든 제품 ID가 사용됨 (99999 초과)");
+                    System.out.println("=== getNextProductId 실패 종료 ===");
+                    return null;
+                }
+                
+            } while (attempts < maxAttempts);
+            
+            System.err.println("💥 제품 ID 생성 시도 횟수 초과: " + maxAttempts);
+            System.out.println("=== getNextProductId 실패 종료 ===");
+            return null;
             
         } catch (Exception e) {
-            // 오류 발생 시 기본값 반환
-            return prefix + "00001"; // 5자리: 00001
+            System.err.println("💥 제품 ID 생성 중 예외 발생:");
+            System.err.println("예외 타입: " + e.getClass().getSimpleName());
+            System.err.println("예외 메시지: " + e.getMessage());
+            e.printStackTrace();
+            
+            // 예외 발생 시 기본값으로 시도
+            System.out.println("🔄 예외 복구 시도...");
+            String fallbackId = prefix + "00001";
+            
+            try {
+                boolean exists = productMapper.checkProductId(fallbackId) > 0;
+                
+                if (!exists) {
+                    System.out.println("✅ 예외 복구 성공: 기본값 사용 " + fallbackId);
+                    System.out.println("=== getNextProductId 복구 성공 종료 ===");
+                    return fallbackId;
+                } else {
+                    System.err.println("❌ 기본값도 중복됨: " + fallbackId);
+                }
+            } catch (Exception fallbackException) {
+                System.err.println("💥 폴백 처리도 실패:");
+                fallbackException.printStackTrace();
+            }
+            
+            System.out.println("=== getNextProductId 완전 실패 종료 ===");
+            return null;
         }
     }
     
