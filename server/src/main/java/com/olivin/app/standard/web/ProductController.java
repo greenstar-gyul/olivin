@@ -3,6 +3,7 @@ package com.olivin.app.standard.web;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.Date;  // 추가된 import
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -279,13 +280,16 @@ public class ProductController {
     }
     
     /**
-     * 제품 등록 - 등록 시점에 제품 ID 자동 생성
+     * 제품 등록 - 등록 시점에 제품 ID 자동 생성 (강화된 디버깅 버전)
      */
     @PostMapping
     public ResponseEntity<Map<String, Object>> createProduct(@RequestBody ProductVO productVO) {
         Map<String, Object> result = new HashMap<>();
         
         try {
+            System.out.println("=== 제품 등록 요청 시작 ===");
+            System.out.println("요청 데이터: " + productVO.toString());
+            
             // 필수 필드 검증
             if (productVO.getProductName() == null || productVO.getProductName().trim().isEmpty()) {
                 result.put("success", false);
@@ -305,22 +309,73 @@ public class ProductController {
                 return ResponseEntity.badRequest().body(result);
             }
             
+            if (productVO.getCompId() == null || productVO.getCompId().trim().isEmpty()) {
+                result.put("success", false);
+                result.put("message", "회사코드는 필수입니다.");
+                return ResponseEntity.badRequest().body(result);
+            }
+            
+            if (productVO.getUnit() == null || productVO.getUnit().trim().isEmpty()) {
+                result.put("success", false);
+                result.put("message", "단위는 필수입니다.");
+                return ResponseEntity.badRequest().body(result);
+            }
+            
+            // 등록자 정보 검증 및 설정
+            if (productVO.getRegUser() == null || productVO.getRegUser().trim().isEmpty()) {
+                productVO.setRegUser("SYSTEM");
+                System.out.println("등록자가 없어 SYSTEM으로 설정");
+            }
+            
+            // 상태가 없으면 승인 대기로 설정
+            if (productVO.getStatus() == null || productVO.getStatus().trim().isEmpty()) {
+                productVO.setStatus("040002"); // 승인 대기
+            }
+            
+            // 등록일이 없으면 현재 시간으로 설정
+            if (productVO.getRegDate() == null) {
+                productVO.setRegDate(new Date());
+            }
+            
+            System.out.println("검증 완료된 데이터:");
+            System.out.println("- 제품명: " + productVO.getProductName());
+            System.out.println("- 카테고리: " + productVO.getCategoryMain());
+            System.out.println("- 등록자: " + productVO.getRegUser());
+            System.out.println("- 등록일: " + productVO.getRegDate());
+            System.out.println("- 회사코드: " + productVO.getCompId());
+            System.out.println("- 브랜드: " + productVO.getVendorName());
+            System.out.println("- 단위: " + productVO.getUnit());
+            
             // 제품 저장 (내부에서 제품 ID 자동 생성)
+            System.out.println("🔄 제품 저장 서비스 호출...");
             int saveResult = productService.saveProduct(productVO);
+            System.out.println("💾 저장 결과: " + saveResult);
             
             if (saveResult > 0) {
+                // 저장 후 생성된 제품 ID 확인
+                String generatedProductId = productVO.getProductId();
+                System.out.println("✅ 생성된 제품 ID: " + generatedProductId);
+                
                 // 저장 후 조인된 데이터로 다시 조회
-                ProductVO savedProduct = productService.getProduct(productVO.getProductId());
+                ProductVO savedProduct = null;
+                if (generatedProductId != null && !generatedProductId.isEmpty()) {
+                    try {
+                        savedProduct = productService.getProduct(generatedProductId);
+                        System.out.println("📋 저장된 제품 재조회 성공");
+                    } catch (Exception e) {
+                        System.err.println("⚠️ 저장된 제품 재조회 실패: " + e.getMessage());
+                    }
+                }
                 
                 result.put("success", true);
                 result.put("message", "제품이 성공적으로 등록되었습니다. 승인 후 판매 가능합니다.");
-                result.put("productId", productVO.getProductId());
+                result.put("productId", generatedProductId);
                 result.put("status", productVO.getStatus());
                 result.put("regUserName", savedProduct != null ? savedProduct.getRegUserName() : null);
                 
                 // 로깅: 등록된 제품의 직원 정보
-                System.out.println("제품 등록 완료:");
-                System.out.println("제품ID: " + productVO.getProductId());
+                System.out.println("=== 제품 등록 완료 ===");
+                System.out.println("제품ID: " + generatedProductId);
                 System.out.println("등록자ID: " + productVO.getRegUser());
                 if (savedProduct != null) {
                     System.out.println("등록자명: " + savedProduct.getRegUserName());
@@ -328,11 +383,21 @@ public class ProductController {
             } else {
                 result.put("success", false);
                 result.put("message", "제품 등록에 실패했습니다.");
+                System.err.println("❌ 제품 저장 실패: saveResult = " + saveResult);
             }
+            
         } catch (Exception e) {
+            System.err.println("=== 제품 등록 중 예외 발생 ===");
+            System.err.println("예외 타입: " + e.getClass().getSimpleName());
+            System.err.println("예외 메시지: " + e.getMessage());
+            e.printStackTrace();
+            
             result.put("success", false);
             result.put("message", "제품 등록 중 오류가 발생했습니다: " + e.getMessage());
         }
+        
+        System.out.println("=== 제품 등록 응답 ===");
+        System.out.println("결과: " + result);
         
         return ResponseEntity.ok(result);
     }

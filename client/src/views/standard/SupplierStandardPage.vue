@@ -15,6 +15,7 @@ const COMPANY_TYPES = {
 // 현재 로그인한 사용자 정보
 const currentUser = ref({
   empId: '',
+  employeeId: '',
   empName: ''
 });
 
@@ -23,7 +24,7 @@ const currentUserName = computed(() => {
   return currentUser.value?.empName || '관리자';
 });
 
-// 개선된 getCurrentUser 함수 - 더 강력한 사용자 정보 파싱
+// 수정된 getCurrentUser 함수 - employeeId 기반
 const getCurrentUser = async () => {
   try {
     const response = await axios.get('/api/auth/me');
@@ -33,7 +34,7 @@ const getCurrentUser = async () => {
       const userData = response.data.data;
       console.log('userData 구조:', JSON.stringify(userData, null, 2));
       
-      let empId = 'admin';
+      let employeeId = 'admin';
       let empName = '관리자';
       
       // 다양한 경우에 대한 더 포괄적인 처리
@@ -50,63 +51,53 @@ const getCurrentUser = async () => {
           console.log('처리 중인 userSource:', typeof userSource, userSource);
           
           if (typeof userSource === 'object' && userSource !== null) {
-            // 객체인 경우 - 다양한 필드명 시도
-            const possibleEmpIds = [
-              userSource.empId,
-              userSource.emp_id, 
-              userSource.EMPLOYEE_ID,
-              userSource.employeeId,
-              userSource.id,
-              userSource.userId,
-              userSource.user_id,
-              userSource.USER_ID
+            // 객체인 경우 - employeeId 우선 검색
+            const possibleEmployeeIds = [
+              userSource.employeeId,        // employeeId 우선
+              userSource.employee_id,       // employee_id
+              userSource.EMPLOYEE_ID,       // EMPLOYEE_ID (DB 컬럼명)
             ];
             
             const possibleEmpNames = [
               userSource.empName,
               userSource.emp_name,
               userSource.EMP_NAME,
-              userSource.name,
-              userSource.userName,
-              userSource.user_name,
-              userSource.USER_NAME,
-              userSource.fullName,
-              userSource.displayName
             ];
             
             // 첫 번째로 유효한 값 찾기
-            const foundEmpId = possibleEmpIds.find(id => id && id !== 'admin' && String(id).trim() !== '');
+            const foundEmployeeId = possibleEmployeeIds.find(id => id && id !== 'admin' && String(id).trim() !== '');
             const foundEmpName = possibleEmpNames.find(name => name && name !== '관리자' && String(name).trim() !== '');
             
-            if (foundEmpId) {
-              empId = String(foundEmpId).trim();
+            if (foundEmployeeId) {
+              employeeId = String(foundEmployeeId).trim();
             }
             if (foundEmpName) {
               empName = String(foundEmpName).trim();
             }
             
             // 유효한 사용자 정보를 찾았으면 중단
-            if (foundEmpId && foundEmpName) {
+            if (foundEmployeeId && foundEmpName) {
               break;
             }
           } else if (typeof userSource === 'string' && userSource.trim() !== '') {
             // 문자열인 경우
             empName = userSource.trim();
-            empId = userSource.trim();
+            employeeId = userSource.trim();
             break;
           }
         }
       }
       
       currentUser.value = {
-        empId: empId,
+        empId: employeeId,          // 호환성을 위해 empId로도 저장
+        employeeId: employeeId,     // employeeId 추가
         empName: empName
       };
       
       console.log('최종 설정된 사용자 정보:', currentUser.value);
       
       // 사용자 정보가 기본값이면 경고 로그
-      if (empId === 'admin' && empName === '관리자') {
+      if (employeeId === 'admin' && empName === '관리자') {
         console.warn('사용자 정보를 찾지 못해 기본값을 사용합니다. API 응답 구조를 확인해주세요.');
       }
       
@@ -121,6 +112,7 @@ const getCurrentUser = async () => {
     // API 실패 시 기본값 사용
     currentUser.value = {
       empId: 'admin',
+      employeeId: 'admin',
       empName: '관리자'
     };
     
@@ -228,7 +220,7 @@ const initializeFormData = async () => {
   const user = await getCurrentUser();
   console.log('폼 초기화 시 사용자 정보:', user);
   
-  formData.value.regUser = user.empId;
+  formData.value.regUser = user.employeeId; // employeeId 사용
   const now = new Date();
   const year = now.getFullYear();
   const month = String(now.getMonth() + 1).padStart(2, '0');
@@ -387,7 +379,7 @@ const clearForm = async () => {
   // formData 초기화
   Object.keys(formData.value).forEach(key => {
     if (key === 'regUser') {
-      formData.value[key] = user.empId;
+      formData.value[key] = user.employeeId; // employeeId 사용
     } else if (key === 'regDate') {
       const now = new Date();
       const year = now.getFullYear();
@@ -427,7 +419,67 @@ const searchData = async (searchOptions) => {
   await loadSuppliers(searchParams);
 };
 
-// 개선된 saveData 함수 - 수정자 정보 제대로 설정
+// 삭제 기능 추가
+const deleteData = async () => {
+  if (!selectedSupplier.value || !selectedSupplierId.value) {
+    alert('삭제할 공급업체를 선택해주세요.');
+    return;
+  }
+
+  // 삭제 확인
+  const confirmDelete = confirm(
+    `공급업체 "${selectedSupplier.value.compName}"을(를) 정말 삭제하시겠습니까?\n\n이 작업은 되돌릴 수 없습니다.`
+  );
+  
+  if (!confirmDelete) {
+    return;
+  }
+
+  try {
+    console.log('공급업체 삭제 시작:', selectedSupplierId.value);
+    
+    const response = await axios.delete(`${API_BASE_URL}/${selectedSupplierId.value}`);
+    
+    console.log('삭제 응답:', response.data);
+    
+    if (response.data.result_code === 'SUCCESS') {
+      alert(`공급업체 "${selectedSupplier.value.compName}"이(가) 성공적으로 삭제되었습니다.`);
+      
+      // 폼 초기화 및 목록 새로고침
+      clearForm();
+      await loadSuppliers();
+    } else {
+      alert(`삭제 실패: ${response.data.message || '삭제 중 오류가 발생했습니다.'}`);
+    }
+    
+  } catch (error) {
+    console.error('공급업체 삭제 실패:', error);
+    console.error('에러 상세:', {
+      code: error.code,
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      data: error.response?.data
+    });
+    
+    let errorMessage = '삭제 중 오류가 발생했습니다.';
+    
+    if (error.code === 'ERR_NETWORK') {
+      errorMessage = '네트워크 오류: 백엔드 서버가 실행되고 있는지 확인해주세요.';
+    } else if (error.response?.status === 404) {
+      errorMessage = '삭제할 공급업체를 찾을 수 없습니다.';
+    } else if (error.response?.status === 409) {
+      errorMessage = '다른 데이터에서 참조 중인 공급업체는 삭제할 수 없습니다. (제품 등록에 사용 중)';
+    } else if (error.response?.data?.message) {
+      errorMessage = error.response.data.message;
+    } else if (error.message) {
+      errorMessage = error.message;
+    }
+    
+    alert('삭제 실패: ' + errorMessage);
+  }
+};
+
+// 개선된 saveData 함수 - employeeId 사용
 const saveData = async () => {
   try {
     console.log('저장할 공급업체 데이터:', formData.value);
@@ -482,7 +534,7 @@ const saveData = async () => {
       const now = new Date();
       
       supplierData.compId = selectedSupplierId.value;
-      supplierData.updateUser = currentUserData.empId; // 수정자 ID - 현재 로그인한 사용자
+      supplierData.updateUser = currentUserData.employeeId; // employeeId 사용
       supplierData.updateDate = now; // 수정일시
       supplierData.regDate = regDate; // 등록일은 기존 값 유지 또는 입력된 값
       
@@ -497,7 +549,7 @@ const saveData = async () => {
       response = await axios.put(`${API_BASE_URL}/${selectedSupplierId.value}`, supplierData);
     } else {
       // 신규 등록 모드
-      supplierData.regUser = currentUserData.empId; // 등록자 ID - 현재 로그인한 사용자
+      supplierData.regUser = currentUserData.employeeId; // employeeId 사용
       supplierData.regDate = regDate; // 등록일
       delete supplierData.compId; // 백엔드에서 자동 생성
       
@@ -678,6 +730,14 @@ const saveData = async () => {
               severity="secondary"
               icon="pi pi-refresh"
               size="small"
+            />
+            <Button 
+              label="삭제" 
+              @click="deleteData"
+              severity="danger"
+              icon="pi pi-trash"
+              size="small"
+              :disabled="!selectedSupplierId"
             />
             <Button 
               label="저장" 
