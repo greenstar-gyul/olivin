@@ -74,7 +74,8 @@ public class AuthService {
                 user.getEmail(),
                 user.getPosition(),
                 user.getDepartmentId(),
-                user.getDeptName()
+                user.getDeptName(),
+                user.getCompId()
             );
             
             LoginResponseVO.RoleInfoVO roleDto = new LoginResponseVO.RoleInfoVO(
@@ -122,7 +123,8 @@ public class AuthService {
                 user.getEmail(),
                 user.getPosition(),
                 user.getDepartmentId(),
-                user.getDeptName()
+                user.getDeptName(),
+                user.getCompId()
             );
             
             LoginResponseVO.RoleInfoVO roleDto = new LoginResponseVO.RoleInfoVO(
