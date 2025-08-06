@@ -260,6 +260,11 @@ const router = createRouter({
                     component: () => import('@/views/sales/SalesOrdersPage.vue'),
                     meta: { roles: ['ROLE_STORE_MANAGER'] }
                 },
+                {
+                    path: '/sales/history',
+                    name: 'salesHistory',
+                    component: () => import('@/views/sales/SalesHistoryPage.vue'),
+                }
                 /* end of sales */
             ]
         },
