@@ -6,7 +6,7 @@
       <div class="header-actions">
         <button @click="refreshData" class="refresh-button" :disabled="isLoading">
           <span v-if="!isLoading">🔄 새로고침</span>
-          <span v-else>⏳ 로딩중...</span>
+          <span v-else>로딩중...</span>
         </button>
         <div class="last-updated">
           마지막 업데이트: {{ lastUpdated }}
@@ -23,8 +23,7 @@
     <!-- KPI 카드들 -->
     <div class="kpi-section">
       <div class="kpi-grid">
-        <div class="kpi-card sales">
-          <div class="kpi-icon">💰</div>
+        <div class="kpi-card">
           <div class="kpi-content">
             <h3>월간 총 매출액</h3>
             <div class="kpi-value">{{ kpiData.totalSales || '로딩 중...' }}</div>
@@ -34,8 +33,7 @@
           </div>
         </div>
 
-        <div class="kpi-card inventory">
-          <div class="kpi-icon">🔄</div>
+        <div class="kpi-card">
           <div class="kpi-content">
             <h3>전체 재고 회전율</h3>
             <div class="kpi-value">{{ kpiData.inventoryTurnover || '로딩 중...' }}</div>
@@ -45,8 +43,7 @@
           </div>
         </div>
 
-        <div class="kpi-card delivery">
-          <div class="kpi-icon">🚚</div>
+        <div class="kpi-card">
           <div class="kpi-content">
             <h3>공급업체 납기준수율</h3>
             <div class="kpi-value">{{ kpiData.deliveryRate || '로딩 중...' }}</div>
@@ -56,8 +53,7 @@
           </div>
         </div>
 
-        <div class="kpi-card stockout">
-          <div class="kpi-icon">📦</div>
+        <div class="kpi-card">
           <div class="kpi-content">
             <h3>품절률</h3>
             <div class="kpi-value">{{ kpiData.stockoutRate || '로딩 중...' }}</div>

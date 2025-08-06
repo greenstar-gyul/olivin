@@ -26,6 +26,7 @@ public class LoginResponseVO {
         private String position;        // 직책
         private String departmentId;      // 부서ID
         private String deptName;        // 부서명
+        private String compId;         // 회사ID
     }
     
     @Data

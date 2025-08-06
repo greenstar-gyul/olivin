@@ -39,7 +39,7 @@ const confirmModal = async (selectedItems) => {
   // console.log('확인용:', selectedItems.orderTitle);
   
   /* 출고 기본키 생성 */
-  const outbndCode = await axios.get('/api/hqOutnbndCode');
+  const outbndCode = await axios.get('/api/outbnd/getCode');
   /* 출고일 : 오늘 날짜로 설정 */ 
   const today = moment().format("YY/MM/DD");
   
@@ -55,7 +55,7 @@ const confirmModal = async (selectedItems) => {
   /* 제품 상세정보 불러오기 */
   const selOrderId = formData.value.orderId;
   // console.log('id값 확인', selOrderId);
-  const res = await axios.get(`/api/orders/${selOrderId}`)
+  const res = await axios.get(`/api/orders/${selOrderId}`);
   console.log('상세값확인', res.data.detail);
   const details = res.data.detail;
 
@@ -131,9 +131,11 @@ const columns = [
 /* Submit */
 
 // 폼과 테이블 데이터를 저장하는 핸들러
-const onRowSelect = (select) => {
-  // console.log('Selected Row:', select);
+const onRowSelect = async (select) => {
+  console.log('Selected Row:', select.productId);
   
+  const test = await axios.get(`/api/inbnd/test/${select.productId}`);
+  console.log(test.data);
   // fetch 사용하는 시간때문에 250ms 지연
   // 실제로는 서버에서 데이터를 가져오는 로직이 필요합니다.
   setTimeout(() => {

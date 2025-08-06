@@ -58,7 +58,8 @@ const model = ref([
         items: [
             { label: '매출 계획 조회', icon: 'pi pi-fw pi-book', to: '/sales/plan' },
             { label: '주문 등록', icon: 'pi pi-fw pi-book', to: '/sales/orders' },
-            { label: '주문 조회', icon: 'pi pi-fw pi-book', to: '/sales/orders/view' }
+            { label: '주문 조회', icon: 'pi pi-fw pi-book', to: '/sales/orders/view' },
+            { label: '판매 이력 조회', icon: 'pi pi-fw pi-book', to: '/sales/history' },
         ]
     },
     {   
