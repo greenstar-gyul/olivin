@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.olivin.app.sales.mapper.SalesOrdersMapper">
+    <sql id="salesIdPrefix">
+    'SOR'
+    </sql>
+    <!-- select -->
+    <select id="selectAllList" resultType="SalesOrdersVO" parameterType="SalesOrdersVO">
+        SELECT
+            so.so_id,
+            so.comp_id,
+            c.comp_name,
+            so.payment_type,
+            GET_DATACODE_NAME(so.payment_type) payment_type_name,
+            so.status,
+            GET_DATACODE_NAME(so.status) status_name,
+            so.total_price,
+            so.emp_id,
+            e.emp_name,
+            so.so_date
+        FROM
+            sales_orders so
+        JOIN companys c ON (so.comp_id = c.comp_id)
+        JOIN employees e ON (so.emp_id = e.employee_id)
+        ORDER BY so.so_id DESC
+    </select>
+    
+    <select id="selectOneBySoId" resultType="SalesOrdersVO" parameterType="String">
+        SELECT
+            so.so_id,
+            so.comp_id,
+            c.comp_name,
+            so.payment_type,
+            GET_DATACODE_NAME(so.payment_type) payment_type_name,
+            so.status,
+            GET_DATACODE_NAME(so.status) status_name,
+            so.total_price,
+            so.emp_id,
+            e.emp_name,
+            so.so_date
+        FROM
+            sales_orders so
+        JOIN
+            companys c ON (so.comp_id = c.comp_id)
+        JOIN
+            employees e ON (so.emp_id = e.employee_id)
+        WHERE
+            so.so_id = #{soId}
+    </select>
+    
+    <select id="selectDetailsBySoId" resultType="SalesOrdersDetailVO" parameterType="String">
+        SELECT
+            sod.sod_id,
+            sod.product_id,
+            p.product_name,
+            (sod.price / sod.quantity) as unit_price,
+            sod.quantity,
+            sod.price,
+            sod.so_id
+        FROM
+            sales_orders_detail sod
+        JOIN
+            products p ON (sod.product_id = p.product_id)
+        WHERE
+            sod.so_id = #{soId}
+    </select>
+    
+    <!-- insert -->
+    <insert id="insertOne" parameterType="SalesOrdersVO">
+        <selectKey keyProperty="soId" resultType="string" order="BEFORE">
+        SELECT
+            <include refid="salesIdPrefix"/> || TO_CHAR(SYSDATE, 'YYYYMMDD') ||
+            LPAD(NVL(MAX(TO_NUMBER(SUBSTR(so_id, LENGTH(<include refid="salesIdPrefix"/> || TO_CHAR(SYSDATE, 'YYYYMMDD')) + 1))), 0) + 1, 3, '0')
+        FROM sales_orders
+        WHERE so_id LIKE <include refid="salesIdPrefix"/> || TO_CHAR(SYSDATE, 'YYYYMMDD') || '%'
+        </selectKey>
+        INSERT INTO sales_orders (
+            so_id,
+            total_price,
+            payment_type,
+            so_date,
+            status,
+            comp_id,
+            emp_id
+        ) VALUES (
+            #{soId},
+            #{totalPrice},
+            #{paymentType},
+            #{soDate},
+            #{status},
+            #{compId},
+            #{empId}
+        )
+    </insert>
+
+    <insert id="insertDetailOne" parameterType="SalesOrdersDetailVO">
+        INSERT INTO sales_orders_detail (
+            sod_id,
+            product_id,
+            quantity,
+            price,
+            so_id
+        ) VALUES (
+            #{sodId},
+            #{productId},
+            #{quantity},
+            #{price},
+            #{soId}
+        )
+    </insert>
+</mapper>
