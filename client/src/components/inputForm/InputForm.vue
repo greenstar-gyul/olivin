@@ -1,11 +1,14 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, watch } from 'vue';
 import DatePickerFromTo from './DatePickerFromTo.vue';
 
 const props = defineProps({
   inputs: {
     type: Object,
     required: true
+  },
+  init: {
+    type: Object
   }
 });
 
@@ -13,6 +16,19 @@ const emit = defineEmits(['saveData', 'openSearchModal']);
 
 // 검색 조건을 담을 객체
 const inputDatas = ref({});
+
+// Input 데이터를 바인딩.
+watch(
+  () => props.init,
+  (newVal) => {
+    if (newVal) {
+      inputDatas.value = { ...newVal }
+    } else {
+      inputDatas.value = {} // 선택 해제 시 초기화
+    }
+  },
+  { immediate: true }
+)
 
 // inputs 기반으로 기본값 초기화, 각 필터의 name을 키로 사용.
 // 단, dateRange 타입의 필터는 fromValue와 toValue로 분리하여 처리

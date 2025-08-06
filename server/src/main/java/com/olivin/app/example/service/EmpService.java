@@ -7,5 +7,9 @@ public interface EmpService {
   List<EmpVO> selectAllList();
   // 조건 목록
   public List<EmpVO> searchEmps(String searchValue);
+  // 등록
 
+  // 수정
+
+  // 삭제
 }

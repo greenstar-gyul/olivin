@@ -8,7 +8,7 @@ import { useToast } from 'primevue/usetoast';
 import axios from '@/service/axios';
 
 const items = ref([]);
-const API_BASE_URL = '/api/emps';
+const API_BASE_URL = '/api/public/emps';
 const toast = useToast();
 const fileUploadRef = ref();
 
@@ -41,7 +41,7 @@ const header = ref({
     empName: '사원이름',
     empType: '고용형태',
     email: '이메일',
-    password: '비밀번호',
+    //password: '비밀번호',
     phone: '연락처',
     position: '직급',
   },
@@ -72,7 +72,7 @@ const header = ref({
           type: 'select',
           label: '부서명',
           value: '',
-          name: 'EmpName',
+          name: 'deptName',
           options: [
             { name: '경영지원팀', value: '경영지원팀' },
             { name: '영업팀', value: '영업팀' },
@@ -153,6 +153,7 @@ const searchData = async (searchOptions) => {
 
     const response = await axios.get(`${API_BASE_URL}/search`, { params });
 
+    // 조회 결과를 items에 저장 (날짜 정리 등 필요시 여기에)
     items.value = response.data;
 
   } catch (error) {
@@ -182,7 +183,6 @@ const saveData = (inputData) => {
     :filters="filters"
     :header="header"
     :inputs="inputs"
-    :checkType="'multiple'"
     @searchData="searchData"
     @saveData="saveData"
   />

@@ -43,33 +43,39 @@ const header = ref({
   rightAligned: []
 });
 
+// 입력필드
 const inputs = ref({
   title: '입력 폼',
   inputs: [
-    { type: 'text', label: '회사정보', value: '', name: 'name' },
-    { type: 'text', label: '회사명', value: '', name: 'category' },
-    {
-      type: 'select',
-      label: '부서명',
-      value: '',
-      name: 'select1',
-      options: [
-        { name: '부서 1', value: '부서 1' },
-        { name: '부서 2', value: '부서 2' },
-        { name: '부서 3', value: '부서 3' }
-      ]
-    },
-    {
-      type: 'select',
-      label: '직급',
-      value: '',
-      name: 'select2',
-      options: [
-        { name: '직급 1', value: '직급 1' },
-        { name: '직급 2', value: '직급 2' },
-        { name: '직급 3', value: '직급 3' }
-      ]
-    }
+    { type: 'text', label: '회사코드', value: '', name: 'compId' },
+    { type: 'text', label: '회사명', value: '', name: 'compName' },
+    { type: 'text', label: '부서코드', value: '', name: 'departmentId' },
+    { type: 'select',
+          label: '부서명',
+          value: '',
+          name: 'deptName',
+          options: [
+            { name: '경영지원팀', value: '경영지원팀' },
+            { name: '영업팀', value: '영업팀' },
+            { name: '물류팀', value: '물류팀' },
+            { name: '구매팀', value: '구매팀' },
+            { name: '회계팀', value: '회계팀' },
+            { name: '마케팅팀', value: '마케팅팀' },
+            { name: '품질관리팀', value: '품질관리팀' },
+            { name: '연구개발팀', value: '연구개발팀' },
+            { name: '고객서비스팀', value: '고객서비스팀' },
+            { name: 'IT팀', value: 'IT팀' },
+            { name: '전략기획팀', value: '전략기획팀' },
+            { name: '인사팀', value: '인사팀' },
+            { name: '법무팀', value: '법무팀' },
+            { name: '감사팀', value: '감사팀' },
+            { name: '해외사업팀', value: '해외사업팀' },
+            { name: '디지털마케팅팀', value: '디지털마케팅팀' },
+            { name: '브랜드팀', value: '브랜드팀' },
+            { name: '상품기획팀', value: '상품기획팀' },
+            { name: '교육팀', value: '교육팀' },
+            { name: '안전관리팀', value: '안전관리팀' },
+          ]}
   ]
 });
 
@@ -89,8 +95,8 @@ const searchData = async (searchOptions) => {
       params.compName = searchOptions.compName.trim();
     }
 
-    if (searchOptions.departId && searchOptions.departId.trim() !== '') {
-      params.departId = searchOptions.departId.trim();
+    if (searchOptions.departmentId && searchOptions.departmentId.trim() !== '') {
+      params.departmentId = searchOptions.departmentId.trim();
     }
 
     if (searchOptions.deptName && searchOptions.deptName.trim() !== '') {
@@ -129,7 +135,6 @@ const saveData = (inputData) => {
     :filters="filters"
     :header="header"
     :inputs="inputs"
-    :checkType="'multiple'"
     @searchData="searchData"
     @saveData="saveData"
   />
