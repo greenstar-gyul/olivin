@@ -4,6 +4,7 @@ import { onMounted, ref } from 'vue';
 import { convertDate } from '@/utils/dateUtils';
 import { useRouter } from 'vue-router';
 import axios from '@/service/axios';
+import { useAuth } from '@/composables/useAuth';
 
 const router = useRouter();
 
@@ -87,12 +88,29 @@ const actionHandler = (rowData) => {
   router.push(`/orders/view/${rowData.orderId}`);
 }
 
-onMounted(() => {
+const getBranchInfo = async (empId) => {
+  const req = await axios.get('/api/orders/user/compInfo', {
+    params: {
+      empId: empId
+    }
+  });
+
+  //지점 정보
+  if (req.data.compType == '100002')
+    return req.data;
+  return undefined;
+}
+
+onMounted(async () => {
   // 1년 전부터 조회하기 위해 기본 날짜 설정
   const searchOptions = searchDetailTableRef.value.searchFormRef.searchOptions;
   if (searchOptions) {
     const defaultOrderDateFrom = new Date();
     defaultOrderDateFrom.setFullYear(defaultOrderDateFrom.getFullYear() - 1);
+
+    const branchInfo = await getBranchInfo(useAuth().user.value.employeeId);
+    searchOptions.orderFrom = branchInfo.compName || '';
+
     searchOptions.orderDateFrom = defaultOrderDateFrom;
     getOrdersData(searchOptions);
   }

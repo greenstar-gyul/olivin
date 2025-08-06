@@ -201,6 +201,28 @@ const tableSearch = async (item, fieldName, data) => {
   itemModalVisible.value = true;
 }
 
+const fetchOrders = async (formData, tableData) => {
+  // 총 가격
+  const totalAmount = parseFloat(String(formData.totalAmount).replace(/[,원]/g, ''));
+  // 발주서 저장
+  const res = await axios.post('/api/orders', {
+    orders: {
+      ...formData,
+      creatorId: defaultForm.value.creatorId,
+      orderType: '150001', //본사 발주
+      reason: formData.reason.value+"", //발주 사유
+      totalAmount //총 가격
+    },
+    ordersDetail: tableData.map((e) => {
+      return {
+        ...e,
+        unit: '130004' //'box'
+      }
+    })
+  });
+  console.log(res.data);
+}
+
 // 폼과 테이블 데이터를 저장하는 핸들러
 const saveFormHandler = async (formData, tableData) => {
   console.log('formData:', formData);
@@ -225,7 +247,6 @@ const saveFormHandler = async (formData, tableData) => {
     }
   }
 
-  const totalAmount = parseFloat(String(formData.totalAmount).replace(/[,원]/g, ''));
   confirm.require({
     icon: 'pi pi-info-circle',
     header: '발주서를 등록',
@@ -239,22 +260,7 @@ const saveFormHandler = async (formData, tableData) => {
       label: '저장'
     },
     accept: async () => {
-      const req = await axios.post('/api/orders', {
-        orders: {
-          ...formData,
-          creatorId: defaultForm.value.creatorId,
-          orderType: '150001', //본사 발주
-          reason: formData.reason.value+"", //발주 사유
-          totalAmount //총 가격
-        },
-        ordersDetail: tableData.map((e) => {
-          return {
-            ...e,
-            unit: '130004' //'box'
-          }
-        })
-      });
-      console.log(req.data);
+      fetchOrders(formData, tableData);
     },
     reject: () => {
       return;

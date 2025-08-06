@@ -19,6 +19,6 @@ import lombok.Data;
  */
 @Data
 public class OrdersDTO {
-	OrdersVO orders;
-	List<OrdersDetailVO> ordersDetail;
+	private OrdersVO orders;
+	private List<OrdersDetailVO> ordersDetail;
 }

@@ -257,8 +257,13 @@ const router = createRouter({
                 {
                     path: '/sales/orders',
                     name: 'salesOrders',
+                    component: () => import('@/views/sales/SalesOrdersMgmt.vue'),
+                    meta: { roles: ['ROLE_STORE_MANAGER', 'ROLE_EMPLOYEE'] }
+                },
+                {
+                    path: '/sales/orders/view',
+                    name: 'salesOrdersView',
                     component: () => import('@/views/sales/SalesOrdersPage.vue'),
-                    meta: { roles: ['ROLE_STORE_MANAGER'] }
                 },
                 {
                     path: '/sales/history',
