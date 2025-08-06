@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -14,6 +15,31 @@ import java.util.Map;
 public class BranchDashboardService {
 
     private final BranchDashboardMapper branchDashboardMapper;
+
+    /**
+     * 지점 정보 조회
+     */
+    public Map<String, Object> getBranchInfo(String compId) {
+        try {
+            Map<String, Object> branchInfo = branchDashboardMapper.getBranchInfo(compId);
+            if (branchInfo == null) {
+                // 기본값 설정
+                Map<String, Object> defaultInfo = new HashMap<>();
+                defaultInfo.put("COMP_ID", compId);
+                defaultInfo.put("COMP_NAME", "알 수 없는 지점");
+                defaultInfo.put("COMP_TYPE_NAME", "지점");
+                return defaultInfo;
+            }
+            return branchInfo;
+        } catch (Exception e) {
+            // 에러 발생 시 기본값 반환
+            Map<String, Object> defaultInfo = new HashMap<>();
+            defaultInfo.put("COMP_ID", compId);
+            defaultInfo.put("COMP_NAME", "지점");
+            defaultInfo.put("COMP_TYPE_NAME", "");
+            return defaultInfo;
+        }
+    }
 
     /**
      * 지점 KPI 데이터 조회
@@ -212,6 +238,48 @@ public class BranchDashboardService {
         });
         
         return alerts;
+    }
+
+    // 🔥 본사용 추가 메서드들
+    /**
+     * 모든 지점 목록 조회 (본사 전용)
+     */
+    public List<Map<String, Object>> getAllBranches() {
+        try {
+            return branchDashboardMapper.getAllBranches();
+        } catch (Exception e) {
+            // 에러 시 빈 리스트 반환
+            return new ArrayList<>();
+        }
+    }
+
+    /**
+     * 모든 지점 통합 KPI (본사 전용)
+     */
+    public Map<String, Object> getAllBranchesKpi() {
+        Map<String, Object> result = new HashMap<>();
+        
+        try {
+            // 전체 지점 수
+            Integer totalBranches = branchDashboardMapper.getTotalBranchCount();
+            result.put("totalBranches", totalBranches != null ? totalBranches : 0);
+            
+            // 전체 매출 합계
+            BigDecimal totalSales = branchDashboardMapper.getAllBranchesTotalSales();
+            result.put("totalSales", formatCurrency(totalSales));
+            
+            // 각 지점별 요약 정보
+            List<Map<String, Object>> branchSummaries = branchDashboardMapper.getAllBranchesSummary();
+            result.put("branchSummaries", branchSummaries);
+            
+            return result;
+        } catch (Exception e) {
+            // 에러 시 기본값 반환
+            result.put("totalBranches", 0);
+            result.put("totalSales", "0원");
+            result.put("branchSummaries", new ArrayList<>());
+            return result;
+        }
     }
 
     // 유틸리티 메서드들

@@ -11,6 +11,11 @@ public interface BranchDashboardMapper {
 
     // KPI 관련 쿼리
     /**
+     * 지점 정보 조회
+     */
+    Map<String, Object> getBranchInfo(@Param("compId") String compId);
+    
+    /**
      * 지점별 당일 매출
      */
     BigDecimal getTodaySales(@Param("compId") String compId);
@@ -103,4 +108,25 @@ public interface BranchDashboardMapper {
      * 지점별 당일 평균 객단가
      */
     BigDecimal getTodayAverageOrderValue(@Param("compId") String compId);
+
+    // 🔥 본사용 추가 메서드들
+    /**
+     * 모든 지점 목록 조회 (본사 전용)
+     */
+    List<Map<String, Object>> getAllBranches();
+    
+    /**
+     * 전체 지점 수 조회
+     */
+    Integer getTotalBranchCount();
+    
+    /**
+     * 모든 지점 총 매출 합계
+     */
+    BigDecimal getAllBranchesTotalSales();
+    
+    /**
+     * 모든 지점 요약 정보
+     */
+    List<Map<String, Object>> getAllBranchesSummary();
 }
