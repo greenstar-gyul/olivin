@@ -11,4 +11,40 @@
              , inbnd_status
         FROM   inbnd
     </select>
+    <select id="selectProdLot" resultType="InbndProdDVO">
+        SELECT d.inbnd_d_no
+              ,d.inbnd_product_no
+              ,d.lot_no
+              ,d.remain_quantity
+              ,d.unit as unit_code
+              ,get_datacode_name(d.unit) as unit
+              ,d.inbnd_status as inbnd_status_code
+              ,get_datacode_name(d.inbnd_status) as inbnd_status
+              ,p.product_id
+              ,p.product_name
+        FROM   inbnd_product_d d
+        JOIN   inbnd_product p 
+          ON   d.inbnd_product_no = p.inbnd_product_no
+        WHERE  p.product_id = #{productId}
+          AND  d.remain_quantity &gt; 0
+          AND  d.inbnd_status = '000001'  -- 입고상태 '입고완료' 코드값
+          AND  p.inbnd_status = '000001'  -- 입고제품 상태 '입고완료' 코드값
+        ORDER BY d.lot_no ASC;
+    </select>
+    <select id="test" resultType="InbndProdDVO">
+        SELECT d.inbnd_d_no
+              ,d.inbnd_product_no
+              ,d.lot_no
+              ,d.remain_quantity
+              ,d.inbnd_quantity
+              ,d.unit
+              ,d.inbnd_status
+        FROM   inbnd_product_d d
+        JOIN   inbnd_product p 
+          ON   d.inbnd_product_no = p.inbnd_product_no
+        WHERE  p.product_id = #{productId}
+          AND  d.remain_quantity &gt; 0
+          AND  d.inbnd_status = '000001'  -- 입고상태 '입고완료' 코드값
+        ORDER BY d.lot_no ASC   
+    </select>
 </mapper>

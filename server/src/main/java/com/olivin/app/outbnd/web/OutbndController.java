@@ -17,12 +17,12 @@ import lombok.RequiredArgsConstructor;
 public class OutbndController {
     private final OutbndService outbndService;
     
-    @GetMapping("/hqOutbndMgmt")
+    @GetMapping("/outbnd/hqMgmt")
     public List<OutbndVO> outbndList() {
       return outbndService.getAllOutbnd();
     } // end of outbndList()
 
-    @GetMapping("/hqOutnbndCode")
+    @GetMapping("/outbnd/getCode")
     public String outbndCode() {
       return outbndService.getCodeForUpdate();
     } // emd pf pitbmdCpde()
