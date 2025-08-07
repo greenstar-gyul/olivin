@@ -31,18 +31,6 @@ const props = defineProps({
     type: Array,
     default: () => []
   }, // BasicTable
-  detailData: {
-    type: Object,
-    default: () => ({})
-  }, // 초기값
-  detailColumns: {
-    type: Array,
-    required: true
-  }, // InputTable
-  detailCRUD: {
-    type: Boolean,
-    default: false
-  }, // 추가/삭제 버튼 활성화 
   tableHeight: {
     type: String,
     default: '400px'
@@ -52,19 +40,7 @@ const props = defineProps({
 const inputTableRef = ref(null);
 const selectRow = ref(null);
 
-const detailTableData = ref([]);
 
-watch(
-  () => props.detailData,
-  (newVal) => {
-    if (newVal.length > 0) {
-      detailTableData.value = newVal;
-    } else {
-      detailTableData.value = [];
-    }
-  },
-  { immediate: true }
-);
 
 //수정요함
 const resetFormHandler = () => {
@@ -78,27 +54,8 @@ const onRowSelect = (select) => {
 
 const onRowUnselect = () => {
   selectRow.value = null;
-  detailTableData.value = [];
 }
 
-const addProductHandler = () => {
-  detailTableData.value.push({ ...props.detailColumns.map(column => ({
-      [column.field]: props.detailData[column.field] || '',
-    })).reduce((acc, curr) => ({
-      ...acc, ...curr
-    }), {}), id: detailTableData.value.reduce(
-    (max, current) => (current.id > max ? current.id : max)
-    , 0) + 1 
-  });
-};
-
-const removeProductHandler = () => {
-  const selected = inputTableRef.value.getSelection();
-  const selectedIds = selected.map(item => item.id);
-  
-  detailTableData.value = detailTableData.value.filter((p, idx) => !selectedIds.includes(p.id));
-  inputTableRef.value.clearSelection();
-};
 </script>
 <template>
   <Fluid>
@@ -112,29 +69,15 @@ const removeProductHandler = () => {
     <!-- middle table -->
     <BasicTable 
       :checked="true"
-      :checkType="'single'"
+      :checkType="'multiple'"
       :data="props.tableData"
       :header="props.tableHeader"
       @rowSelect="onRowSelect"
-      @rowUnselect="onRowUnselect"
-    />
-
-    <!-- detail table -->
-    <InputTable 
-      :ref="'inputTableRef'"
-      title="제품 상세 목록"
-      :data="detailTableData"
-      :columns="props.detailColumns"
-      :selected="true"
-      :maxHeight="props.tableHeight"
+      @rowUnselect="onRowUnselect"    
     >
       <template #btn>
-        <slot name="detailBtn" />
-        <template v-if="props.detailCRUD">
-          <Button label="추가" @click="addProductHandler" :disabled="!selectRow" />
-          <Button label="삭제" severity="danger" @click="removeProductHandler" :disabled="!selectRow" />
-        </template>
+        <slot name="basicBtn" />
       </template>
-    </InputTable>
+    </BasicTable>
   </Fluid>
 </template>

@@ -15,7 +15,7 @@
     <select id="selectCodeForUpdate" resultType="String">
         SELECT
             'OUT' || TO_CHAR(SYSDATE, 'YYYYMMDD') ||
-            LPAD(NVL(MAX(TO_NUMBER(SUBSTR(order_id, LENGTH('OUT' || TO_CHAR(SYSDATE, 'YYYYMMDD')) + 1))), 0) + 1, 3, '0') as "res"
+            LPAD(NVL(MAX(TO_NUMBER(SUBSTR(outbnd_no, LENGTH('OUT' || TO_CHAR(SYSDATE, 'YYYYMMDD')) + 1))), 0) + 1, 3, '0') as "res"
         FROM outbnd
         WHERE outbnd_no LIKE 'OUT' || TO_CHAR(SYSDATE, 'YYYYMMDD') || '%' 
     </select>
