@@ -3,7 +3,6 @@ import { ref, watch, computed } from 'vue';
 import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
 
-// emit 정의, props
 const emit = defineEmits(['rowSelect', 'rowUnselect']);
 const props = defineProps({
   data: {
@@ -41,24 +40,65 @@ const items = ref([]);
 // checkType에 따라 selectedItems 초기값 설정
 const selectedItems = ref(props.checkType === 'single' ? null : []);
 
-// 여러 개의 watch 대신 computed 사용
-const tableColumns = computed(() => {
-  // 1. props.columns가 명시적으로 제공되면 최우선으로 사용
-  if (props.columns && props.columns.length > 0) {
-    return props.columns;
+// checkType이 변경되면 selectedItems 초기화
+watch(
+  () => props.checkType,
+  (newType) => {
+    selectedItems.value = newType === 'single' ? null : [];
   }
-  // 2. props.header.header 객체가 있으면 키 목록을 사용
-  if (props.header && props.header.header) {
-    return Object.keys(props.header.header);
-  }
-  // 3. 데이터(props.data)가 있고 첫 번째 항목이 존재하면 그 객체의 키를 사용
-  if (Array.isArray(props.data) && props.data.length > 0) {
-    return Object.keys(props.data[0]);
-  }
-  // 모든 조건이 충족되지 않으면 빈 배열 반환
-  return [];
-});
+);
 
+// 타입 검증과 값 존재 검증을 해서 값이 있을 때 데이터 추가..
+// 문제 있으면 바로 빈배열..
+watch(
+  () => props.data,
+  (newVal) => {
+    if (props.columns.length > 0) return; // columns가 있을 경우 watch 종료하고 존재하는 컬럼 사용..
+
+    // header에 정의된 필드들만 사용
+    if (props.header && props.header.header) {
+      items.value = Object.keys(props.header.header);
+    } else if (Array.isArray(newVal) && newVal.length > 0) {
+      items.value = Object.keys(newVal[0]);
+    } else {
+      items.value = [];
+    }
+  },
+  { immediate: true }
+);
+
+// 컬럼이 바뀌면 해당 컬럼 목록으로 바꾸기..?
+watch(
+  () => props.columns,
+  (newVal) => {
+    if (newVal.length > 0) {
+      items.value = newVal;
+    } else if (props.header && props.header.header) {
+      // header에 정의된 필드들만 사용
+      items.value = Object.keys(props.header.header);
+    } else if (Array.isArray(props.data) && props.data.length > 0) {
+      items.value = Object.keys(props.data[0]);
+    } else {
+      items.value = [];
+    }
+  },
+  { immediate: true }
+);
+
+// header가 변경될 때도 컬럼 업데이트
+watch(
+  () => props.header,
+  (newVal) => {
+    if (props.columns.length > 0) return; // columns가 있을 경우 무시
+    
+    if (newVal && newVal.header) {
+      items.value = Object.keys(newVal.header);
+    } else {
+      items.value = [];
+    }
+  },
+  { immediate: true }
+);
 
 const onRowSelect = (event) => {
   // 선택된 행이 있을 때만 처리
@@ -111,15 +151,16 @@ const header = computed(() => props.header);
       </div>
     </div>
     
-    <!-- DataTable (PrimeVue) - scrollHeight props 사용 -->
+    <!-- DataTable (PrimeVue) -->
     <DataTable v-model:selection="selectedItems" :value="props.data" :dataKey="props.dataKey" showGridlines scrollable
       :scrollHeight="props.scrollHeight" tableStyle="min-width: 50rem" @rowSelect="onRowSelect" @rowUnselect="onRowUnselect"
       :selectionMode="props.checked ? props.checkType : null">
 
       <Column v-if="props.checked" :selectionMode="props.checkType" headerStyle="width: 3rem"></Column>
-      
+
       <!-- 동적 컬럼 생성 -->
-      <Column v-for="colKey in tableColumns" :key="colKey" :field="colKey" :header="header.header[colKey] ?? colKey">
+      <Column v-for="item in items" :key="item" :field="item" :header="header.header[item] ?? item">
+        <!-- 날짜포맷변경을 위해 추가한 파트 -->
         <template #body="slotProps">
           <!-- 숫자형 데이터는 오른쪽 정렬하고 3자리 콤마 추가 -->
           <span v-if="header.rightAligned && header.rightAligned.includes(item)" class="text-right block">
