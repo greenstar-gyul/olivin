@@ -162,6 +162,27 @@ const searchData = async (searchOptions) => {
   }
 };
 
+// ✅ 등록/수정/삭제
+const saveData = async (inputData, mode = 'insert') => {
+  try {
+    if (mode === 'insert') {
+      await axios.post(`${API_BASE_URL}`, inputData);
+      toast.add({ severity: 'success', summary: '등록 성공', life: 2000 });
+    } else if (mode === 'update') {
+      await axios.put(`${API_BASE_URL}/${inputData.employeeId}`, inputData);
+      toast.add({ severity: 'success', summary: '수정 성공', life: 2000 });
+    } else if (mode === 'delete') {
+      await axios.delete(`${API_BASE_URL}/${inputData.employeeId}`);
+      toast.add({ severity: 'warn', summary: '삭제 성공', life: 2000 });
+    }
+    await searchData({}); // 리스트 갱신
+  } catch (error) {
+    toast.add({ severity: 'error', summary: '요청 실패', detail: error.message, life: 3000 });
+  }
+};
+
+
+
 // ✅ 부서 목록 초기 로딩용 함수
 const loadEmps = async () => {
   await searchData({});
@@ -170,16 +191,14 @@ const loadEmps = async () => {
 // ✅ 컴포넌트 마운트 시 실행
 onMounted(() => {
   loadEmps();
+  searchData({});
 });
 
-const saveData = (inputData) => {
-  console.log('Saving data:', inputData);
-};
 </script>
 
 <template>
   <EmpInput
-  :items="items"
+    :items="items"
     :filters="filters"
     :header="header"
     :inputs="inputs"

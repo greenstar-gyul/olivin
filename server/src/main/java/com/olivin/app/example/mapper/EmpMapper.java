@@ -13,9 +13,9 @@ public interface EmpMapper {
   List<EmpVO> selectAllList();
   List<EmpVO> selectAllList(EmpVO empVO);
   EmpVO selectEmpVO(String empId);
-  int insertEmp(EmpVO empId);
+  int insertEmp(EmpVO empVO);
   int updateEmp(EmpVO empVO);
-  int deleteEmp(String empId);
+  int deleteEmp(String employeeId);
   List<EmpVO> selectEmpsByCondition(Map<String, Object> params);
   int checkEmpId(String empId);
 

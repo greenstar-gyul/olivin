@@ -18,10 +18,44 @@
     JOIN companys c ON e.comp_id = c.comp_id
     JOIN departments d ON e.department_id = d.department_id
    </select>
+   
+   <!-- 등록 -->
+   <insert id="insertEmp" parameterType="EmpVO">
+    INSERT INTO employees (
+        employee_id,
+        emp_name,
+        emp_type,
+        email,
+        password,
+        phone,
+        position
+    )
+    VALUES #{employeeId},
+           #{empName},
+           #{empType},
+           #{email},
+           #{password},
+           #{phone},
+           #{position}
+   </insert>
 
-   <!-- <insert id="insertEmp" resultType="EmpVO">
-    INSERT INTO
-    VALUES 
-   </insert> -->
+   <!-- 수정 -->
+   <update id="updateEmp" parameterType="EmpVO">
+        UPDATE employees
+        SET
+                emp_name = #{employeeId},
+                emp_type = #{empType},
+                email = #{email},
+                password = #{password},
+                phone = #{phone},
+                position = #{position}
+        WHERE employee_id = #{employeeId}
+   </update>
+
+   <!-- 삭제 -->
+    <delete id="deleteEmp" parameterType="String">
+        DELETE FROM employees
+        WHERE employee_id = #{employeeId}
+    </delete>
 
 </mapper>

@@ -14,6 +14,7 @@ public class EmpVO {
   private String compName; // 회사명
   private String departmentId; //부서코드
   private String deptName; //부서명
+  
   private String employeeId; //사원코드
   private String empName; //사원이름
   private String empType; //고용형태

@@ -2,7 +2,7 @@
 import { ref } from 'vue';
 import SearchForm from '@/components/inputForm/SearchForm.vue';
 import BasicTable from '@/components/table/BasicTable.vue';
-import InputForm from '@/components/inputForm/InputForm.vue';
+import DeptEmpInputForm from '@/components/inputForm/DeptEmpInputForm.vue';
 import Button from 'primevue/button';
 
 export default {
@@ -11,7 +11,7 @@ export default {
   components: {
     SearchForm,
     BasicTable,
-    InputForm,
+    DeptEmpInputForm,
     Button
   },
 
@@ -61,8 +61,12 @@ export default {
       emit('searchData', searchOptions);
     };
 
-    const saveData = (inputData) => {
-      emit('saveData', inputData);
+    const saveData = (inputData, mode) => {
+      emit('saveData', inputData, mode);
+    };
+
+    const onSaveData = (data, mode) => {
+      emit('saveData', data, mode);  // 그대로 상위로 전달
     };
 
     const openSearchModal = (inputName) => {
@@ -88,6 +92,12 @@ export default {
       }
     };
 
+    const deleteSelected = () => {
+      if (selectedItems.value) {
+        emit('saveData', selectedItems.value, 'delete');
+      }
+    };
+
     expose({
       searchFormRef,
       inputFormRef
@@ -99,8 +109,10 @@ export default {
       selectedItems,
       searchFormRef,
       inputFormRef,
+      deleteSelected,
       searchData,
       saveData,
+      onSaveData,
       openSearchModal,
       onRowSelect,
       onRowUnselect,
@@ -128,11 +140,11 @@ export default {
       class="col-span-4"
     >
       <template #btn>
-        <Button label="삭제" severity="danger" class="min-w-fit whitespace-nowrap" outlined />
+        <Button label="삭제" severity="danger" class="min-w-fit whitespace-nowrap" outlined @click="deleteSelected" />
       </template>
     </BasicTable>
 
-    <InputForm
+    <DeptEmpInputForm
       ref="inputFormRef"
       :inputs="inputs"
       :init="selectedItems"

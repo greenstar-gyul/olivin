@@ -2,6 +2,7 @@ package com.olivin.app.common.web;
 
 import java.util.List;
 
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -13,25 +14,44 @@ import lombok.RequiredArgsConstructor;
 
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-
 
 @RequestMapping("/api")
 @RestController
 @RequiredArgsConstructor
 public class EmpController {
+
   private final EmpService empService;
 
+  // 전체 조회
   @GetMapping("/public/emps/search")
-  public List<EmpVO> EmpList() {
+  public List<EmpVO> empList() {
       return empService.selectAllList();
   }
   
-  // @PostMapping("path")
-  // public String postMethodName(@RequestBody String entity) {
-  //     //TODO: process POST request
-      
-  //     return entity;
-  // }
+    // 조건 검색 (검색어 파라미터 기반)
+    @GetMapping("/public/emps")
+    public List<EmpVO> searchEmps(@RequestParam String searchValue) {
+        return empService.searchEmps(searchValue);
+    }
+
+    // 등록
+    @PostMapping("/emps")
+    public int insertEmp(@RequestBody EmpVO empVO) {
+        return empService.insertEmp(empVO);
+    }
+
+    // 수정
+    @PutMapping("/emps")
+    public int updateEmp(@RequestBody EmpVO empVO) {
+        return empService.updateEmp(empVO);
+    }
+
+    // 삭제
+    @DeleteMapping("/emps")
+    public int deleteEmp(@RequestParam String employeeId) {
+        return empService.deleteEmp(employeeId);
+    }
   
 }
