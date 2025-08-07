@@ -5,7 +5,8 @@ import InputMaster from '../inputForm/InputMaster.vue';
 import SearchForm from '../inputForm/SearchForm.vue';
 import BasicTable from '../table/BasicTable.vue';
 
-const emit = defineEmits(['searchData', 'saveData', 'openSearchModal']);
+// ✅ rowSelect, rowUnselect 이벤트 추가
+const emit = defineEmits(['searchData', 'saveData', 'openSearchModal', 'rowSelect', 'rowUnselect']);
 const props = defineProps({
   filters: {
     type: Array,
@@ -22,6 +23,10 @@ const props = defineProps({
   inputs: {
     type: Object,
     required: true
+  },
+  scrollHeight: {
+    type: String,
+    default: '400px'  // 기본값 400px
   }
 });
 
@@ -47,6 +52,9 @@ const onRowSelect = (data) => {
     }
     selectedItems.value.push(data);
   }
+  
+  // ✅ 부모 컴포넌트로 이벤트 전달
+  emit('rowSelect', data);
 }
 
 const onRowUnselect = (data) => {
@@ -55,6 +63,9 @@ const onRowUnselect = (data) => {
   } else {
     selectedItems.value = null;
   }
+  
+  // ✅ 부모 컴포넌트로 이벤트 전달
+  emit('rowUnselect', data);
 };
 
 const openSearchModal = (inputName) => {
@@ -70,9 +81,9 @@ defineExpose({
 <template>
   <SearchForm ref="searchFormRef" :filters="props.filters" @searchData="searchData" @openSearchModal="openSearchModal" />
   <div class="grid grid-cols-7 gap-4 mb-4 items-stretch">
-    <BasicTable :data="props.items" :header="props.header" :checked="true" @rowSelect="onRowSelect" @rowUnselect="onRowUnselect" class="col-span-4">
+    <BasicTable :data="props.items" :header="props.header" :checked="true" :scrollHeight="props.scrollHeight" @rowSelect="onRowSelect" @rowUnselect="onRowUnselect" class="col-span-4">
       <template #btn>
-        <Button label="삭제" severity="danger" class="min-w-fit whitespace-nowrap" outlined></Button>
+        <slot name="btn"></slot>
       </template>
     </BasicTable>
     <InputForm ref="inputFormRef" :inputs="props.inputs" @saveData="saveData" @openSearchModal="openSearchModal" class="col-span-3"></InputForm>

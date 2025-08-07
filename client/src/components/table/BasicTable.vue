@@ -28,6 +28,10 @@ const props = defineProps({
   checkType: {
     type: String,
     default: 'single'
+  },
+  scrollHeight: {
+    type: String,
+    default: '400px'  // 기본값 400px로 기존 테이블들 영향없음
   }
 });
 
@@ -134,9 +138,9 @@ const onRowUnselect = (event) => {
       </div>
     </div>
     
-    <!-- DataTable (PrimeVue) -->
+    <!-- DataTable (PrimeVue) - scrollHeight props 사용 -->
     <DataTable v-model:selection="selectedItems" :value="props.data" :dataKey="props.dataKey" showGridlines scrollable
-      scrollHeight="400px" tableStyle="min-width: 50rem" @rowSelect="onRowSelect" @rowUnselect="onRowUnselect"
+      :scrollHeight="props.scrollHeight" tableStyle="min-width: 50rem" @rowSelect="onRowSelect" @rowUnselect="onRowUnselect"
       :selectionMode="props.checked ? props.checkType : null">
 
       <Column v-if="props.checked" :selectionMode="props.checkType" headerStyle="width: 3rem"></Column>

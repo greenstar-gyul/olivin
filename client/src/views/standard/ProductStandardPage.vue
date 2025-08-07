@@ -1,10 +1,9 @@
 <script setup>
 import StandardInput from '@/components/common/StandardInput.vue';
-import FileUpload from 'primevue/fileupload';
 import Toast from 'primevue/toast';
 import Button from 'primevue/button';
 import DialogModal from '@/components/overray/DialogModal.vue';
-import { ref, onMounted, nextTick, computed } from 'vue';
+import { ref, onMounted, computed, watch, nextTick } from 'vue';
 import { useToast } from 'primevue/usetoast';
 import axios from '@/service/axios';
 
@@ -17,121 +16,76 @@ const currentUser = ref({
 
 const API_BASE_URL = '/api/products';
 const toast = useToast();
-const fileUploadRef = ref();
-
-// 현재 로그인한 사용자명을 computed로 처리
-const currentUserName = computed(() => {
-  return currentUser.value?.empName || '사용자';
-});
-
-// 수정된 getCurrentUser 함수 - employeeId 기반
-const getCurrentUser = async () => {
-  try {
-    const response = await axios.get('/api/auth/me');
-    console.log('사용자 API 전체 응답:', JSON.stringify(response.data, null, 2));
-    
-    if (response.data.success && response.data.data) {
-      const userData = response.data.data;
-      console.log('userData 구조:', JSON.stringify(userData, null, 2));
-      
-      let employeeId = 'olivin10001';
-      let empName = '김홍인';
-      
-      // 다양한 경우에 대한 더 포괄적인 처리
-      const possibleUserSources = [
-        userData.user,           // user 객체
-        userData,               // userData 직접
-        userData.employee,      // employee 객체
-        userData.userInfo,      // userInfo 객체
-        userData.loginUser      // loginUser 객체
-      ];
-      
-      for (const userSource of possibleUserSources) {
-        if (userSource) {
-          console.log('처리 중인 userSource:', typeof userSource, userSource);
-          
-          if (typeof userSource === 'object' && userSource !== null) {
-            // 객체인 경우 - employeeId 우선 검색
-            const possibleEmployeeIds = [
-              userSource.employeeId,        // employeeId 우선
-              userSource.employee_id,       // employee_id
-              userSource.EMPLOYEE_ID,       // EMPLOYEE_ID (DB 컬럼명)
-            ];
-            
-            const possibleEmpNames = [
-              userSource.empName,
-              userSource.emp_name,
-              userSource.EMP_NAME,
-            ];
-            
-            // 첫 번째로 유효한 값 찾기
-            const foundEmployeeId = possibleEmployeeIds.find(id => id && id !== 'olivin10001' && String(id).trim() !== '');
-            const foundEmpName = possibleEmpNames.find(name => name && name !== '김홍인' && String(name).trim() !== '');
-            
-            if (foundEmployeeId) {
-              employeeId = String(foundEmployeeId).trim();
-            }
-            if (foundEmpName) {
-              empName = String(foundEmpName).trim();
-            }
-            
-            // 유효한 사용자 정보를 찾았으면 중단
-            if (foundEmployeeId && foundEmpName) {
-              break;
-            }
-          } else if (typeof userSource === 'string' && userSource.trim() !== '') {
-            // 문자열인 경우
-            empName = userSource.trim();
-            employeeId = userSource.trim();
-            break;
-          }
-        }
-      }
-      
-      currentUser.value = {
-        empId: employeeId,          // 호환성을 위해 empId로도 저장
-        employeeId: employeeId,     // employeeId 추가
-        empName: empName
-      };
-      
-      console.log('최종 설정된 사용자 정보:', currentUser.value);
-      
-      // 사용자 정보가 기본값이면 경고 로그
-      if (employeeId === 'olivin10001' && empName === '김홍인') {
-        console.warn('사용자 정보를 찾지 못해 기본값을 사용합니다. API 응답 구조를 확인해주세요.');
-      }
-      
-      return currentUser.value;
-    } else {
-      console.warn('API 응답에 사용자 데이터가 없음:', response.data);
-      throw new Error('API 응답에 사용자 데이터가 없습니다');
-    }
-  } catch (error) {
-    console.error('사용자 정보 가져오기 실패:', error);
-    
-    // API 실패 시 기본값 사용
-    currentUser.value = {
-      empId: 'olivin10001',
-      employeeId: 'olivin10001',
-      empName: '김홍인'
-    };
-    
-    console.warn('사용자 정보 API 실패로 기본값 사용:', currentUser.value);
-    return currentUser.value;
-  }
-};
 
 // window.location.origin을 computed로 처리
 const baseUrl = computed(() => {
   return typeof window !== 'undefined' ? window.location.origin : '';
 });
 
-/* Modal functions */
+// 사용자 정보 가져오기 함수
+const getCurrentUser = async () => {
+  try {
+    const response = await axios.get('/api/auth/me');
+    
+    if (response.data.success && response.data.data) {
+      const userData = response.data.data;
+      
+      let employeeId = 'olivin10001';
+      let empName = '김홍인';
+      
+      const possibleUserSources = [
+        userData.user,
+        userData,
+        userData.employee,
+        userData.userInfo,
+        userData.loginUser
+      ];
+      
+      for (const userSource of possibleUserSources) {
+        if (userSource && typeof userSource === 'object') {
+          const possibleEmployeeIds = [
+            userSource.employeeId,
+            userSource.employee_id,
+            userSource.EMPLOYEE_ID,
+          ];
+          
+          const possibleEmpNames = [
+            userSource.empName,
+            userSource.emp_name,
+            userSource.EMP_NAME,
+          ];
+          
+          const foundEmployeeId = possibleEmployeeIds.find(id => id && String(id).trim() !== '');
+          const foundEmpName = possibleEmpNames.find(name => name && String(name).trim() !== '');
+          
+          if (foundEmployeeId) employeeId = String(foundEmployeeId).trim();
+          if (foundEmpName) empName = String(foundEmpName).trim();
+          
+          if (foundEmployeeId && foundEmpName) break;
+        }
+      }
+      
+      currentUser.value = {
+        empId: employeeId,
+        employeeId: employeeId,
+        empName: empName
+      };
+      
+      return currentUser.value;
+    }
+  } catch (error) {
+    console.error('사용자 정보 가져오기 실패:', error);
+    currentUser.value = {
+      empId: 'olivin10001',
+      employeeId: 'olivin10001',
+      empName: '김홍인'
+    };
+    return currentUser.value;
+  }
+};
 
-// 회사코드 모달의 visible 상태를 관리하는 ref 변수
+// 회사 모달 관련
 const companyModalVisible = ref(false);
-
-// 회사코드 모달창의 테이블 헤더 정보 (공급업체 기준정보와 동일하게)
 const companyModalHeaders = ref([
   { field: 'compId', header: '업체ID' },
   { field: 'compName', header: '업체명' },
@@ -140,63 +94,23 @@ const companyModalHeaders = ref([
   { field: 'phoneNumber', header: '전화번호' },
   { field: 'address', header: '주소' },
 ]);
-
-// 모달창의 데이터 아이템
 const companyModalItems = ref([]);
 
-// 모달창 닫기 함수
-const closeCompanyModal = () => {
-  companyModalVisible.value = false;
-};
-
-// 회사코드 모달창 확인 버튼 클릭 시 호출되는 함수
-const confirmCompanyModal = async (selectedItems) => {
-  // 선택된 회사 정보를 폼 데이터에 반영
-  if (selectedItems && selectedItems.compId) {
-    // COMP_ID 설정
-    formData.value.compId = selectedItems.compId;
-    
-    // VENDOR_NAME 설정 (COMP_NAME을 브랜드명으로 사용)
-    formData.value.vendorName = selectedItems.compName;
-    
-    toast.add({ 
-      severity: 'success', 
-      summary: '성공', 
-      detail: `회사 "${selectedItems.compName}" 선택 완료`, 
-      life: 3000 
-    });
-  }
-  
-  companyModalVisible.value = false;
-};
-
-// 회사코드 모달을 열 때 호출되는 함수
-const loadCompanyOnClick = () => {
-  companyModalVisible.value = true;
-};
-
-const searchModal = (searchValue) => {
-  // 검색 로직 구현
-};
-
-/* end of Modal functions */
-
-// 카테고리 옵션 (6자리 데이터베이스 코드 기준)
+// 카테고리 옵션
 const categoryMainOptions = [
-  { name: '스킨케어', value: '110001', code: '11' },
-  { name: '메이크업', value: '110002', code: '11' },
-  { name: '클렌징', value: '110003', code: '11' },
-  { name: '헤어케어', value: '110004', code: '11' },
-  { name: '구강용품', value: '110005', code: '11' },
-  { name: '선케어', value: '110006', code: '11' },
-  { name: '뷰티소품', value: '110007', code: '11' },
-  { name: '건강/기능 식품', value: '110008', code: '11' },
-  { name: '푸드', value: '110009', code: '11' }
+  { name: '스킨케어', value: '110001' },
+  { name: '메이크업', value: '110002' },
+  { name: '클렌징', value: '110003' },
+  { name: '헤어케어', value: '110004' },
+  { name: '구강용품', value: '110005' },
+  { name: '선케어', value: '110006' },
+  { name: '뷰티소품', value: '110007' },
+  { name: '건강/기능 식품', value: '110008' },
+  { name: '푸드', value: '110009' }
 ];
 
-// 세부카테고리 옵션 (6자리 데이터베이스 코드 기준)
 const categorySubOptions = {
-  '110001': [ // 스킨케어
+  '110001': [
     { name: '스킨/토너', value: '121001' },
     { name: '에센스/세럼/앰플', value: '121002' },
     { name: '크림', value: '121003' },
@@ -204,7 +118,7 @@ const categorySubOptions = {
     { name: '미스트/오일', value: '121005' },
     { name: '스킨케어 디바이스', value: '121006' }
   ],
-  '110002': [ // 메이크업
+  '110002': [
     { name: '베이스 메이크업', value: '122001' },
     { name: '아이 메이크업', value: '122002' },
     { name: '치크&컨투어', value: '122003' },
@@ -212,7 +126,7 @@ const categorySubOptions = {
     { name: '피니시&픽서', value: '122005' },
     { name: '네일 메이크업', value: '122006' }
   ],
-  '110003': [ // 클렌징
+  '110003': [
     { name: '클렌징폼/젤', value: '123001' },
     { name: '오일/밤', value: '123002' },
     { name: '워터/밀크', value: '123003' },
@@ -221,7 +135,7 @@ const categorySubOptions = {
     { name: '립&아이리무버', value: '123006' },
     { name: '클렌징 디바이스', value: '123007' }
   ],
-  '110004': [ // 헤어케어
+  '110004': [
     { name: '샴푸/린스', value: '124001' },
     { name: '트리트먼트/팩', value: '124002' },
     { name: '두피앰플/토닉', value: '124003' },
@@ -230,20 +144,20 @@ const categorySubOptions = {
     { name: '헤어기기/브러시', value: '124006' },
     { name: '스타일링', value: '124007' }
   ],
-  '110005': [ // 구강용품
+  '110005': [
     { name: '칫솔', value: '125001' },
     { name: '치약', value: '125002' },
     { name: '애프터구강케어', value: '125003' },
     { name: '구강가전', value: '125004' }
   ],
-  '110006': [ // 선케어
+  '110006': [
     { name: '선크림', value: '126001' },
     { name: '선스틱', value: '126002' },
     { name: '선쿠션', value: '126003' },
     { name: '선스프레이/선패치', value: '126004' },
     { name: '태닝/애프터선', value: '126005' }
   ],
-  '110007': [ // 뷰티소품
+  '110007': [
     { name: '메이크업소품', value: '127001' },
     { name: '아이소품', value: '127002' },
     { name: '스킨케어소품', value: '127003' },
@@ -251,13 +165,13 @@ const categorySubOptions = {
     { name: '네일/바디소품', value: '127005' },
     { name: '뷰티잡화', value: '127006' }
   ],
-  '110008': [ // 건강/기능 식품
+  '110008': [
     { name: '비타민', value: '128001' },
     { name: '영양제', value: '128002' },
     { name: '유산균', value: '128003' },
     { name: '슬리밍/이너뷰티', value: '128004' }
   ],
-  '110009': [ // 푸드
+  '110009': [
     { name: '식단관리/이너뷰티', value: '129001' },
     { name: '과자/초콜릿/디저트', value: '129002' },
     { name: '생수/음료/커피', value: '129003' },
@@ -266,7 +180,6 @@ const categorySubOptions = {
   ]
 };
 
-// 단위 옵션 (6자리 데이터베이스 코드 기준)
 const unitOptions = [
   { name: 'ml', value: '130001' },
   { name: 'g', value: '130002' },
@@ -275,6 +188,7 @@ const unitOptions = [
   { name: 'pack', value: '130005' }
 ];
 
+// 검색 조건
 const filters = ref({
   title: '조회 조건',
   filters: [
@@ -284,15 +198,14 @@ const filters = ref({
     { type: 'select', label: '세부카테고리', value: '', placeholder: '세부카테고리를 선택하세요', name: 'categorySub', options: [] },
     { type: 'number', label: '입수량', value: '', placeholder: '입수량을 입력하세요', name: 'packQty' },
     { type: 'text', label: '등록자', value: '', placeholder: '등록자를 입력하세요', name: 'regUser' },
-    { type: 'dateRange', label: '등록일', value: ['', ''], placeholder: '등록일 범위를 선택하세요', name: 'regDateRange' }
+    { type: 'dateRange', label: '등록일', value: '', fromPlaceholder: '시작일', toPlaceholder: '종료일', name: 'regDateRange' }
   ]
 });
 
 const items = ref([]);
 const selectedProduct = ref(null);
-const selectedProductId = ref('');
 
-// 헤더에서 등록자 표시를 위해 regUserName 추가
+// 테이블 헤더
 const header = ref({
   title: '제품 기준정보 관리',
   header: {
@@ -309,41 +222,21 @@ const header = ref({
     purchasePrice: '구매가격',
     sellPrice: '판매가격',
     status: '상태',
-    regUserName: '등록자',  // regUser 대신 regUserName 사용
+    regUserName: '등록자',
     regDate: '등록일',
-    productImage: '제품이미지',
     note: '비고'
   },
   rightAligned: ['packQty', 'safetyStock', 'purchasePrice', 'sellPrice']
 });
 
-// 폼 데이터를 반응형으로 관리
-const formData = ref({
-  productId: '',
-  compId: '',
-  productName: '',
-  categoryMain: '',
-  categorySub: '',
-  vendorName: '',
-  productSpec: '',
-  unit: '',
-  packQty: '',
-  safetyStock: '',
-  purchasePrice: '',
-  sellPrice: '',
-  regUser: '', // employeeId 값으로 설정
-  regUserName: '', // 백엔드에서 조인된 등록자 이름
-  regDate: '',
-  note: ''
-});
-
+// 입력 폼
 const inputs = ref({
   title: '제품 등록/수정',
   inputs: [
     { type: 'text', label: '제품ID', placeholder: '등록 시 자동생성됩니다', name: 'productId', readonly: true },
     { type: 'text', label: '제품명', placeholder: '제품명을 입력하세요', name: 'productName', required: true },
     { type: 'text', label: '회사코드', placeholder: '회사선택 필수', name: 'compId', required: true, readonly: true },
-    { type: 'text-with-button', label: '브랜드', placeholder: '회사 선택시 자동 입력', name: 'vendorName', required: true, readonly: true, buttonLabel: '회사선택', buttonAction: 'loadCompany' },
+    { type: 'item-search', label: '브랜드', placeholder: '회사 선택시 자동 입력', name: 'vendorName', required: true },
     { type: 'select', label: '카테고리', placeholder: '카테고리를 선택하세요', name: 'categoryMain', required: true, options: categoryMainOptions },
     { type: 'select', label: '세부카테고리', placeholder: '세부카테고리를 선택하세요', name: 'categorySub', options: [] },
     { type: 'text', label: '용량/규격', placeholder: '50ml, 30포, 7.5g 등', name: 'productSpec' },
@@ -354,54 +247,36 @@ const inputs = ref({
     { type: 'number', label: '판매가격', placeholder: '소비자가격 (원)', name: 'sellPrice' },
     { type: 'text', label: '등록자', placeholder: '현재 로그인 사용자 자동 설정', name: 'regUser', readonly: true },
     { type: 'text', label: '등록일', placeholder: '2024-01-01 형식으로 입력하세요', name: 'regDate' },
-    { type: 'textarea', label: '비고', placeholder: '제품 설명, 특징, 주의사항 등을 상세히 입력하세요', name: 'note' }
+    { type: 'textarea', label: '비고', placeholder: '제품 설명, 특징, 주의사항 등을 상세히 입력하세요', name: 'note' },
+    { type: 'file', label: '제품 이미지', placeholder: '이미지를 선택하세요', name: 'productImage', accept: 'image/*', maxFileSize: 10000000, multiple: false }
   ]
 });
 
-const selectedImageFile = ref(null);
-const selectedImageFiles = ref([]);
-const uploadedImageUrl = ref('');
+// StandardInput 컴포넌트 ref
+const standardInputRef = ref(null);
 
-// 선택된 대분류에 따른 세부카테고리 옵션
-const filteredCategorySubOptions = computed(() => {
-  return categorySubOptions[formData.value.categoryMain] || [];
-});
-
-// 조회 조건의 카테고리에 따른 세부카테고리 옵션
-const filteredSearchCategorySubOptions = computed(() => {
-  const categoryMainFilter = filters.value.filters.find(f => f.name === 'categoryMain');
-  return categorySubOptions[categoryMainFilter?.value] || [];
-});
-
-// 카테고리 변경 시 세부카테고리 초기화만 (제품 ID는 등록 시에만 생성)
-const onCategoryMainChange = () => {
-  // 세부카테고리 초기화
-  formData.value.categorySub = '';
+// ✅ 카테고리 변경 처리 함수 개선
+const handleCategoryMainChange = (categoryMainValue) => {
+  console.log('입력 폼 카테고리 변경됨:', categoryMainValue);
   
-  // 제품 ID는 등록 버튼 클릭 시에만 생성되므로 여기서는 처리하지 않음
-  formData.value.productId = '';
-};
-
-// 조회 조건의 카테고리 변경 시 세부카테고리 초기화
-const onSearchCategoryMainChange = () => {
-  const categorySubFilter = filters.value.filters.find(f => f.name === 'categorySub');
-  if (categorySubFilter) {
-    categorySubFilter.value = '';
+  // 세부카테고리 옵션 업데이트
+  const categorySubInput = inputs.value.inputs.find(input => input.name === 'categorySub');
+  if (categorySubInput) {
+    categorySubInput.options = categorySubOptions[categoryMainValue] || [];
+    console.log('세부카테고리 옵션 업데이트됨:', categorySubInput.options);
   }
-};
-
-// 버튼 액션 핸들러
-const handleButtonAction = (action) => {
-  switch(action) {
-    case 'loadCompany':
-      loadCompanyOnClick();
-      break;
-    default:
-      break;
+  
+  // ✅ 현재 선택된 세부카테고리 초기화 (기존 값과 충돌 방지)
+  if (standardInputRef.value?.inputFormRef) {
+    const inputFormRef = standardInputRef.value.inputFormRef;
+    inputFormRef.inputDatas.categorySub = '';
   }
+  
+  // ✅ Vue 반응성 강제 업데이트
+  inputs.value = { ...inputs.value };
 };
 
-// 코드를 이름으로 변환하는 함수들 (6자리 코드 기준)
+// 코드 변환 함수들
 const getCategoryMainName = (code) => {
   const category = categoryMainOptions.find(opt => opt.value === code);
   return category ? category.name : code;
@@ -420,7 +295,6 @@ const getUnitName = (code) => {
   return unit ? unit.name : code;
 };
 
-// 상태 코드를 이름으로 변환하는 함수 (6자리 코드 기준)
 const getStatusName = (code) => {
   const statusMap = {
     '040001': '완료',
@@ -430,411 +304,7 @@ const getStatusName = (code) => {
   return statusMap[code] || code;
 };
 
-// 제품 데이터 변환 함수 - 백엔드 조인된 데이터 처리
-const filterProductData = (product) => {
-  return {
-    productId: product.productId,
-    productName: product.productName,
-    vendorName: product.vendorName,
-    compId: product.compId,
-    productSpec: product.productSpec,
-    packQty: product.packQty,
-    safetyStock: product.safetyStock,
-    purchasePrice: product.purchasePrice,
-    sellPrice: product.sellPrice,
-    note: product.note,
-    productImage: product.productImage,
-    // 표시용 (변환된 값)
-    categoryMain: getCategoryMainName(product.categoryMain),
-    categorySub: getCategorySubName(product.categorySub),
-    unit: getUnitName(product.unit),
-    status: getStatusName(product.status),
-    regUserName: product.regUserName || product.regUser, // 백엔드에서 조인된 이름 우선 사용
-    regDate: product.regDate ? formatDate(product.regDate) : '',
-    // 원본 코드값 (폼 데이터용)
-    categoryMainCode: product.categoryMain,
-    categorySubCode: product.categorySub,
-    unitCode: product.unit,
-    statusCode: product.status,
-    regUserCode: product.regUser
-  };
-};
-
-// 제품 선택 시 폼 데이터 업데이트
-const onProductSelect = async (product) => {
-  if (!product) return;
-  
-  console.log('선택된 제품 (백엔드 조인 데이터):', product);
-  
-  selectedProduct.value = product;
-  selectedProductId.value = product.productId;
-  
-  await updateFormData(product);
-  
-  if (product.productImage) {
-    uploadedImageUrl.value = product.productImage;
-  } else {
-    uploadedImageUrl.value = '';
-  }
-};
-
-// 폼 데이터 업데이트 함수 - 백엔드 조인된 이름 포함
-const updateFormData = async (productData) => {
-  try {
-    // formData 객체를 직접 업데이트
-    Object.keys(formData.value).forEach(key => {
-      if (key === 'categoryMain' && productData.categoryMainCode) {
-        formData.value[key] = String(productData.categoryMainCode);
-      } else if (key === 'categorySub' && productData.categorySubCode) {
-        formData.value[key] = String(productData.categorySubCode);
-      } else if (key === 'unit' && productData.unitCode) {
-        formData.value[key] = String(productData.unitCode);
-      } else if (key === 'status' && productData.statusCode) {
-        formData.value[key] = String(productData.statusCode);
-      } else if (key === 'regUser' && productData.regUserCode) {
-        formData.value[key] = String(productData.regUserCode);
-      } else if (key === 'regUserName' && productData.regUserName) {
-        formData.value[key] = String(productData.regUserName); // 백엔드에서 조인된 이름
-      } else if (key in productData && !key.endsWith('Code')) {
-        let value = productData[key] || '';
-        
-        // regDate는 문자열로 처리 (입력형)
-        if ((key === 'regDate' || key === 'updateDate') && value) {
-          value = formatDateTimeForInput(value);
-        }
-        
-        formData.value[key] = String(value);
-      }
-    });
-    
-    await nextTick();
-    
-  } catch (error) {
-    console.error('폼 업데이트 중 오류:', error);
-  }
-};
-
-// 라디오 버튼 변경 시 처리
-const onRadioChange = (productId) => {
-  const product = items.value.find(item => item.productId === productId);
-  if (product) {
-    onProductSelect(product);
-  }
-};
-
-// 테이블 행 클릭 시 처리
-const onRowClick = (product) => {
-  selectedProductId.value = product.productId;
-  onProductSelect(product);
-};
-
-// 제품 목록 로드 - 백엔드 조인 포함
-const loadProducts = async () => {
-  try {
-    console.log('제품 목록 로드 시작 (백엔드 조인 포함)...');
-    
-    const response = await axios.get(`${API_BASE_URL}`);
-    console.log('API 응답 (백엔드 조인 포함):', response.data);
-    
-    if (response.data && Array.isArray(response.data)) {
-      items.value = response.data.map(product => filterProductData(product));
-      console.log('처리된 제품 목록:', items.value);
-      
-      // 백엔드 조인 확인
-      if (items.value.length > 0) {
-        console.log('✅ 백엔드 조인 성공 - 첫 번째 제품:');
-        console.log('regUser (ID):', items.value[0].regUserCode);
-        console.log('regUserName (이름):', items.value[0].regUserName);
-      }
-    }
-    
-  } catch (error) {
-    console.error('제품 목록 조회 실패:', error);
-    toast.add({ 
-      severity: 'error', 
-      summary: '오류', 
-      detail: '제품 목록을 불러오는데 실패했습니다.', 
-      life: 3000 
-    });
-  }
-};
-
-// 삭제 기능 추가
-const deleteData = async () => {
-  if (!selectedProduct.value || !selectedProductId.value) {
-    toast.add({ 
-      severity: 'warn', 
-      summary: '선택 필요', 
-      detail: '삭제할 제품을 선택해주세요.', 
-      life: 3000 
-    });
-    return;
-  }
-
-  // 삭제 확인
-  const confirmDelete = confirm(
-    `제품 "${selectedProduct.value.productName}"을(를) 정말 삭제하시겠습니까?\n\n이 작업은 되돌릴 수 없습니다.`
-  );
-  
-  if (!confirmDelete) {
-    return;
-  }
-
-  try {
-    console.log('제품 삭제 시작:', selectedProductId.value);
-    
-    const response = await axios.delete(`${API_BASE_URL}/${selectedProductId.value}`);
-    
-    console.log('삭제 응답:', response.data);
-    
-    if (response.data.success) {
-      toast.add({ 
-        severity: 'success', 
-        summary: '삭제 완료', 
-        detail: `제품 "${selectedProduct.value.productName}"이(가) 성공적으로 삭제되었습니다.`, 
-        life: 3000 
-      });
-      
-      // 폼 초기화 및 목록 새로고침
-      clearForm();
-      await loadProducts();
-    } else {
-      toast.add({ 
-        severity: 'error', 
-        summary: '삭제 실패', 
-        detail: response.data.message || '삭제 중 오류가 발생했습니다.', 
-        life: 5000 
-      });
-    }
-    
-  } catch (error) {
-    console.error('제품 삭제 실패:', error);
-    
-    let errorMessage = '삭제 중 오류가 발생했습니다.';
-    
-    if (error.code === 'ERR_NETWORK') {
-      errorMessage = '네트워크 오류: 서버 연결을 확인해주세요.';
-    } else if (error.response?.status === 404) {
-      errorMessage = '삭제할 제품을 찾을 수 없습니다.';
-    } else if (error.response?.status === 409) {
-      errorMessage = '다른 데이터에서 참조 중인 제품은 삭제할 수 없습니다.';
-    } else if (error.response?.data?.message) {
-      errorMessage = error.response.data.message;
-    } else if (error.message) {
-      errorMessage = error.message;
-    }
-    
-    toast.add({ 
-      severity: 'error', 
-      summary: '삭제 실패', 
-      detail: errorMessage, 
-      life: 5000 
-    });
-  }
-};
-
-// 개선된 saveData 함수 - 강화된 디버깅 버전
-const saveData = async () => {
-  try {
-    console.log('=== 저장 시작 ===');
-    console.log('현재 formData:', formData.value);
-    console.log('selectedProduct:', selectedProduct.value);
-    console.log('selectedProductId:', selectedProductId.value);
-    
-    // 필수 필드 검증
-    const requiredFields = [
-      { field: 'productName', label: '제품명' },
-      { field: 'compId', label: '회사코드' },
-      { field: 'categoryMain', label: '카테고리' },
-      { field: 'vendorName', label: '브랜드' },
-      { field: 'unit', label: '단위' }
-    ];
-    
-    for (const req of requiredFields) {
-      if (!formData.value[req.field] || formData.value[req.field].trim() === '') {
-        toast.add({ 
-          severity: 'error', 
-          summary: '검증 오류', 
-          detail: `${req.label}은(는) 필수입력 항목입니다.`, 
-          life: 3000 
-        });
-        return;
-      }
-    }
-    
-    let imageUrl = uploadedImageUrl.value;
-    
-    // 이미지 업로드 처리 (선택사항)
-    if (selectedImageFile.value && !uploadedImageUrl.value) {
-      try {
-        imageUrl = await uploadProductImage(selectedImageFile.value);
-        uploadedImageUrl.value = imageUrl;
-      } catch (error) {
-        const continueWithoutImage = confirm(`이미지 업로드에 실패했습니다.\n오류: ${error.message}\n\n이미지 없이 제품을 등록하시겠습니까?`);
-        if (!continueWithoutImage) {
-          return;
-        }
-        imageUrl = null;
-      }
-    }
-    
-    // 현재 사용자 정보 확인
-    const currentUserData = await getCurrentUser();
-    console.log('저장 시점의 현재 사용자 정보:', currentUserData);
-    
-    // 등록/수정 모드 판별 (더 엄격하게)
-    const isUpdateMode = selectedProduct.value && selectedProductId.value && selectedProductId.value.trim() !== '';
-    console.log('업데이트 모드:', isUpdateMode);
-    
-    let response;
-    
-    if (isUpdateMode) {
-      // === 수정 모드 ===
-      console.log('=== 수정 모드 실행 ===');
-      
-      // 등록일 처리 (수정 모드에서는 기존 값 유지 또는 새로 설정)
-      let regDate = null;
-      if (formData.value.regDate && formData.value.regDate.trim() !== '') {
-        try {
-          const dateStr = formData.value.regDate.trim();
-          regDate = new Date(dateStr + 'T00:00:00');
-          if (isNaN(regDate.getTime())) {
-            throw new Error('유효하지 않은 날짜 형식');
-          }
-        } catch (error) {
-          toast.add({ 
-            severity: 'error', 
-            summary: '검증 오류', 
-            detail: '등록일 형식이 올바르지 않습니다. (예: 2024-01-01)', 
-            life: 3000 
-          });
-          return;
-        }
-      }
-      
-      const updateData = {
-        ...formData.value,
-        productId: selectedProductId.value,
-        updateUser: currentUserData.employeeId,
-        updateDate: new Date(),
-        regDate: regDate,
-        productImage: imageUrl || null,
-        // 기존 등록자 정보는 유지
-        regUser: selectedProduct.value.regUserCode || formData.value.regUser
-      };
-      
-      console.log('수정 데이터:', updateData);
-      response = await axios.put(`${API_BASE_URL}/${selectedProductId.value}`, updateData);
-      
-    } else {
-      // === 신규 등록 모드 ===
-      console.log('=== 신규 등록 모드 실행 ===');
-      
-      // 등록일 처리 (신규 등록)
-      let regDate = null;
-      if (formData.value.regDate && formData.value.regDate.trim() !== '') {
-        try {
-          const dateStr = formData.value.regDate.trim();
-          regDate = new Date(dateStr + 'T00:00:00');
-          if (isNaN(regDate.getTime())) {
-            throw new Error('유효하지 않은 날짜 형식');
-          }
-        } catch (error) {
-          toast.add({ 
-            severity: 'error', 
-            summary: '검증 오류', 
-            detail: '등록일 형식이 올바르지 않습니다. (예: 2024-01-01)', 
-            life: 3000 
-          });
-          return;
-        }
-      } else {
-        // 등록일이 비어있으면 현재 날짜로 설정
-        regDate = new Date();
-      }
-      
-      const newProductData = {
-        // 백엔드에서 자동 생성되므로 productId는 제외
-        compId: formData.value.compId,
-        productName: formData.value.productName,
-        categoryMain: formData.value.categoryMain,
-        categorySub: formData.value.categorySub || null,
-        vendorName: formData.value.vendorName,
-        productSpec: formData.value.productSpec || null,
-        unit: formData.value.unit,
-        packQty: formData.value.packQty ? parseInt(formData.value.packQty) : null,
-        safetyStock: formData.value.safetyStock ? parseInt(formData.value.safetyStock) : null,
-        purchasePrice: formData.value.purchasePrice ? parseFloat(formData.value.purchasePrice) : null,
-        sellPrice: formData.value.sellPrice ? parseFloat(formData.value.sellPrice) : null,
-        regUser: currentUserData.employeeId,
-        regDate: regDate,
-        status: '040002', // 승인 대기 상태
-        productImage: imageUrl || null,
-        note: formData.value.note || null
-      };
-      
-      console.log('신규 등록 데이터:', newProductData);
-      response = await axios.post(API_BASE_URL, newProductData);
-    }
-    
-    console.log('서버 응답:', response.data);
-    
-    if (response.data.success) {
-      const successMessage = isUpdateMode ? 
-        `제품이 성공적으로 수정되었습니다. (수정자: ${currentUserData.empName})` : 
-        `제품이 성공적으로 등록되었습니다. (등록자: ${currentUserData.empName}${response.data.productId ? ', 제품ID: ' + response.data.productId : ''})`;
-      
-      toast.add({ 
-        severity: 'success', 
-        summary: '성공', 
-        detail: successMessage, 
-        life: 3000 
-      });
-      
-      clearForm();
-      await loadProducts();
-    } else {
-      console.error('저장 실패:', response.data);
-      toast.add({ 
-        severity: 'error', 
-        summary: '저장 실패', 
-        detail: response.data.message || '알 수 없는 오류가 발생했습니다.', 
-        life: 5000 
-      });
-    }
-    
-  } catch (error) {
-    console.error('=== 저장 오류 상세 정보 ===');
-    console.error('Error object:', error);
-    console.error('Error code:', error.code);
-    console.error('Error response status:', error.response?.status);
-    console.error('Error response data:', error.response?.data);
-    console.error('Error message:', error.message);
-    
-    let errorMessage = '저장 중 오류가 발생했습니다.';
-    
-    if (error.code === 'ERR_NETWORK') {
-      errorMessage = '네트워크 오류: 서버 연결을 확인해주세요.';
-    } else if (error.response?.status === 400) {
-      errorMessage = error.response?.data?.message || '잘못된 요청입니다.';
-    } else if (error.response?.status === 500) {
-      errorMessage = '서버 내부 오류가 발생했습니다.';
-    } else if (error.response?.data?.message) {
-      errorMessage = error.response.data.message;
-    } else if (error.message) {
-      errorMessage = error.message;
-    }
-    
-    toast.add({ 
-      severity: 'error', 
-      summary: '저장 실패', 
-      detail: errorMessage, 
-      life: 5000 
-    });
-  }
-};
-
-// 날짜 포맷팅 함수들
+// 날짜 포맷팅
 const formatDate = (dateString) => {
   if (!dateString) return '';
   try {
@@ -849,31 +319,11 @@ const formatDate = (dateString) => {
   }
 };
 
-const formatDateTime = (dateString) => {
-  if (!dateString) return '';
-  try {
-    const date = new Date(dateString);
-    return date.toLocaleString('ko-KR', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  } catch (error) {
-    return dateString;
-  }
-};
-
 const formatDateTimeForInput = (dateString) => {
   if (!dateString) return '';
-  
   try {
     const date = new Date(dateString);
-    
-    if (isNaN(date.getTime())) {
-      return dateString;
-    }
+    if (isNaN(date.getTime())) return dateString;
     
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -885,76 +335,422 @@ const formatDateTimeForInput = (dateString) => {
   }
 };
 
-// 컴포넌트 마운트 시 초기화
-onMounted(async () => {
+// 제품 데이터 변환 (고유키 추가)
+const filterProductData = (product, index = 0) => {
+  return {
+    id: product.productId || `temp_product_${Date.now()}_${index}`, // 고유 ID 추가
+    productId: product.productId,
+    productName: product.productName,
+    vendorName: product.vendorName,
+    compId: product.compId,
+    productSpec: product.productSpec,
+    packQty: product.packQty,
+    safetyStock: product.safetyStock,
+    purchasePrice: product.purchasePrice,
+    sellPrice: product.sellPrice,
+    note: product.note,
+    productImage: product.productImage,
+    categoryMain: getCategoryMainName(product.categoryMain),
+    categorySub: getCategorySubName(product.categorySub),
+    unit: getUnitName(product.unit),
+    status: getStatusName(product.status),
+    regUserName: product.regUserName || product.regUser,
+    regDate: product.regDate ? formatDate(product.regDate) : '',
+    categoryMainCode: product.categoryMain,
+    categorySubCode: product.categorySub,
+    unitCode: product.unit,
+    statusCode: product.status,
+    regUserCode: product.regUser
+  };
+};
+
+// 제품 목록 로드
+const loadProducts = async () => {
   try {
-    // 사용자 정보 디버깅
-    try {
-      const response = await axios.get('/api/auth/me');
-      console.log('=== 사용자 API 디버깅 ===');
-      console.log('전체 응답:', JSON.stringify(response.data, null, 2));
-      console.log('response.data.data:', JSON.stringify(response.data.data, null, 2));
-      if (response.data.data?.user) {
-        console.log('user 객체:', JSON.stringify(response.data.data.user, null, 2));
-      }
-      console.log('========================');
-    } catch (error) {
-      console.error('디버깅 중 오류:', error);
+    const response = await axios.get(`${API_BASE_URL}`);
+    
+    if (response.data && Array.isArray(response.data)) {
+      items.value = response.data.map((product, index) => filterProductData(product, index));
     }
-    
-    // 병렬로 초기 데이터 로드
-    await Promise.all([
-      loadProducts(),
-      loadCompanyData()
-    ]);
-    
-    // 사용자 정보 설정 후 폼 초기화
-    await getCurrentUser();
-    
-    // 현재 로그인한 사용자 정보 설정 (employeeId를 저장)
-    formData.value.regUser = currentUser.value.employeeId; // employeeId 사용
-    
-    // 현재 날짜를 YYYY-MM-DD 형식으로 설정
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const day = String(now.getDate()).padStart(2, '0');
-    formData.value.regDate = `${year}-${month}-${day}`;
-    
   } catch (error) {
+    console.error('제품 목록 조회 실패:', error);
     toast.add({ 
       severity: 'error', 
-      summary: '초기화 오류', 
-      detail: '페이지 초기화 중 오류가 발생했습니다.', 
+      summary: '오류', 
+      detail: '제품 목록을 불러오는데 실패했습니다.', 
       life: 3000 
     });
   }
-});
+};
 
-// 회사 목록 로드
+// ✅ 검색 처리 (검색 조건의 카테고리 변경도 처리)
+const searchData = async (searchOptions) => {
+  try {
+    const params = {};
+    
+    if (searchOptions.productName?.trim()) params.productName = searchOptions.productName.trim();
+    if (searchOptions.vendorName?.trim()) params.vendorName = searchOptions.vendorName.trim();
+    if (searchOptions.categoryMain?.trim()) {
+      params.categoryMain = searchOptions.categoryMain.trim();
+      
+      // ✅ 검색 조건 변경 시 세부카테고리 옵션 업데이트
+      const categorySubFilter = filters.value.filters.find(f => f.name === 'categorySub');
+      if (categorySubFilter) {
+        categorySubFilter.options = categorySubOptions[searchOptions.categoryMain] || [];
+        console.log('검색 조건 세부카테고리 옵션 업데이트됨');
+      }
+    }
+    if (searchOptions.categorySub?.trim()) params.categorySub = searchOptions.categorySub.trim();
+    if (searchOptions.compId?.trim()) params.compId = searchOptions.compId.trim();
+    if (searchOptions.packQty) params.packQty = searchOptions.packQty;
+    if (searchOptions.regUser?.trim()) params.regUser = searchOptions.regUser.trim();
+    if (searchOptions.regDateRangeFrom && searchOptions.regDateRangeTo) {
+      params.regDateFrom = searchOptions.regDateRangeFrom;
+      params.regDateTo = searchOptions.regDateRangeTo;
+    }
+    
+    const response = await axios.get(`${API_BASE_URL}/search`, { params });
+    items.value = response.data.map((product, index) => filterProductData(product, index));
+    
+  } catch (error) {
+    console.error('검색 실패:', error);
+    toast.add({ 
+      severity: 'error', 
+      summary: '오류', 
+      detail: '검색에 실패했습니다.', 
+      life: 3000 
+    });
+    items.value = [];
+  }
+};
+
+// 행 선택 처리
+const onRowSelect = async (product) => {
+  console.log('🎯 제품 선택됨:', product);
+  selectedProduct.value = product;
+  
+  if (standardInputRef.value?.inputFormRef) {
+    const inputFormRef = standardInputRef.value.inputFormRef;
+    
+    // ✅ 방법 1: 모든 데이터를 먼저 초기화
+    console.log('🔄 폼 데이터 초기화...');
+    Object.keys(inputFormRef.inputDatas).forEach(key => {
+      inputFormRef.inputDatas[key] = '';
+    });
+    
+    // ✅ 방법 2: 카테고리 옵션 업데이트 (세부카테고리 초기화 포함)
+    if (product.categoryMainCode) {
+      console.log('🔧 카테고리 옵션 업데이트:', product.categoryMainCode);
+      handleCategoryMainChange(product.categoryMainCode);
+    }
+    
+    // ✅ 방법 3: 충분한 대기 시간
+    await nextTick();
+    await new Promise(resolve => setTimeout(resolve, 150));
+    
+    // ✅ 방법 4: 카테고리부터 순차적으로 설정
+    console.log('📝 카테고리 데이터 설정...');
+    if (product.categoryMainCode) {
+      inputFormRef.inputDatas.categoryMain = String(product.categoryMainCode);
+      console.log('✅ 메인 카테고리 설정:', product.categoryMainCode);
+    }
+    
+    // ✅ 방법 5: 세부카테고리 설정 (추가 대기 후)
+    await nextTick();
+    if (product.categorySubCode) {
+      inputFormRef.inputDatas.categorySub = String(product.categorySubCode);
+      console.log('✅ 세부 카테고리 설정:', product.categorySubCode);
+    }
+    
+    // ✅ 방법 6: 나머지 데이터 설정
+    console.log('📝 나머지 폼 데이터 설정...');
+    Object.keys(inputFormRef.inputDatas).forEach(key => {
+      if (key === 'categoryMain' || key === 'categorySub') {
+        // 이미 설정됨
+        return;
+      } else if (key === 'unit' && product.unitCode) {
+        inputFormRef.inputDatas[key] = String(product.unitCode);
+      } else if (key === 'regUser' && product.regUserCode) {
+        inputFormRef.inputDatas[key] = String(product.regUserCode);
+      } else if (key === 'productImage_preview' && product.productImage) {
+        inputFormRef.inputDatas[key] = product.productImage.startsWith('http') ? product.productImage : `${baseUrl.value}${product.productImage}`;
+      } else if (key in product && !key.endsWith('Code') && !key.endsWith('_preview') && key !== 'id') {
+        let value = product[key] || '';
+        if ((key === 'regDate' || key === 'updateDate') && value) {
+          value = formatDateTimeForInput(value);
+        }
+        inputFormRef.inputDatas[key] = String(value);
+      }
+    });
+    
+    // ✅ 방법 7: 최종 확인 및 재설정 (필요시)
+    await nextTick();
+    if (product.categorySubCode && !inputFormRef.inputDatas.categorySub) {
+      console.log('🔧 세부카테고리 재설정 시도:', product.categorySubCode);
+      inputFormRef.inputDatas.categorySub = String(product.categorySubCode);
+    }
+    
+    console.log('✅ 최종 폼 데이터:', {
+      categoryMain: inputFormRef.inputDatas.categoryMain,
+      categorySub: inputFormRef.inputDatas.categorySub,
+      productName: inputFormRef.inputDatas.productName,
+      세부카테고리옵션수: inputs.value.inputs.find(input => input.name === 'categorySub')?.options?.length || 0,
+      현재세부카테고리옵션: inputs.value.inputs.find(input => input.name === 'categorySub')?.options?.map(opt => `${opt.name}(${opt.value})`) || []
+    });
+  }
+};
+
+const onRowUnselect = () => {
+  selectedProduct.value = null;
+};
+
+// 이미지 업로드 처리
+const uploadProductImage = async (file) => {
+  if (!file) return null;
+  
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    const response = await axios.post(`${API_BASE_URL}/upload-image`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+    
+    if (response.data.success && response.data.imageUrl) {
+      return response.data.imageUrl;
+    } else {
+      throw new Error(response.data.message || '이미지 업로드 실패');
+    }
+  } catch (error) {
+    if (error.response?.status === 404) {
+      throw new Error('이미지 업로드 API를 찾을 수 없습니다.');
+    } else if (error.response?.status === 413) {
+      throw new Error('파일 크기가 너무 큽니다. 10MB 이하의 파일을 선택해주세요.');
+    } else {
+      throw new Error('이미지 업로드 중 오류가 발생했습니다.');
+    }
+  }
+};
+
+// 저장 처리
+const saveData = async (inputData) => {
+  try {
+    // 필수 필드 검증
+    const requiredFields = [
+      { field: 'productName', label: '제품명' },
+      { field: 'compId', label: '회사코드' },
+      { field: 'categoryMain', label: '카테고리' },
+      { field: 'vendorName', label: '브랜드' },
+      { field: 'unit', label: '단위' }
+    ];
+    
+    for (const req of requiredFields) {
+      if (!inputData[req.field]?.trim()) {
+        toast.add({ 
+          severity: 'error', 
+          summary: '검증 오류', 
+          detail: `${req.label}은(는) 필수입력 항목입니다.`, 
+          life: 3000 
+        });
+        return;
+      }
+    }
+    
+    let imageUrl = null;
+    
+    // 이미지 업로드 처리
+    if (inputData.productImage && inputData.productImage instanceof File) {
+      try {
+        imageUrl = await uploadProductImage(inputData.productImage);
+      } catch (error) {
+        const continueWithoutImage = confirm(`이미지 업로드에 실패했습니다.\n오류: ${error.message}\n\n이미지 없이 제품을 등록하시겠습니까?`);
+        if (!continueWithoutImage) return;
+        imageUrl = null;
+      }
+    } else if (inputData.productImage_preview) {
+      // 기존 이미지가 있는 경우
+      imageUrl = selectedProduct.value?.productImage || null;
+    }
+    
+    const currentUserData = await getCurrentUser();
+    const isUpdateMode = selectedProduct.value?.productId?.trim();
+    
+    let response;
+    
+    if (isUpdateMode) {
+      // 수정 모드
+      let regDate = null;
+      if (inputData.regDate?.trim()) {
+        try {
+          regDate = new Date(inputData.regDate.trim() + 'T00:00:00');
+          if (isNaN(regDate.getTime())) throw new Error('유효하지 않은 날짜');
+        } catch (error) {
+          toast.add({ 
+            severity: 'error', 
+            summary: '검증 오류', 
+            detail: '등록일 형식이 올바르지 않습니다. (예: 2024-01-01)', 
+            life: 3000 
+          });
+          return;
+        }
+      }
+      
+      const updateData = {
+        ...inputData,
+        productId: selectedProduct.value.productId,
+        updateUser: currentUserData.employeeId,
+        updateDate: new Date(),
+        regDate: regDate,
+        productImage: imageUrl,
+        regUser: selectedProduct.value.regUserCode || inputData.regUser
+      };
+      
+      response = await axios.put(`${API_BASE_URL}/${selectedProduct.value.productId}`, updateData);
+    } else {
+      // 신규 등록 모드
+      let regDate = inputData.regDate?.trim() ? 
+        new Date(inputData.regDate.trim() + 'T00:00:00') : 
+        new Date();
+      
+      const newProductData = {
+        compId: inputData.compId,
+        productName: inputData.productName,
+        categoryMain: inputData.categoryMain,
+        categorySub: inputData.categorySub || null,
+        vendorName: inputData.vendorName,
+        productSpec: inputData.productSpec || null,
+        unit: inputData.unit,
+        packQty: inputData.packQty ? parseInt(inputData.packQty) : null,
+        safetyStock: inputData.safetyStock ? parseInt(inputData.safetyStock) : null,
+        purchasePrice: inputData.purchasePrice ? parseFloat(inputData.purchasePrice) : null,
+        sellPrice: inputData.sellPrice ? parseFloat(inputData.sellPrice) : null,
+        regUser: currentUserData.employeeId,
+        regDate: regDate,
+        status: '040002',
+        productImage: imageUrl,
+        note: inputData.note || null
+      };
+      
+      response = await axios.post(API_BASE_URL, newProductData);
+    }
+    
+    if (response.data.success) {
+      const successMessage = isUpdateMode ? 
+        `제품이 성공적으로 수정되었습니다. (수정자: ${currentUserData.empName})` : 
+        `제품이 성공적으로 등록되었습니다. (등록자: ${currentUserData.empName})`;
+      
+      toast.add({ 
+        severity: 'success', 
+        summary: '성공', 
+        detail: successMessage, 
+        life: 3000 
+      });
+      
+      // 폼 초기화
+      if (standardInputRef.value?.inputFormRef) {
+        standardInputRef.value.inputFormRef.resetInputDatas();
+      }
+      selectedProduct.value = null;
+      
+      await loadProducts();
+    } else {
+      toast.add({ 
+        severity: 'error', 
+        summary: '저장 실패', 
+        detail: response.data.message || '알 수 없는 오류가 발생했습니다.', 
+        life: 5000 
+      });
+    }
+    
+  } catch (error) {
+    console.error('저장 오류:', error);
+    
+    let errorMessage = '저장 중 오류가 발생했습니다.';
+    if (error.code === 'ERR_NETWORK') {
+      errorMessage = '네트워크 오류: 서버 연결을 확인해주세요.';
+    } else if (error.response?.data?.message) {
+      errorMessage = error.response.data.message;
+    }
+    
+    toast.add({ 
+      severity: 'error', 
+      summary: '저장 실패', 
+      detail: errorMessage, 
+      life: 5000 
+    });
+  }
+};
+
+// 삭제 처리
+const deleteData = async () => {
+  if (!selectedProduct.value?.productId) {
+    toast.add({ 
+      severity: 'warn', 
+      summary: '선택 필요', 
+      detail: '삭제할 제품을 선택해주세요.', 
+      life: 3000 
+    });
+    return;
+  }
+
+  const confirmDelete = confirm(
+    `제품 "${selectedProduct.value.productName}"을(를) 정말 삭제하시겠습니까?\n\n이 작업은 되돌릴 수 없습니다.`
+  );
+  
+  if (!confirmDelete) return;
+
+  try {
+    const response = await axios.delete(`${API_BASE_URL}/${selectedProduct.value.productId}`);
+    
+    if (response.data.success) {
+      toast.add({ 
+        severity: 'success', 
+        summary: '삭제 완료', 
+        detail: `제품 "${selectedProduct.value.productName}"이(가) 성공적으로 삭제되었습니다.`, 
+        life: 3000 
+      });
+      
+      if (standardInputRef.value?.inputFormRef) {
+        standardInputRef.value.inputFormRef.resetInputDatas();
+      }
+      selectedProduct.value = null;
+      
+      await loadProducts();
+    } else {
+      toast.add({ 
+        severity: 'error', 
+        summary: '삭제 실패', 
+        detail: response.data.message || '삭제 중 오류가 발생했습니다.', 
+        life: 5000 
+      });
+    }
+  } catch (error) {
+    console.error('제품 삭제 실패:', error);
+    toast.add({ 
+      severity: 'error', 
+      summary: '삭제 실패', 
+      detail: '삭제 중 오류가 발생했습니다.', 
+      life: 5000 
+    });
+  }
+};
+
+// 회사 데이터 로드
 const loadCompanyData = async () => {
   try {
     const result = await axios.get('/api/companies');
-    
-    // API 응답에서 data 필드 추출
     const companies = result.data.data || result.data;
-    
-    // 공급업체만 필터링 (compType이 '100003'인 것만)
     const suppliers = companies.filter(item => item.compType === '100003');
     
-    companyModalItems.value = suppliers.map((item) => {
-      return {
-        ...item,
-        // DB 컬럼명에 맞춰 매핑 (COMP_ID, COMP_NAME)
-        compId: item.compId || item.comp_id || item.COMP_ID,
-        compName: item.compName || item.comp_name || item.COMP_NAME,
-        phoneNumber: item.phoneNumber || item.phone_number || item.phone || item.telNumber || '',
-        address: item.address || item.addr || item.compAddress || '',
-        compType: item.compType || item.comp_type || item.type || '',
-        bizNumber: item.bizNumber || item.biz_number || '',
-        ceoName: item.ceoName || item.ceo_name || '',
-      }
-    });
+    companyModalItems.value = suppliers.map((item) => ({
+      ...item,
+      compId: item.compId || item.comp_id || item.COMP_ID,
+      compName: item.compName || item.comp_name || item.COMP_NAME,
+      phoneNumber: item.phoneNumber || item.phone_number || item.phone || '',
+      address: item.address || item.addr || '',
+      bizNumber: item.bizNumber || item.biz_number || '',
+      ceoName: item.ceoName || item.ceo_name || '',
+    }));
   } catch (e) {
     toast.add({ 
       severity: 'error', 
@@ -965,56 +761,51 @@ const loadCompanyData = async () => {
   }
 };
 
-// 제품 이미지 업로드
-const uploadProductImage = async (file) => {
-  if (!file) return null;
-  
-  try {
-    const formData = new FormData();
-    formData.append('file', file);
+// 모달 함수들
+const closeCompanyModal = () => {
+  companyModalVisible.value = false;
+};
+
+const confirmCompanyModal = async (selectedItems) => {
+  if (selectedItems?.compId && standardInputRef.value?.inputFormRef) {
+    const inputFormRef = standardInputRef.value.inputFormRef;
+    inputFormRef.inputDatas.compId = selectedItems.compId;
+    inputFormRef.inputDatas.vendorName = selectedItems.compName;
     
-    // 백엔드 API 호출
-    const response = await axios.post(`${API_BASE_URL}/upload-image`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      }
+    toast.add({ 
+      severity: 'success', 
+      summary: '성공', 
+      detail: `회사 "${selectedItems.compName}" 선택 완료`, 
+      life: 3000 
     });
-    
-    // ProductController의 응답 구조에 맞춰 처리
-    if (response.data.success && response.data.imageUrl) {
-      return response.data.imageUrl;
-    } else {
-      throw new Error(response.data.message || '이미지 업로드 실패');
-    }
-  } catch (error) {
-    // 구체적인 에러 메시지
-    if (error.response?.status === 404) {
-      throw new Error('이미지 업로드 API를 찾을 수 없습니다.');
-    } else if (error.response?.status === 413) {
-      throw new Error('파일 크기가 너무 큽니다. 10MB 이하의 파일을 선택해주세요.');
-    } else if (error.response?.data?.message) {
-      throw new Error(error.response.data.message);
-    } else {
-      throw new Error('이미지 업로드 중 오류가 발생했습니다.');
-    }
+  }
+  companyModalVisible.value = false;
+};
+
+const loadCompanyOnClick = () => {
+  companyModalVisible.value = true;
+};
+
+const searchModal = (searchValue) => {
+  // 검색 로직 구현
+};
+
+const openSearchModal = (inputName) => {
+  if (inputName === 'vendorName') {
+    loadCompanyOnClick();
   }
 };
 
-// 파일 선택 시 처리
-const onFileSelect = (event) => {
-  selectedImageFiles.value = event.files;
-  if (event.files && event.files.length > 0) {
-    selectedImageFile.value = event.files[0];
-  }
+// 파일 관련 이벤트 처리 (InputForm에서 emit되는 이벤트들)
+const handleFileSelected = (event) => {
+  console.log('파일 선택됨:', event);
 };
 
-// 파일 업로드 처리
-const onFileUpload = async () => {
-  if (selectedImageFile.value) {
+const handleFileUploaded = async (event) => {
+  console.log('파일 업로드 요청:', event);
+  if (event.file) {
     try {
-      const imageUrl = await uploadProductImage(selectedImageFile.value);
-      uploadedImageUrl.value = imageUrl;
-      
+      const imageUrl = await uploadProductImage(event.file);
       toast.add({ 
         severity: 'success', 
         summary: '성공', 
@@ -1032,467 +823,158 @@ const onFileUpload = async () => {
   }
 };
 
-// 수동 업로드
-const manualUpload = () => {
-  if (fileUploadRef.value) {
-    fileUploadRef.value.upload();
-  }
+const handleFileRemoved = (event) => {
+  console.log('파일 제거됨:', event);
 };
 
-// 파일 제거
-const onFileRemove = () => {
-  selectedImageFile.value = null;
-  selectedImageFiles.value = [];
-  uploadedImageUrl.value = '';
-};
-
-// 파일 클리어
-const onFileClear = () => {
-  selectedImageFile.value = null;
-  selectedImageFiles.value = [];
-  uploadedImageUrl.value = '';
-};
-
-// 폼 초기화
-const clearForm = async () => {
-  selectedProduct.value = null;
-  selectedProductId.value = '';
-  
-  // 현재 사용자 정보 가져오기
+// 초기화 함수
+const initializeFormData = async () => {
   const user = await getCurrentUser();
   
-  // formData 초기화
-  Object.keys(formData.value).forEach(key => {
-    if (key === 'regUser') {
-      formData.value[key] = user.employeeId; // employeeId 사용
-    } else if (key === 'regDate') {
-      // 현재 날짜를 YYYY-MM-DD 형식으로 설정
-      const now = new Date();
-      const year = now.getFullYear();
-      const month = String(now.getMonth() + 1).padStart(2, '0');
-      const day = String(now.getDate()).padStart(2, '0');
-      formData.value[key] = `${year}-${month}-${day}`;
-    } else {
-      formData.value[key] = '';
-    }
-  });
-  
-  selectedImageFile.value = null;
-  selectedImageFiles.value = [];
-  uploadedImageUrl.value = '';
-  if (fileUploadRef.value) {
-    fileUploadRef.value.clear();
+  if (standardInputRef.value?.inputFormRef) {
+    const inputFormRef = standardInputRef.value.inputFormRef;
+    inputFormRef.inputDatas.regUser = user.employeeId;
+    
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    inputFormRef.inputDatas.regDate = `${year}-${month}-${day}`;
   }
 };
 
-// 검색 처리 - 백엔드 조인 포함
-const searchData = async (searchOptions) => {
-  try {
-    console.log('검색 옵션:', searchOptions);
-    
-    const params = {};
-    
-    // 검색 파라미터 설정
-    if (searchOptions.productName && searchOptions.productName.trim() !== '') {
-      params.productName = searchOptions.productName.trim();
+// ✅ 검색 조건 카테고리 변경 처리 함수 추가
+const handleSearchCategoryMainChange = (categoryMainValue) => {
+  console.log('검색 조건 카테고리 변경됨:', categoryMainValue);
+  
+  // 검색 조건의 세부카테고리 옵션 업데이트
+  const categorySubFilter = filters.value.filters.find(f => f.name === 'categorySub');
+  if (categorySubFilter) {
+    categorySubFilter.options = categorySubOptions[categoryMainValue] || [];
+    console.log('검색 조건 세부카테고리 옵션 업데이트됨:', categorySubFilter.options);
+  }
+  
+  // 검색 조건의 현재 선택된 세부카테고리 초기화
+  if (standardInputRef.value?.searchFormRef) {
+    const searchFormRef = standardInputRef.value.searchFormRef;
+    if (searchFormRef.searchOptions) {
+      searchFormRef.searchOptions.categorySub = '';
     }
-    
-    if (searchOptions.vendorName && searchOptions.vendorName.trim() !== '') {
-      params.vendorName = searchOptions.vendorName.trim();
-    }
-    
-    if (searchOptions.categoryMain && searchOptions.categoryMain.trim() !== '') {
-      params.categoryMain = searchOptions.categoryMain.trim();
-    }
-    
-    if (searchOptions.categorySub && searchOptions.categorySub.trim() !== '') {
-      params.categorySub = searchOptions.categorySub.trim();
-    }
+  }
+};
 
-    if (searchOptions.compId && searchOptions.compId.trim() !== '') {
-      params.compId = searchOptions.compId.trim();
-    }
+// ✅ 컴포넌트 마운트 (검색 조건 watch도 추가)
+onMounted(async () => {
+  try {
+    await Promise.all([loadProducts(), loadCompanyData()]);
+    await getCurrentUser();
     
-    if (searchOptions.packQty && searchOptions.packQty !== '') {
-      params.packQty = searchOptions.packQty;
-    }
-    
-    if (searchOptions.regUser && searchOptions.regUser.trim() !== '') {
-      params.regUser = searchOptions.regUser.trim();
-    }
-    
-    if (searchOptions.regDateRange && searchOptions.regDateRange.length === 2) {
-      params.regDateFrom = searchOptions.regDateRange[0];
-      params.regDateTo = searchOptions.regDateRange[1];
-    }
-    
-    console.log('검색 파라미터:', params);
-    const response = await axios.get(`${API_BASE_URL}/search`, { params });
-    console.log('검색 결과 (백엔드 조인 포함):', response.data);
-    
-    items.value = response.data.map(product => filterProductData(product));
-    console.log('필터링된 결과:', items.value);
+    setTimeout(async () => {
+      await initializeFormData();
+      
+      // ✅ 입력 폼의 categoryMain 값 변화 감지
+      if (standardInputRef.value?.inputFormRef) {
+        console.log('입력 폼 watch 설정 중...');
+        
+        // categoryMain 값 변화 감지
+        watch(
+          () => standardInputRef.value.inputFormRef.inputDatas.categoryMain,
+          (newValue, oldValue) => {
+            console.log('입력 폼 categoryMain 변경 감지:', { oldValue, newValue });
+            if (newValue && newValue !== oldValue) {
+              handleCategoryMainChange(newValue);
+            }
+          },
+          { immediate: false } // 초기값은 무시, 변경 시에만 실행
+        );
+        
+        console.log('입력 폼 watch 설정 완료');
+      }
+      
+      // ✅ 검색 조건의 categoryMain 값 변화 감지
+      if (standardInputRef.value?.searchFormRef) {
+        console.log('검색 조건 watch 설정 중...');
+        
+        // 검색 조건 categoryMain 값 변화 감지
+        watch(
+          () => {
+            const searchFormRef = standardInputRef.value.searchFormRef;
+            return searchFormRef?.searchOptions?.categoryMain;
+          },
+          (newValue, oldValue) => {
+            console.log('검색 조건 categoryMain 변경 감지:', { oldValue, newValue });
+            if (newValue && newValue !== oldValue) {
+              handleSearchCategoryMainChange(newValue);
+            }
+          },
+          { immediate: false }
+        );
+        
+        console.log('검색 조건 watch 설정 완료');
+      }
+    }, 200); // StandardInput이 완전히 마운트될 때까지 대기
     
   } catch (error) {
-    console.error('검색 실패:', error);
     toast.add({ 
       severity: 'error', 
-      summary: '오류', 
-      detail: '제품 목록을 불러오는데 실패했습니다.', 
+      summary: '초기화 오류', 
+      detail: '페이지 초기화 중 오류가 발생했습니다.', 
       life: 3000 
     });
-    items.value = [];
   }
-};
-
+});
 </script>
 
 <template>
-  <div class="space-y-6">
-    <!-- 상단: 조회 조건 -->
-    <div class="card p-6">
-      <div class="font-semibold text-xl mb-4">{{ filters.title }}</div>
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-4">
-        <div v-for="filter in filters.filters" :key="filter.name" class="flex flex-col">
-          <label class="block text-sm font-medium mb-2">{{ filter.label }}</label>
-          
-          <!-- 텍스트/숫자 입력 -->
-          <input
-            v-if="filter.type === 'text' || filter.type === 'number'"
-            v-model="filter.value"
-            :type="filter.type"
-            :placeholder="filter.placeholder"
-            class="p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          
-          <!-- 셀렉트 박스 -->
-          <select
-            v-else-if="filter.type === 'select'"
-            v-model="filter.value"
-            @change="filter.name === 'categoryMain' ? onSearchCategoryMainChange() : null"
-            class="p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="">{{ filter.placeholder }}</option>
-            <option 
-              v-for="option in filter.name === 'categorySub' ? filteredSearchCategorySubOptions : filter.options" 
-              :key="option.value" 
-              :value="option.value"
-            >
-              {{ option.name }}
-            </option>
-          </select>
-          
-          <!-- 날짜 범위 -->
-          <div v-else-if="filter.type === 'dateRange'" class="flex gap-2">
-            <input
-              v-model="filter.value[0]"
-              type="date"
-              class="p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 flex-1"
-            />
-            <span class="self-center">~</span>
-            <input
-              v-model="filter.value[1]"
-              type="date"
-              class="p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 flex-1"
-            />
-          </div>
-        </div>
-      </div>
-      
-      <div class="flex justify-center gap-3">
+  <Toast />
+  
+  <div class="product-page-container">
+    <!-- 메인 제품 관리 영역 -->
+    <StandardInput
+      ref="standardInputRef"
+      :filters="filters"
+      :items="items"
+      :header="header"
+      :inputs="inputs"
+      :scrollHeight="'600px'"
+      @searchData="searchData"
+      @saveData="saveData"
+      @openSearchModal="openSearchModal"
+      @rowSelect="onRowSelect"
+      @rowUnselect="onRowUnselect"
+      @fileSelected="handleFileSelected"
+      @fileUploaded="handleFileUploaded"
+      @fileRemoved="handleFileRemoved"
+    >
+      <!-- 삭제 버튼 -->
+      <template #btn>
         <Button 
-          label="초기화" 
-          @click="() => {
-            filters.filters.forEach(filter => {
-              if (filter.type === 'dateRange') {
-                filter.value = ['', ''];
-              } else {
-                filter.value = '';
-              }
-            });
-            loadProducts();
-          }"
-          severity="secondary"
+          label="삭제" 
+          severity="danger" 
+          class="min-w-fit whitespace-nowrap" 
+          outlined
+          :disabled="!selectedProduct"
+          @click="deleteData"
         />
-        <Button 
-          label="조회" 
-          @click="() => {
-            const searchOptions = {};
-            filters.filters.forEach(filter => {
-              if (filter.type === 'dateRange') {
-                searchOptions[filter.name] = filter.value;
-              } else {
-                searchOptions[filter.name] = filter.value;
-              }
-            });
-            searchData(searchOptions);
-          }"
-          severity="success"
-        />
-      </div>
-    </div>
-    
-    <!-- 하단: 좌우 분할 -->
-    <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
-      <!-- 좌측: 제품 목록 -->
-      <div class="card p-6">
-        <div class="font-semibold text-xl mb-4">{{ header.title }}</div>
-        <div class="overflow-auto max-h-[1000px] border border-gray-200 rounded">
-          <div class="min-w-max">
-            <table class="w-full border-collapse border border-gray-300">
-              <thead>
-                <tr class="bg-gray-100">
-                  <th class="border border-gray-300 p-2 text-center sticky left-0 bg-gray-100 z-10 min-w-[60px]">선택</th>
-                  <th v-for="(headerText, key) in header.header" :key="key" 
-                      class="border border-gray-300 p-2 text-center whitespace-nowrap min-w-[100px]">
-                    {{ headerText }}
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="item in items" :key="item.productId" class="hover:bg-gray-50 cursor-pointer" 
-                    @click="onRowClick(item)">
-                  <td class="border border-gray-300 p-2 text-center sticky left-0 bg-white z-10">
-                    <input 
-                      type="radio" 
-                      :name="'product-select'" 
-                      :value="item.productId" 
-                      v-model="selectedProductId"
-                      @change="onRadioChange(item.productId)"
-                    />
-                  </td>
-                  <td v-for="(headerText, key) in header.header" :key="key" 
-                      class="border border-gray-300 p-2 whitespace-nowrap"
-                      :class="header.rightAligned?.includes(key) ? 'text-right' : 'text-left'">
-                    <span v-if="key === 'note' && item[key]" 
-                          class="inline-block max-w-[200px] truncate" 
-                          :title="item[key]">
-                      {{ item[key] }}
-                    </span>
-                    <span v-else-if="key === 'categoryMain'">
-                      {{ getCategoryMainName(item.categoryMainCode || item[key]) }}
-                    </span>
-                    <span v-else-if="key === 'categorySub'">
-                      {{ getCategorySubName(item.categorySubCode || item[key]) }}
-                    </span>
-                    <span v-else-if="key === 'unit'">
-                      {{ getUnitName(item.unitCode || item[key]) }}
-                    </span>
-                    <span v-else-if="key === 'status'">
-                      {{ getStatusName(item.statusCode || item[key]) }}
-                    </span>
-                    <span v-else-if="key === 'regUserName'">
-                      {{ item.regUserName || item.regUser || '' }}
-                    </span>
-                    <span v-else-if="key === 'purchasePrice' || key === 'sellPrice'">
-                      {{ item[key] ? item[key].toLocaleString() : '' }}원
-                    </span>
-                    <span v-else-if="key === 'regDate'">
-                      {{ item[key] ? formatDate(item[key]) : '-' }}
-                    </span>
-                    <span v-else>
-                      {{ item[key] || '' }}
-                    </span>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-      
-      <!-- 우측: 제품 등록/수정 폼 -->
-      <div class="card p-6">
-        <!-- 제목과 버튼을 같은 라인에 배치 -->
-        <div class="flex justify-between items-center mb-4">
-          <div class="font-semibold text-xl">{{ inputs.title }}</div>
-          <div class="flex gap-3">
-            <Button 
-              label="초기화" 
-              @click="clearForm" 
-              severity="secondary"
-              icon="pi pi-refresh"
-              size="small"
-            />
-            <Button 
-              label="삭제" 
-              @click="deleteData"
-              severity="danger"
-              icon="pi pi-trash"
-              size="small"
-              :disabled="!selectedProductId"
-            />
-            <Button 
-              label="저장" 
-              @click="saveData"
-              severity="success"
-              icon="pi pi-save"
-              size="small"
-            />
-          </div>
-        </div>
-        
-        <!-- 기본 정보 입력 필드들 -->
-        <div class="space-y-4 mb-6">
-          <!-- 일반 필드들 (2열 그리드) -->
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div v-for="input in inputs.inputs.filter(i => i.type !== 'textarea')" :key="input.name" class="flex flex-col">
-              <label class="block text-sm font-medium mb-2">
-                {{ input.label }}
-                <span v-if="input.required" class="text-red-500">*</span>
-              </label>
-              
-              <!-- select 필드들 처리 -->
-              <select
-                v-if="input.type === 'select'"
-                v-model="formData[input.name]"
-                @change="input.name === 'categoryMain' ? onCategoryMainChange() : null"
-                class="p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="">{{ input.placeholder }}</option>
-                <!-- 세부카테고리는 필터링된 옵션 사용 -->
-                <option 
-                  v-for="option in input.name === 'categorySub' ? filteredCategorySubOptions : input.options" 
-                  :key="option.value" 
-                  :value="option.value"
-                >
-                  {{ option.name }}
-                </option>
-              </select>
-              
-              <!-- 버튼이 있는 텍스트 입력 필드 -->
-              <div v-else-if="input.type === 'text-with-button'" class="flex gap-2">
-                <input
-                  v-model="formData[input.name]"
-                  type="text"
-                  :placeholder="input.placeholder"
-                  :readonly="input.readonly"
-                  class="flex-1 p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  :class="{ 'bg-gray-100': input.readonly }"
-                />
-                <Button 
-                  :label="input.buttonLabel" 
-                  @click="handleButtonAction(input.buttonAction)"
-                  severity="info"
-                  size="small"
-                  class="min-w-fit whitespace-nowrap"
-                  outlined
-                />
-              </div>
-              
-              <!-- 등록자 필드 - 특별 처리 (사용자명만 표시) -->
-              <input
-                v-else-if="input.name === 'regUser'"
-                :value="currentUserName"
-                type="text"
-                :placeholder="input.placeholder"
-                readonly
-                class="p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-100"
-              />
-              
-              <!-- 일반 입력 필드들 -->
-              <input
-                v-else
-                v-model="formData[input.name]"
-                :type="input.type"
-                :placeholder="input.placeholder"
-                :readonly="input.readonly"
-                class="p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                :class="{ 'bg-gray-100': input.readonly }"
-              />
-            </div>
-          </div>
-          
-          <!-- 비고 필드 (전체 폭) -->
-          <div v-for="input in inputs.inputs.filter(i => i.type === 'textarea')" :key="input.name" class="flex flex-col">
-            <label class="block text-sm font-medium mb-2">
-              {{ input.label }}
-              <span v-if="input.required" class="text-red-500">*</span>
-            </label>
-            
-            <textarea
-              v-model="formData[input.name]"
-              :placeholder="input.placeholder"
-              rows="4"
-              class="p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none w-full"
-            />
-          </div>
-        </div>
-        
-        <!-- 제품 이미지 업로드 섹션 -->
-        <div class="border-t pt-6">
-          <div class="font-medium text-lg mb-4">제품 이미지</div>
-          
-          <!-- 파일 업로드 영역 -->
-          <div class="mb-4">
-            <label class="block text-sm font-medium mb-2">이미지 파일</label>
-            <Toast />
-            <FileUpload 
-              ref="fileUploadRef"
-              name="productImage" 
-              accept="image/*" 
-              :maxFileSize="10000000"
-              :multiple="false"
-              customUpload
-              @select="onFileSelect"
-              @uploader="onFileUpload"
-              @remove="onFileRemove"
-              @clear="onFileClear"
-              chooseLabel="파일 선택"
-              uploadLabel="업로드"
-              cancelLabel="취소"
-            >
-              <template #empty>
-                <div class="text-center">
-                  <i class="pi pi-cloud-upload text-4xl text-gray-400"></i>
-                  <p class="mt-2 text-gray-500">드래그 앤 드롭하거나 클릭해서 이미지를 선택하세요</p>
-                </div>
-              </template>
-            </FileUpload>
-            
-            <!-- 수동 업로드 버튼 -->
-            <div v-if="selectedImageFile && !uploadedImageUrl" class="mt-3">
-              <Button 
-                label="이미지 업로드" 
-                @click="manualUpload" 
-                severity="secondary"
-                icon="pi pi-upload"
-              />
-            </div>
-          </div>
-          
-          <!-- 업로드된 이미지 미리보기 -->
-          <div v-if="uploadedImageUrl" class="flex flex-col items-center">
-            <label class="block text-sm font-medium mb-2">미리보기</label>
-            <div class="border rounded-lg p-4 bg-gray-50">
-              <img 
-                :src="uploadedImageUrl.startsWith('http') ? uploadedImageUrl : `${baseUrl}${uploadedImageUrl}`" 
-                alt="제품 이미지 미리보기"
-                class="max-w-full max-h-48 object-contain rounded"
-              />
-              <p class="text-sm text-gray-600 mt-2 text-center">업로드 완료</p>
-              <button 
-                @click="onFileClear"
-                class="mt-2 px-3 py-1 bg-red-500 text-white rounded text-sm hover:bg-red-600 w-full"
-              >
-                이미지 제거
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 회사코드 선택 모달 -->
-    <DialogModal 
-      title="공급업체 검색" 
-      :display="companyModalVisible" 
-      :headers="companyModalHeaders" 
-      :items="companyModalItems" 
-      :selectionMode="'single'" 
-      @close="closeCompanyModal" 
-      @confirm="confirmCompanyModal" 
-      @search-modal="searchModal"
-    />
+      </template>
+    </StandardInput>
   </div>
+
+  <!-- 회사 선택 모달 -->
+  <DialogModal 
+    title="공급업체 검색" 
+    :display="companyModalVisible" 
+    :headers="companyModalHeaders" 
+    :items="companyModalItems" 
+    :selectionMode="'single'" 
+    @close="closeCompanyModal" 
+    @confirm="confirmCompanyModal" 
+    @search-modal="searchModal"
+  />
 </template>
+
+<style scoped>
+.product-page-container {
+  position: relative;
+}
+</style>
