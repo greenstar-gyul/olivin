@@ -1,7 +1,10 @@
 // AuthService.java
 package com.olivin.app.auth.service;
 
-import lombok.extern.slf4j.Slf4j;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
@@ -14,10 +17,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @Slf4j
@@ -64,6 +64,7 @@ public class AuthService {
             extraClaims.put("departmentId", user.getDepartmentId());
             extraClaims.put("position", user.getPosition());
             extraClaims.put("compId", user.getCompId());
+            extraClaims.put("compName", user.getCompName());
             
             String token = jwtService.generateToken(userDetails, extraClaims);
             
@@ -75,7 +76,8 @@ public class AuthService {
                 user.getPosition(),
                 user.getDepartmentId(),
                 user.getDeptName(),
-                user.getCompId()
+                user.getCompId(),
+                user.getCompName()
             );
             
             LoginResponseVO.RoleInfoVO roleDto = new LoginResponseVO.RoleInfoVO(
@@ -124,7 +126,8 @@ public class AuthService {
                 user.getPosition(),
                 user.getDepartmentId(),
                 user.getDeptName(),
-                user.getCompId()
+                user.getCompId(),
+                user.getCompName()
             );
             
             LoginResponseVO.RoleInfoVO roleDto = new LoginResponseVO.RoleInfoVO(
