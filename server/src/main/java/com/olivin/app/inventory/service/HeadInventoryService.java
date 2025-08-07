@@ -12,6 +12,7 @@ import java.util.List;
  * 2025.07.25 : 최초 작성
  * 2025.07.30 : 주석 추가, 구현
  * 2025.07.31 : 재고 검색 기능 추가
+ * 2025.08.07 : 로트 정보 조회 기능 추가 <br>
  */
 public interface HeadInventoryService {
     public List<HeadInventoryVO> selectAllHeadInventory();
@@ -22,4 +23,12 @@ public interface HeadInventoryService {
      * @return 조건에 맞는 본사 재고 목록
      */
     public List<HeadInventoryVO> selectHeadInventoryList(HeadInventoryVO headInventoryVO);
+
+    /**
+     * 본사 재고의 로트 정보를 조회하는 메소드입니다.
+     * 
+     * @param productId 조회할 제품 ID
+     * @return 해당 제품의 로트 정보 목록
+     */
+    public List<HeadInventoryVO> selectHeadInventoryLot(String productId);
 }

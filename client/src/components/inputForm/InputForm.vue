@@ -12,7 +12,7 @@ const props = defineProps({
   }
 });
 
-const emit = defineEmits(['saveData', 'openSearchModal']);
+const emit = defineEmits(['saveData', 'openSearchModal', 'fileSelected', 'fileUploaded', 'fileRemoved']);
 
 // 검색 조건을 담을 객체
 const inputDatas = ref({});
@@ -40,9 +40,59 @@ const initializeInputDatas = () => {
       options[element.name + 'To'] = '';
       return;
     }
+    if (element.type === 'file') {
+      options[element.name] = null;
+      options[element.name + '_preview'] = '';
+      return;
+    }
     options[element.name] = '';
   });
   inputDatas.value = options;
+};
+
+// 파일 처리 함수들
+const handleFileSelect = (event) => {
+  const inputName = event.target?.name || 'productImage'; // 기본값으로 productImage 사용
+  if (event.files?.length > 0) {
+    const file = event.files[0];
+    inputDatas.value[inputName] = file;
+    
+    // 이미지 미리보기 생성
+    if (file.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        inputDatas.value[inputName + '_preview'] = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+    
+    emit('fileSelected', { inputName: inputName, file: file });
+  }
+};
+
+const handleFileUpload = (event) => {
+  const inputName = event.target?.name || 'productImage';
+  emit('fileUploaded', { inputName: inputName, file: inputDatas.value[inputName] });
+};
+
+const handleFileRemove = (event) => {
+  const inputName = event.target?.name || 'productImage';
+  inputDatas.value[inputName] = null;
+  inputDatas.value[inputName + '_preview'] = '';
+  emit('fileRemoved', { inputName: inputName });
+};
+
+const handleFileClear = (event) => {
+  const inputName = event.target?.name || 'productImage';
+  inputDatas.value[inputName] = null;
+  inputDatas.value[inputName + '_preview'] = '';
+  emit('fileRemoved', { inputName: inputName });
+};
+
+const clearFilePreview = (inputName) => {
+  inputDatas.value[inputName] = null;
+  inputDatas.value[inputName + '_preview'] = '';
+  emit('fileRemoved', { inputName: inputName });
 };
 
 // 초기화
@@ -62,6 +112,7 @@ const openSearchModal = (inputName) => {
 
 defineExpose({
   inputDatas,
+  resetInputDatas,
 });
 
 </script>
@@ -84,15 +135,15 @@ defineExpose({
     <!-- 입력 필드들 (2개씩 자동 배치) -->
     <div class="grid grid-cols-2 gap-4">
       <div v-for="(input, index) in inputs.inputs" :key="input.name || index" class="grid grid-cols-12 gap-2"
-        :class="(input.type === 'dateRange' || input.type === 'textarea') ? 'col-span-2' : 'col-span-1'">
+        :class="(input.type === 'dateRange' || input.type === 'textarea' || input.type === 'file') ? 'col-span-2' : 'col-span-1'">
 
         <label :for="input.label" class="flex items-center col-span-12 mb-2 md:col-span-3 md:mb-0">{{ input.label
           }}</label>
-        <div v-if="input.type !== 'textarea'" class="col-span-12 md:col-span-9 flex">
+        <div v-if="input.type !== 'textarea' && input.type !== 'file'" class="col-span-12 md:col-span-9 flex">
 
           <!-- Text Input -->
           <InputText v-if="input.type === 'text'" :id="'input-' + index" type="text" v-model="inputDatas[input.name]"
-            :placeholder="input.placeholder || 'Enter text...'" class="flex-1" />
+            :placeholder="input.placeholder || 'Enter text...'" class="flex-1" :readonly="input.readonly" />
 
           <!-- Date Picker -->
           <DatePicker v-else-if="input.type === 'date'" :id="'input-' + index" v-model="inputDatas[input.name]"
@@ -123,10 +174,52 @@ defineExpose({
           <InputText v-else :id="'input-' + index" type="text" v-model="inputDatas[input.name]"
             :placeholder="input.placeholder || 'Enter text...'" class="flex-1" />
         </div>
-        <div v-else class="col-span-12 md:col-span-12 flex">
+        <div v-else-if="input.type === 'textarea'" class="col-span-12 md:col-span-12 flex">
           <!-- Textarea Input -->
           <Textarea v-if="input.type === 'textarea'" :id="'input-' + index" v-model="inputDatas[input.name]"
             :placeholder="input.placeholder || 'Enter text...'" class="flex-1" rows="3" />
+        </div>
+        <div v-else-if="input.type === 'file'" class="col-span-12 md:col-span-12">
+          <!-- File Upload -->
+          <div class="flex-1">
+            <FileUpload 
+              :id="'input-' + index"
+              :name="input.name"
+              :accept="input.accept || 'image/*'"
+              :maxFileSize="input.maxFileSize || 10000000"
+              :multiple="input.multiple || false"
+              customUpload
+              @select="handleFileSelect"
+              @uploader="handleFileUpload"
+              @remove="handleFileRemove"
+              @clear="handleFileClear"
+              chooseLabel="선택"
+              uploadLabel="업로드"  
+              cancelLabel="취소"
+            >
+              <template #empty>
+                <div class="text-center py-2">
+                  <i class="pi pi-cloud-upload text-sm text-gray-400"></i>
+                  <p class="text-xs text-gray-500 mt-1">{{ input.placeholder || '파일 선택' }}</p>
+                </div>
+              </template>
+            </FileUpload>
+            
+            <!-- 이미지 미리보기 -->
+            <div v-if="inputDatas[input.name + '_preview']" class="mt-2 text-center">
+              <img 
+                :src="inputDatas[input.name + '_preview']" 
+                alt="미리보기"
+                class="w-full h-16 object-cover rounded border"
+              />
+              <button 
+                @click="clearFilePreview(input.name)"
+                class="mt-1 px-2 py-1 bg-red-500 text-white rounded text-xs hover:bg-red-600 w-full"
+              >
+                제거
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>

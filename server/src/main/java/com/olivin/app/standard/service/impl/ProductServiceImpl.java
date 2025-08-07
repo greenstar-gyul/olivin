@@ -1,5 +1,6 @@
 package com.olivin.app.standard.service.impl;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -160,11 +161,42 @@ public class ProductServiceImpl implements ProductService {
     }
     
     /**
-     * 검색 조건에 따른 제품 조회 - 직원 이름 조인 포함
+     * 검색 조건에 따른 제품 조회 - 기존 코드에 예외 처리만 추가
      */
     @Override
     public List<ProductVO> searchProducts(Map<String, Object> searchParams) {
-        return productMapper.selectProductsByCondition(searchParams);
+        try {
+            System.out.println("=== ProductService 검색 시작 ===");
+            System.out.println("검색 파라미터: " + searchParams);
+            
+            // 파라미터 유효성 검사
+            if (searchParams == null || searchParams.isEmpty()) {
+                System.out.println("검색 파라미터가 비어있습니다.");
+                return new ArrayList<>();
+            }
+            
+            // 파라미터 로깅
+            searchParams.forEach((key, value) -> {
+                System.out.println("파라미터 [" + key + "]: " + value + 
+                    " (타입: " + (value != null ? value.getClass().getSimpleName() : "null") + ")");
+            });
+            
+            // MyBatis 매퍼 호출
+            List<ProductVO> results = productMapper.selectProductsByCondition(searchParams);
+            
+            System.out.println("✅ 검색 완료: " + (results != null ? results.size() : 0) + "개 결과");
+            
+            return results != null ? results : new ArrayList<>();
+            
+        } catch (Exception e) {
+            System.err.println("=== 검색 중 오류 발생 ===");
+            System.err.println("오류 타입: " + e.getClass().getSimpleName());
+            System.err.println("오류 메시지: " + e.getMessage());
+            e.printStackTrace();
+            
+            // 빈 리스트 반환 (예외를 다시 던지지 않음)
+            return new ArrayList<>();
+        }
     }
     
     /**

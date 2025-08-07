@@ -3,15 +3,11 @@ import StandardInput from '@/components/common/StandardInput.vue';
 import DialogModal from '@/components/overray/DialogModal.vue';
 import { ref, onMounted, computed } from 'vue';
 import axios from '@/service/axios';
+import Button from 'primevue/button';
+import Dialog from 'primevue/dialog';
+import Checkbox from 'primevue/checkbox';
 
-const API_BASE_URL = '/api/companies';
-
-// 회사 유형 코드 상수 
-const COMPANY_TYPES = {
-  HEADQUARTERS: '100001', // 본사
-  BRANCH: '100002',       // 지점  
-  SUPPLIER: '100003'      // 공급업체
-};
+const API_BASE_URL = '/api/roles';
 
 // 현재 로그인한 사용자 정보
 const currentUser = ref({
@@ -120,10 +116,9 @@ const getCurrentUser = async () => {
 const filters = ref({
   title: '조회 조건',
   filters: [
-    { type: 'text', label: '업체명', value: '', placeholder: '업체명을 입력하세요', name: 'compName' },
-    { type: 'text', label: '사업자번호', value: '', placeholder: '000-00-00000', name: 'bizNumber' },
-    { type: 'text', label: 'CEO명', value: '', placeholder: 'CEO명을 입력하세요', name: 'ceoName' },
-    { type: 'text', label: '전화번호', value: '', placeholder: '02-0000-0000', name: 'phone' },
+    { type: 'text', label: '권한명', value: '', placeholder: '권한명을 입력하세요', name: 'roleName' },
+    { type: 'text', label: '권한설명', value: '', placeholder: '권한설명을 입력하세요', name: 'roleDesc' },
+    { type: 'text', label: '등록자', value: '', placeholder: '등록자를 입력하세요', name: 'regUser' },
     { type: 'dateRange', label: '등록일 범위', value: '', fromPlaceholder: '시작일', toPlaceholder: '종료일', name: 'dateRange' }
   ]
 });
@@ -132,56 +127,41 @@ const items = ref([]);
 const loading = ref(false);
 
 const header = ref({
-  title: '공급업체 기준정보 관리',
+  title: '권한 기준정보 관리',
   header: {
-    compId: '업체ID', 
-    compName: '업체명', 
-    bizNumber: '사업자번호', 
-    ceoName: 'CEO명', 
-    phone: '전화번호', 
-    address: '주소',
-    addressDetail: '상세주소',
-    zipcode: '우편번호',
+    roleId: '권한ID', 
+    roleName: '권한명', 
+    roleDesc: '권한설명', 
+    permissionNames: '보유권한',
+    employeeCount: '직원수',
+    permissionCount: '권한수',
     regUser: '등록자',
     regDate: '등록일'
   },
-  rightAligned: []
+  rightAligned: ['employeeCount', 'permissionCount']
 });
 
 const inputs = ref({
-  title: '공급업체 등록/수정',
+  title: '권한 등록/수정',
   inputs: [
-    { type: 'text', label: '업체ID', placeholder: '자동생성', name: 'compId', readonly: true },
-    { type: 'text', label: '업체명', placeholder: '업체명을 입력하세요', name: 'compName', required: true },
-    { type: 'text', label: '사업자번호', placeholder: '000-00-00000', name: 'bizNumber', required: true },
-    { type: 'text', label: 'CEO명', placeholder: 'CEO명을 입력하세요', name: 'ceoName', required: true },
-    { type: 'text', label: '전화번호', placeholder: '02-0000-0000', name: 'phone' },
-    { type: 'text', label: '우편번호', placeholder: '00000', name: 'zipcode' },
-    { type: 'text', label: '주소', placeholder: '주소를 입력하세요', name: 'address' },
-    { type: 'text', label: '상세주소', placeholder: '상세주소를 입력하세요', name: 'addressDetail' },
-    { type: 'select', label: '정산주기', placeholder: '정산주기를 선택하세요', name: 'settleCycle', options: [
-      { name: '월말정산', value: '월말정산' },
-      { name: '15일정산', value: '15일정산' },
-      { name: '주간정산', value: '주간정산' }
-    ]},
-    { type: 'text', label: '정산담당자', placeholder: '정산담당자명', name: 'settleMgr' },
+    { type: 'text', label: '권한ID', placeholder: '자동생성', name: 'roleId', readonly: true },
+    { type: 'text', label: '권한명', placeholder: '권한명을 입력하세요', name: 'roleName', required: true },
+    { type: 'textarea', label: '권한설명', placeholder: '권한설명을 입력하세요', name: 'roleDesc', required: true },
     { type: 'text', label: '등록자', placeholder: '등록자 ID', name: 'regUser', readonly: true },
-    { type: 'text', label: '등록일', placeholder: '2024-01-01 형식으로 입력하세요', name: 'regDate' },
-    { type: 'textarea', label: '비고', placeholder: '특이사항을 입력하세요', name: 'note' }
+    { type: 'text', label: '등록일', placeholder: '2024-01-01 형식으로 입력하세요', name: 'regDate' }
   ]
 });
 
 // StandardInput 컴포넌트 ref
 const standardInputRef = ref(null);
 
-// 선택된 공급업체 정보
-const selectedSupplier = ref(null);
+// 선택된 권한 정보
+const selectedRole = ref(null);
 
-// 주소 포맷 함수
-const formatAddress = (address, addressDetail) => {
-  if (!address) return '';
-  return addressDetail ? `${address} ${addressDetail}` : address;
-};
+// 권한 할당 모달 관련
+const permissionModalVisible = ref(false);
+const allPermissions = ref([]);
+const selectedPermissions = ref([]);
 
 // 날짜 포맷 함수들
 const formatDate = (dateString) => {
@@ -198,49 +178,44 @@ const formatDate = (dateString) => {
   }
 };
 
-// 공급업체 목록 조회 (고유키 추가)
-const loadSuppliers = async (searchParams = {}) => {
+// 권한 목록 조회 (고유키 추가)
+const loadRoles = async (searchParams = {}) => {
   try {
     loading.value = true;
-    console.log('공급업체 목록 조회 시작...');
+    console.log('권한 목록 조회 시작...');
     
-    // 모든 회사 조회 후 공급업체만 필터링
     const response = await axios.get(API_BASE_URL, { params: searchParams });
     
-    console.log('회사 API 원본 응답:', response.data);
+    console.log('권한 API 원본 응답:', response.data);
     
     // API 응답 구조 처리
-    let companies = [];
+    let roles = [];
     if (response.data.result_code === 'SUCCESS' && response.data.data) {
-      companies = response.data.data;
+      roles = response.data.data;
     } else if (Array.isArray(response.data)) {
-      companies = response.data;
+      roles = response.data;
     } else {
       console.error('예상하지 못한 응답 구조:', response.data);
-      companies = [];
+      roles = [];
     }
     
-    console.log('전체 회사 데이터:', companies);
-    console.log('COMP_TYPE 값들:', companies.map(c => ({ id: c.compId, type: c.compType, name: c.compName })));
-    
-    // 공급업체만 필터링 (compType이 '100003'인 것)
-    const suppliers = companies.filter(item => item.compType === COMPANY_TYPES.SUPPLIER);
-    
-    console.log('필터링된 공급업체:', suppliers);
+    console.log('권한 데이터:', roles);
     
     // 데이터 가공 (고유 ID 추가)
-    items.value = suppliers.map((item, index) => ({
-      id: item.compId || `temp_supplier_${Date.now()}_${index}`, // 고유 ID 추가
+    items.value = roles.map((item, index) => ({
+      id: item.roleId || `temp_role_${Date.now()}_${index}`, // 고유 ID 추가
       ...item,
-      address: formatAddress(item.address, item.addressDetail),
       regDate: item.regDate ? formatDate(item.regDate) : '',
-      updateDate: item.updateDate ? formatDate(item.updateDate) : null
+      updateDate: item.updateDate ? formatDate(item.updateDate) : null,
+      employeeCount: item.employeeCount || 0,
+      permissionCount: item.permissionCount || 0,
+      permissionNames: item.permissionNames || '' // 조인으로 가져온 권한명들
     }));
     
-    console.log('최종 공급업체 목록:', items.value);
+    console.log('최종 권한 목록:', items.value);
     
   } catch (error) {
-    console.error('공급업체 목록 조회 실패:', error);
+    console.error('권한 목록 조회 실패:', error);
     console.error('에러 응답:', error.response);
     alert('데이터 조회에 실패했습니다.');
     items.value = [];
@@ -249,37 +224,73 @@ const loadSuppliers = async (searchParams = {}) => {
   }
 };
 
+// 모든 권한 목록 조회 (Map 형태)
+const loadAllPermissions = async () => {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/permissions`);
+    
+    if (response.data.result_code === 'SUCCESS' && response.data.data) {
+      allPermissions.value = response.data.data.map(perm => ({
+        permId: perm.PERM_ID,
+        permName: perm.PERM_NAME,
+        permDescription: perm.PERM_DESCRIPTION,
+        selected: false
+      }));
+    }
+  } catch (error) {
+    console.error('권한 목록 조회 실패:', error);
+    alert('권한 목록 조회에 실패했습니다.');
+  }
+};
+
+// 특정 권한의 권한 ID 목록 조회
+const loadRolePermissions = async (roleId) => {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/${roleId}/permissions`);
+    
+    if (response.data.result_code === 'SUCCESS' && response.data.data) {
+      const rolePermissionIds = response.data.data;
+      
+      // 모든 권한에서 선택 상태 업데이트
+      allPermissions.value.forEach(perm => {
+        perm.selected = rolePermissionIds.includes(perm.permId);
+      });
+      
+      selectedPermissions.value = rolePermissionIds;
+    }
+  } catch (error) {
+    console.error('권한별 권한 조회 실패:', error);
+  }
+};
+
 // 검색 실행
 const searchData = async (searchOptions) => {
-  console.log('공급업체 검색 조건:', searchOptions);
+  console.log('권한 검색 조건:', searchOptions);
   
   const searchParams = {};
   
   // 검색 조건 매핑
-  if (searchOptions.compName && searchOptions.compName.trim() !== '') {
-    searchParams.compName = searchOptions.compName.trim();
+  if (searchOptions.roleName && searchOptions.roleName.trim() !== '') {
+    searchParams.roleName = searchOptions.roleName.trim();
   }
-  if (searchOptions.bizNumber && searchOptions.bizNumber.trim() !== '') {
-    searchParams.bizNumber = searchOptions.bizNumber.trim();
+  if (searchOptions.roleDesc && searchOptions.roleDesc.trim() !== '') {
+    searchParams.roleDesc = searchOptions.roleDesc.trim();
   }
-  if (searchOptions.ceoName && searchOptions.ceoName.trim() !== '') {
-    searchParams.ceoName = searchOptions.ceoName.trim();
-  }
-  if (searchOptions.phone && searchOptions.phone.trim() !== '') {
-    searchParams.phone = searchOptions.phone.trim();
+  if (searchOptions.regUser && searchOptions.regUser.trim() !== '') {
+    searchParams.regUser = searchOptions.regUser.trim();
   }
   if (searchOptions.dateRangeFrom && searchOptions.dateRangeTo) {
     searchParams.regDateFrom = searchOptions.dateRangeFrom;
     searchParams.regDateTo = searchOptions.dateRangeTo;
   }
   
-  await loadSuppliers(searchParams);
+  await loadRoles(searchParams);
 };
 
 // 행 선택 처리
-const onRowSelect = (supplier) => {
-  console.log('선택된 공급업체:', supplier);
-  selectedSupplier.value = supplier;
+const onRowSelect = (role) => {
+  console.log('선택된 권한:', role);
+  selectedRole.value = role;
   
   // StandardInput의 inputForm에 데이터 설정
   if (standardInputRef.value && standardInputRef.value.inputFormRef) {
@@ -305,8 +316,8 @@ const onRowSelect = (supplier) => {
     
     // 폼 데이터 업데이트 (id 필드는 제외)
     Object.keys(inputFormRef.inputDatas).forEach(key => {
-      if (key !== 'id' && key in supplier) {
-        let value = supplier[key] || '';
+      if (key !== 'id' && key in role) {
+        let value = role[key] || '';
         
         // 날짜 필드를 위한 포맷팅
         if ((key === 'regDate' || key === 'updateDate') && value) {
@@ -321,19 +332,18 @@ const onRowSelect = (supplier) => {
 
 // 행 선택 해제 처리
 const onRowUnselect = () => {
-  selectedSupplier.value = null;
+  selectedRole.value = null;
 };
 
 // 저장 처리
 const saveData = async (inputData) => {
   try {
-    console.log('저장할 공급업체 데이터:', inputData);
+    console.log('저장할 권한 데이터:', inputData);
     
     // 필수 필드 검증
     const requiredFields = [
-      { field: 'compName', label: '업체명' },
-      { field: 'bizNumber', label: '사업자번호' },
-      { field: 'ceoName', label: 'CEO명' }
+      { field: 'roleName', label: '권한명' },
+      { field: 'roleDesc', label: '권한설명' }
     ];
     
     for (const req of requiredFields) {
@@ -363,13 +373,12 @@ const saveData = async (inputData) => {
     const currentUserData = await getCurrentUser();
     console.log('저장 시점의 현재 사용자 정보:', currentUserData);
     
-    // 선택된 공급업체가 있으면 수정 모드, 없으면 신규 등록
-    const isUpdateMode = selectedSupplier.value && selectedSupplier.value.compId;
+    // 선택된 권한이 있으면 수정 모드, 없으면 신규 등록
+    const isUpdateMode = selectedRole.value && selectedRole.value.roleId;
     
-    // 기본 공급업체 데이터 구성
-    const supplierData = {
-      ...inputData,
-      compType: COMPANY_TYPES.SUPPLIER // 공급업체 유형 고정
+    // 기본 권한 데이터 구성
+    const roleData = {
+      ...inputData
     };
     
     let response;
@@ -378,33 +387,32 @@ const saveData = async (inputData) => {
       // 수정 모드 - 수정자 정보 명확히 설정
       const now = new Date();
       
-      supplierData.compId = selectedSupplier.value.compId;
-      supplierData.updateUser = currentUserData.employeeId; // employeeId 사용
-      supplierData.updateDate = now; // 수정일시
-      supplierData.regDate = regDate; // 등록일은 기존 값 유지 또는 입력된 값
+      roleData.roleId = selectedRole.value.roleId;
+      roleData.updateUser = currentUserData.employeeId; // employeeId 사용
+      roleData.updateDate = now; // 수정일시
+      roleData.regDate = regDate; // 등록일은 기존 값 유지 또는 입력된 값
       
       console.log('수정 모드 - 전송할 데이터:', {
-        compId: supplierData.compId,
-        updateUser: supplierData.updateUser,
-        updateDate: supplierData.updateDate,
-        regUser: supplierData.regUser,
-        regDate: supplierData.regDate
+        roleId: roleData.roleId,
+        updateUser: roleData.updateUser,
+        updateDate: roleData.updateDate,
+        regUser: roleData.regUser,
+        regDate: roleData.regDate
       });
       
-      response = await axios.put(`${API_BASE_URL}/${selectedSupplier.value.compId}`, supplierData);
+      response = await axios.put(`${API_BASE_URL}/${selectedRole.value.roleId}`, roleData);
     } else {
       // 신규 등록 모드
-      supplierData.regUser = currentUserData.employeeId; // employeeId 사용
-      supplierData.regDate = regDate; // 등록일
-      delete supplierData.compId; // 백엔드에서 자동 생성
+      roleData.regUser = currentUserData.employeeId; // employeeId 사용
+      roleData.regDate = regDate; // 등록일
+      delete roleData.roleId; // 백엔드에서 자동 생성
       
       console.log('등록 모드 - 전송할 데이터:', {
-        regUser: supplierData.regUser,
-        regDate: supplierData.regDate,
-        compType: supplierData.compType
+        regUser: roleData.regUser,
+        regDate: roleData.regDate
       });
       
-      response = await axios.post(API_BASE_URL, supplierData);
+      response = await axios.post(API_BASE_URL, roleData);
     }
     
     // 응답 처리
@@ -412,23 +420,23 @@ const saveData = async (inputData) => {
     
     if (response.data.result_code === 'SUCCESS') {
       alert(isUpdateMode ? 
-        `공급업체가 성공적으로 수정되었습니다. (수정자: ${currentUserData.empName})` : 
-        `공급업체가 성공적으로 등록되었습니다. (등록자: ${currentUserData.empName})`
+        `권한이 성공적으로 수정되었습니다. (수정자: ${currentUserData.empName})` : 
+        `권한이 성공적으로 등록되었습니다. (등록자: ${currentUserData.empName})`
       );
       
       // 폼 초기화
       if (standardInputRef.value && standardInputRef.value.inputFormRef) {
         standardInputRef.value.inputFormRef.resetInputDatas();
       }
-      selectedSupplier.value = null;
+      selectedRole.value = null;
       
-      await loadSuppliers();
+      await loadRoles();
     } else {
       alert(`저장 실패: ${response.data.message || '알 수 없는 오류'}`);
     }
     
   } catch (error) {
-    console.error('공급업체 저장 실패:', error);
+    console.error('권한 저장 실패:', error);
     console.error('에러 상세:', {
       code: error.code,
       status: error.response?.status,
@@ -446,14 +454,14 @@ const saveData = async (inputData) => {
 
 // 삭제 처리
 const deleteData = async () => {
-  if (!selectedSupplier.value || !selectedSupplier.value.compId) {
-    alert('삭제할 공급업체를 선택해주세요.');
+  if (!selectedRole.value || !selectedRole.value.roleId) {
+    alert('삭제할 권한을 선택해주세요.');
     return;
   }
 
   // 삭제 확인
   const confirmDelete = confirm(
-    `공급업체 "${selectedSupplier.value.compName}"을(를) 정말 삭제하시겠습니까?\n\n이 작업은 되돌릴 수 없습니다.`
+    `권한 "${selectedRole.value.roleName}"을(를) 정말 삭제하시겠습니까?\n\n이 작업은 되돌릴 수 없습니다.`
   );
   
   if (!confirmDelete) {
@@ -461,28 +469,28 @@ const deleteData = async () => {
   }
 
   try {
-    console.log('공급업체 삭제 시작:', selectedSupplier.value.compId);
+    console.log('권한 삭제 시작:', selectedRole.value.roleId);
     
-    const response = await axios.delete(`${API_BASE_URL}/${selectedSupplier.value.compId}`);
+    const response = await axios.delete(`${API_BASE_URL}/${selectedRole.value.roleId}`);
     
     console.log('삭제 응답:', response.data);
     
     if (response.data.result_code === 'SUCCESS') {
-      alert(`공급업체 "${selectedSupplier.value.compName}"이(가) 성공적으로 삭제되었습니다.`);
+      alert(`권한 "${selectedRole.value.roleName}"이(가) 성공적으로 삭제되었습니다.`);
       
       // 폼 초기화
       if (standardInputRef.value && standardInputRef.value.inputFormRef) {
         standardInputRef.value.inputFormRef.resetInputDatas();
       }
-      selectedSupplier.value = null;
+      selectedRole.value = null;
       
-      await loadSuppliers();
+      await loadRoles();
     } else {
       alert(`삭제 실패: ${response.data.message || '삭제 중 오류가 발생했습니다.'}`);
     }
     
   } catch (error) {
-    console.error('공급업체 삭제 실패:', error);
+    console.error('권한 삭제 실패:', error);
     console.error('에러 상세:', {
       code: error.code,
       status: error.response?.status,
@@ -495,16 +503,64 @@ const deleteData = async () => {
     if (error.code === 'ERR_NETWORK') {
       errorMessage = '네트워크 오류: 백엔드 서버가 실행되고 있는지 확인해주세요.';
     } else if (error.response?.status === 404) {
-      errorMessage = '삭제할 공급업체를 찾을 수 없습니다.';
+      errorMessage = '삭제할 권한을 찾을 수 없습니다.';
     } else if (error.response?.status === 409) {
-      errorMessage = '다른 데이터에서 참조 중인 공급업체는 삭제할 수 없습니다. (제품 등록에 사용 중)';
+      errorMessage = '해당 권한을 사용 중인 직원이 있어 삭제할 수 없습니다.';
     } else if (error.response?.data?.message) {
-      errorMessage = error.response.data.message;
+      errorMessage = response.data.message;
     } else if (error.message) {
       errorMessage = error.message;
     }
     
     alert('삭제 실패: ' + errorMessage);
+  }
+};
+
+// 권한 할당 모달 열기
+const openPermissionModal = async () => {
+  if (!selectedRole.value) {
+    alert('권한을 선택해주세요.');
+    return;
+  }
+  
+  await loadAllPermissions();
+  await loadRolePermissions(selectedRole.value.roleId);
+  permissionModalVisible.value = true;
+};
+
+// 권한 할당 저장
+const savePermissions = async () => {
+  try {
+    const response = await axios.post(`${API_BASE_URL}/${selectedRole.value.roleId}/permissions`, {
+      permissionIds: selectedPermissions.value
+    });
+    
+    if (response.data.result_code === 'SUCCESS') {
+      alert('권한이 성공적으로 할당되었습니다.');
+      permissionModalVisible.value = false;
+      await loadRoles(); // 권한 수 업데이트를 위해 재조회
+    } else {
+      alert(`권한 할당 실패: ${response.data.message}`);
+    }
+  } catch (error) {
+    console.error('권한 할당 실패:', error);
+    alert('권한 할당 중 오류가 발생했습니다.');
+  }
+};
+
+// 권한 선택/해제 처리
+const togglePermission = (permId) => {
+  const index = selectedPermissions.value.indexOf(permId);
+  if (index > -1) {
+    selectedPermissions.value.splice(index, 1);
+  } else {
+    selectedPermissions.value.push(permId);
+  }
+  
+  // allPermissions의 selected 상태도 업데이트
+  const permission = allPermissions.value.find(p => p.permId === permId);
+  if (permission) {
+    permission.selected = !permission.selected;
   }
 };
 
@@ -548,7 +604,7 @@ onMounted(async () => {
     console.error('디버깅 중 오류:', error);
   }
   
-  await loadSuppliers();
+  await loadRoles();
   
   // 약간의 지연 후 초기화 (StandardInput이 완전히 마운트된 후)
   setTimeout(async () => {
@@ -570,16 +626,72 @@ onMounted(async () => {
     @rowSelect="onRowSelect"
     @rowUnselect="onRowUnselect"
   >
-    <!-- 삭제 버튼 추가 -->
+    <!-- 삭제 및 권한 할당 버튼 추가 -->
     <template #btn>
       <Button 
         label="삭제" 
         severity="danger" 
+        class="min-w-fit whitespace-nowrap mr-2" 
+        outlined
+        :disabled="!selectedRole"
+        @click="deleteData"
+      />
+      <Button 
+        label="권한할당" 
+        severity="info" 
         class="min-w-fit whitespace-nowrap" 
         outlined
-        :disabled="!selectedSupplier"
-        @click="deleteData"
+        :disabled="!selectedRole"
+        @click="openPermissionModal"
       />
     </template>
   </StandardInput>
+
+  <!-- 권한 할당 모달 -->
+  <Dialog 
+    v-model:visible="permissionModalVisible" 
+    :modal="true" 
+    :closable="true"
+    :style="{ width: '60vw' }"
+    header="권한 할당"
+  >
+    <div class="p-4">
+      <div v-if="selectedRole" class="mb-4 p-3 bg-blue-50 rounded">
+        <h4 class="text-lg font-semibold text-blue-800">
+          선택된 권한: {{ selectedRole.roleName }}
+        </h4>
+        <p class="text-sm text-blue-600">{{ selectedRole.roleDesc }}</p>
+      </div>
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-96 overflow-y-auto">
+        <div v-for="permission in allPermissions" :key="permission.permId" 
+             class="flex items-center p-3 border rounded hover:bg-gray-50">
+          <Checkbox 
+            :id="`perm_${permission.permId}`"
+            :value="permission.permId"
+            v-model="selectedPermissions"
+            @change="togglePermission(permission.permId)"
+          />
+          <label :for="`perm_${permission.permId}`" class="ml-3 cursor-pointer flex-1">
+            <div class="font-medium">{{ permission.permName }}</div>
+            <div class="text-sm text-gray-600">{{ permission.permDescription }}</div>
+          </label>
+        </div>
+      </div>
+      
+      <div class="flex justify-end gap-2 mt-6 pt-4 border-t">
+        <Button 
+          label="취소" 
+          severity="secondary" 
+          outlined
+          @click="permissionModalVisible = false"
+        />
+        <Button 
+          label="저장" 
+          severity="primary"
+          @click="savePermissions"
+        />
+      </div>
+    </div>
+  </Dialog>
 </template>

@@ -29,6 +29,10 @@ const props = defineProps({
   checkType: {
     type: String,
     default: 'single'
+  },
+  scrollHeight: {
+    type: String,
+    default: '400px'
   }
 });
 
@@ -77,6 +81,19 @@ const onRowUnselect = (event) => {
   emit('rowUnselect', event.data);
 };
 
+// 선택을 해제하는 메서드
+const clearSelection = () => {
+  selectedItems.value = props.checkType === 'single' ? null : [];
+  console.log('Selection cleared in BasicTable');
+};
+
+// 부모 컴포넌트에서 접근할 수 있도록 expose
+defineExpose({
+  clearSelection
+});
+
+const header = computed(() => props.header);
+
 </script>
 <template>
   <!-- 📋 검색 조회 테이블 영역 -->
@@ -94,9 +111,9 @@ const onRowUnselect = (event) => {
       </div>
     </div>
     
-    <!-- DataTable (PrimeVue) -->
+    <!-- DataTable (PrimeVue) - scrollHeight props 사용 -->
     <DataTable v-model:selection="selectedItems" :value="props.data" :dataKey="props.dataKey" showGridlines scrollable
-      scrollHeight="400px" tableStyle="min-width: 50rem" @rowSelect="onRowSelect" @rowUnselect="onRowUnselect"
+      :scrollHeight="props.scrollHeight" tableStyle="min-width: 50rem" @rowSelect="onRowSelect" @rowUnselect="onRowUnselect"
       :selectionMode="props.checked ? props.checkType : null">
 
       <Column v-if="props.checked" :selectionMode="props.checkType" headerStyle="width: 3rem"></Column>
@@ -104,12 +121,17 @@ const onRowUnselect = (event) => {
       <!-- 동적 컬럼 생성 -->
       <Column v-for="colKey in tableColumns" :key="colKey" :field="colKey" :header="header.header[colKey] ?? colKey">
         <template #body="slotProps">
-            <span v-if="header.rightAligned && header.rightAligned.includes(colKey)" class="text-right block">
-                {{ Number(slotProps.data[colKey]).toLocaleString() }}
-            </span>
-            <span v-else>
-                {{ slotProps.data[colKey] }}
-            </span>
+          <!-- 숫자형 데이터는 오른쪽 정렬하고 3자리 콤마 추가 -->
+          <span v-if="header.rightAligned && header.rightAligned.includes(item)" class="text-right block">
+            {{ slotProps.data[item].toLocaleString() }}
+          </span>
+          <!-- 일반 텍스트 데이터는 기본 정렬 -->
+          <span v-else>
+            {{ slotProps.data[item] }}
+          </span>
+          <!-- <span>
+            {{ slotProps.data[item] }}
+          </span> -->
         </template>
       </Column>
     </DataTable>

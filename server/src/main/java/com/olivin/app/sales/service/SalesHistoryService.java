@@ -16,4 +16,11 @@ public interface SalesHistoryService {
      * 판매 이력 전체 조회
      */
     List<SalesHistoryVO> getHistoryAll();
+
+    /**
+     * 판매 이력 검색
+     * @param salesHistoryVO 검색 조건을 담은 VO 객체
+     * @return 검색된 판매 이력 목록
+     */
+    List<SalesHistoryVO> getSalesHistoryList(SalesHistoryVO salesHistoryVO);
 }

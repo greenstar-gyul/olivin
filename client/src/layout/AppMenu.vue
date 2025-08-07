@@ -71,6 +71,13 @@ const model = ref([
             { label: '사원정보', icon: 'pi pi-fw pi-id-card', to: '/views/emp' },
         ]
     },
+    {
+        label: '권한',
+        to: '/roles',
+        items: [
+            { label: '권한 관리', icon: 'pi pi-fw pi-users', to: '/roles/manage' },
+        ]
+    },
     {   
         label: '컴포넌트 테스트',
         to: '/test',

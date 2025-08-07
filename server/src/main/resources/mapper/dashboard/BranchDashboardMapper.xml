@@ -77,13 +77,13 @@
         ) date_range
         LEFT JOIN (
             SELECT 
-                TRUNC(SYSDATE) as SALE_DATE,
+                TRUNC(so.SO_DATE) as SALE_DATE,
                 SUM(TOTAL_PRICE) as DAILY_SALES
-            FROM SALES_ORDERS
-            WHERE COMP_ID = #{compId}
-            AND STATUS = '020001'
-            AND TRUNC(SYSDATE) BETWEEN TRUNC(SYSDATE) - 6 AND TRUNC(SYSDATE)
-            GROUP BY TRUNC(SYSDATE)
+            FROM SALES_ORDERS so
+            WHERE so.COMP_ID = #{compId}
+            AND so.STATUS = '020001'
+            AND TRUNC(so.SO_DATE) BETWEEN TRUNC(SYSDATE) - 6 AND TRUNC(SYSDATE)
+            GROUP BY TRUNC(so.SO_DATE)
         ) daily_sales ON date_range.sale_date = daily_sales.SALE_DATE
         ORDER BY date_range.sale_date
     </select>
