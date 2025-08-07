@@ -18,10 +18,10 @@ const formSchema = [
   { label: '발주사유', id: 'reasonName' },
   { label: '등록자', id: 'creatorName' },
   { label: '납기예정일', id: 'dueDate', data: 'date' },
-  { label: '공급업체', id: 'orderTo', },
+  { label: '발주처', id: 'orderFrom', },
   { label: '발주요청일', id: 'orderDate', data: 'date' },
   { label: '발주상태', id: 'orderStatusName' },
-  { label: '총 금액', id: 'totalAmount', data: 'number' },
+  { label: '총 금액', id: 'totalAmount' },
 ];
 
 /* View Table */
@@ -63,12 +63,18 @@ const redirectToList = () => {
 
 onBeforeMount(async () => {
   const res = await axios.get(`/api/orders/${route.params.orderId}`);
-  defaultForm.value = res.data.order
-
-  // const totalAmount = defaultForm.value.totalAmount;
-  // defaultForm.value.totalAmount = Number(totalAmount).toLocaleString()+'원';
+  defaultForm.value = {
+    ...res.data.order,
+    totalAmount: Number(res.data.order.totalAmount).toLocaleString()+'원',
+  };
+  if (defaultForm.value.orderType === '150002') {
+    delete columns.header.packQty; // 속성 제거
+  }
 
   defaultTable.value = res.data.detail.map((e) => {
+    if (defaultForm.value.orderType === '150002') {
+      e.packQty = 1; // 지점 발주서의 경우 packQty는 항상 1로 설정
+    }
     return {
       ...e,
       quantity: Number(e.quantity).toLocaleString(),

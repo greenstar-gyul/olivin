@@ -16,6 +16,12 @@ const router = createRouter({
                     meta: { roles: ['system_admin'] }
                 },
                 {
+                    path: '/dashboard/branch',
+                    name: 'BranchDashboard',
+                    component: () => import('@/views/dashboard/BranchDashboard.vue'),
+                    meta: { roles: ['system_admin', 'branch_manager', 'sales_manager'] }
+                },
+                {
                     path: '/',
                     name: 'dashboard',
                     component: () => import('@/views/Dashboard.vue')
@@ -266,9 +272,19 @@ const router = createRouter({
                 {
                     path: '/sales/orders',
                     name: 'salesOrders',
-                    component: () => import('@/views/sales/SalesOrdersPage.vue'),
-                    meta: { roles: ['ROLE_STORE_MANAGER'] }
+                    component: () => import('@/views/sales/SalesOrdersMgmt.vue'),
+                    meta: { roles: ['ROLE_STORE_MANAGER', 'ROLE_EMPLOYEE'] }
                 },
+                {
+                    path: '/sales/orders/view',
+                    name: 'salesOrdersView',
+                    component: () => import('@/views/sales/SalesOrdersPage.vue'),
+                },
+                {
+                    path: '/sales/history',
+                    name: 'salesHistory',
+                    component: () => import('@/views/sales/SalesHistoryPage.vue'),
+                }
                 /* end of sales */
             ]
         },

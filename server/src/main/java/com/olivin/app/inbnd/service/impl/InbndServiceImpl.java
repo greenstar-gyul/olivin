@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 
 import com.olivin.app.inbnd.mapper.InbndMapper;
+import com.olivin.app.inbnd.service.InbndProdDVO;
 import com.olivin.app.inbnd.service.InbndService;
 import com.olivin.app.inbnd.service.InbndVO;
 
@@ -19,4 +20,14 @@ public class InbndServiceImpl implements InbndService{
     public List<InbndVO> getAllInbnd() {
         return inbndMapper.selectAllList();
     } // end of getAllInbnd()
+
+    @Override
+    public List<InbndProdDVO> getProdByLot(){
+        return inbndMapper.selectProdLot();
+    } // end of getProdByLot()
+
+    @Override
+    public List<InbndProdDVO> test(String productId){
+        return inbndMapper.test(productId);
+    }
 } // end of class

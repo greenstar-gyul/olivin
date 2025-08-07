@@ -1,42 +1,37 @@
 <script setup>
-import { onBeforeMount, onMounted, ref, watch } from 'vue';
 import InputDataTable from '@/components/common/InputDataTable.vue';
+import { onBeforeMount, onMounted, ref, watch } from 'vue';
 import { convertDate } from '@/utils/dateUtils';
 import { useAuth } from '@/composables/useAuth';
 import { useConfirm } from 'primevue';
 import axios from '@/service/axios';
+import DialogModal from '@/components/overray/DialogModal.vue';
 
 /* Form Data */
 
 const inputRef = ref(null);
-const confirm = useConfirm();
+const confirm = useConfirm(); //confirm
 
 // 폼 기본값
 const defaultForm = ref({
-  orderDate: convertDate(new Date()),
-  totalAmount: '0원',
+  soDate: convertDate(new Date()),
+  totalPrice: '0원',
 });
 
 // 폼 스키마
-const formSchema = [
-  { type: 'text', label: '제안명', id: 'orderTitle', placeholder: '제안명을 입력하세요.' },
-  { type: 'select', label: '제안사유', id: 'reason', placeholder: '제안사유를 선택하세요.',
+const formSchema = ref([
+  { type: 'data', label: '주문일자', id: 'soDate', data: 'date' },
+  { type: 'select', label: '결제수단', id: 'paymentType', placeholder: '결제수단을 선택하세요.',
     options: [
-      { name: '정기 발주', value: 140001 },
-      { name: '수요 예측 발주', value: 140002 },
-      { name: '재고 부족', value: 140003 },
-      { name: '신상품 발주', value: 140004 },
-      { name: '긴급 발주', value: 140005 },
-      { name: '행사상품 발주', value: 140006 },
+      { name: '현금', value: 160001 },
+      { name: '계좌이체', value: 160002 },
+      { name: '카드결제', value: 160003 },
     ]
   },
-  { type: 'data', label: '등록자', id: 'creatorName', data: 'text' },
-  { type: 'date', label: '납기예정일', id: 'dueDate', placeholder: '납기예정일을 선택하세요.' },
-  { type: 'data', label: '공급업체명', id: 'orderFrom', data: 'text' },
-  { type: 'text', label: '비고', id: 'note', placeholder: '비고를 입력하세요.'}, 
-  { type: 'data', label: '발주요청일', id: 'orderDate', data: 'date' },
-  { type: 'data', label: '총 가격', id: 'totalAmount', data: 'text' }
-];
+  { type: 'data', label: '지점명', id: 'compName', data: 'text' },
+  { type: 'data', label: '등록자', id: 'empName', data: 'text' },
+  { type: 'data', label: '총 가격', id: 'totalPrice', data: 'text' },
+]);
 
 /* Input Table */
 
@@ -46,21 +41,22 @@ let tableData = ref({});
 const defaultTable = {
   // categoryMain: '화장품',
   // price: 15000,
-  unit: 'box',
+  unit: 'ea',
 };
 
 // 테이블 컬럼 정의
 const columns = [
-  { inputType: 'item-search', header: '제품명', field: 'productName', placeholder: '제품명을 입력하세요.' },
-  { type: 'text', header: '제품분류', field: 'categoryMain' },
-  { type: 'number', header: '단가', field: 'price' },
+  { inputType: 'item-search', header: '상품명', field: 'productName', placeholder: '상품명을 입력하세요.' },
+  { type: 'text', header: '상품분류', field: 'categoryMain' },
+  { type: 'number', header: '가격', field: 'price' },
   { inputType: 'number', header: '수량', field: 'quantity', placeholder: '수량을 입력하세요.' },
-  { type: 'text', header: '단위', field: 'unit'},
-  { type: 'number', header: '박스당 수량', field: 'packQty' }
+  { type: 'text', header: '단위', field: 'unit' },
+  { type: 'text', header: '합계', field: 'total' }
 ];
 
 /* modal */
 
+// 제품 모달
 const itemModalVisible = ref(false);
 const itemModalReturn = ref({});
 const itemModalItems = ref([]);
@@ -71,27 +67,19 @@ const itemModalHeaders = ref([
   { field: 'categorySub', header: '소분류' },
   { field: 'vendorName', header: '공급사명' },
   { field: 'productSpec', header: '규격' },
+  { field: 'stockQuantity', header: '재고수량(개)' }
 ]);
 
 const getItemModalItems = async (searchValue) => {
-  let req;
-  if (searchValue) {
-    req = await axios.get('/api/search/products', {
-      params: {
-        searchValue
-      }
-    });
-  } else {
-    req = await axios.get('/api/search/products/all');
+  const params = {
+    compName: defaultForm.value.compName,
+    productName: searchValue || '',
   }
-
-  if (req?.data) {
-    return req.data.filter((e) => {
-      return e.vendorName == defaultForm.value.orderFrom;
-    });
-  } else {
-    return req;
-  }
+  console.log(params);
+  let req = await axios.get('/api/inventory/branchStock/search', {
+    params: params
+  });
+  return req?.data ? req.data : req;
 }
 
 const itemCloseModal = () => {
@@ -101,7 +89,7 @@ const itemCloseModal = () => {
 const itemConfirmModal = async (selectedItems) => {
   const modalData = itemModalReturn.value;
   // console.log('selected Item', selectedItems);
-  // console.log('data', modelData);
+  console.log('data', modalData);
   const same = modalData.data.filter((e) => {
     return e[modalData.fieldName] == selectedItems.productName;
   });
@@ -115,9 +103,7 @@ const itemConfirmModal = async (selectedItems) => {
     modalData.item[modalData.fieldName] = selectedItems.productName;
     modalData.item['productId'] = selectedItems.productId;
     modalData.item['categoryMain'] = selectedItems.categoryMain;
-    modalData.item['price'] = selectedItems.purchasePrice;
-    modalData.item['packQty'] = product.data.packQty;
-  
+    modalData.item['price'] = product.data.sellPrice;
   }
 
   itemModalVisible.value = false; //모달 닫음
@@ -139,32 +125,22 @@ const tableSearch = async (item, fieldName, data) => {
   itemModalVisible.value = true;
 }
 
-const fetchOrders = async (formData, tableData) => {
-  //본사 정보
-  const headRes = await axios.get(`/api/search/company/head`, {
-    params : {
-      searchValue: ''
-    }
-  });
-  const headInfo = headRes.data[0];
+const fetchSalesOrders = async (formData, tableData) => {
   //총 가격
-  let totalAmount = Number(formData.totalAmount.replace(/[,원]/g, ''));
-  const res = await axios.post('/api/orders', {
+  const totalPrice = parseInt(String(formData.totalPrice).replace(/[,원]/g, ''));
+  // 주문서 등록
+  const res = await axios.post('/api/sales/orders', {
     orders: {
       ...formData,
-      creatorId: defaultForm.value.creatorId,
-      orderType: '150003', //발주 제안
-      reason: formData.reason.value+"", //발주 사유
-      //수주처 정보
-      orderToId: headInfo.compId,
-      orderTo: headInfo.compName,
-      totalAmount //총 가격
+      paymentType: formData.paymentType.value,
+      totalPrice
     },
-    ordersDetail: tableData.map((e) => {
+    ordersDetail: tableData.map((item) => {
       return {
-        ...e,
-        unit: '130004' //'box'
-      }
+        productId: item.productId,
+        quantity: item.quantity,
+        price: parseInt(String(item.total).replace(/[,원]/g, '')),
+      };
     })
   });
   console.log(res.data);
@@ -172,12 +148,11 @@ const fetchOrders = async (formData, tableData) => {
 
 // 폼과 테이블 데이터를 저장하는 핸들러
 const saveFormHandler = async (formData, tableData) => {
-  console.log('formData:', formData);
-  console.log('tableData:', tableData);
+  console.log('sales:', formData);
+  console.log('salesDetail:', tableData);
 
   for (const form in formData) {
     if (!formData[form]) {
-      if (form == 'note') continue;
       // TODO : 다른 alert() 함수를 사용하면 변경
       alert("폼에 정보에 비어있는 데이터가 있습니다.");
       return;
@@ -196,8 +171,8 @@ const saveFormHandler = async (formData, tableData) => {
 
   confirm.require({
     icon: 'pi pi-info-circle',
-    header: '제안서를 등록',
-    message: '제안서를 등록하시겠습니까?',
+    header: '주문서 등록',
+    message: '주문서를 등록하시겠습니까?',
     rejectProps: {
       label: '취소',
       severity: 'secondary',
@@ -207,7 +182,7 @@ const saveFormHandler = async (formData, tableData) => {
       label: '저장'
     },
     accept: async () => {
-      fetchOrders(formData, tableData);
+      fetchSalesOrders(formData, tableData);
     },
     reject: () => {
       return;
@@ -220,42 +195,46 @@ watch(
   (newVal) => {
     if (tableData.value.value) {
       let total = 0;
+      console.log(tableData.value);
       for (const data of tableData.value.value) {
         const quantity = data.quantity ? data.quantity : 0;
-        total += data.price * data.packQty * quantity;
+        total += data.price * quantity;
+        data.total = (data.price * quantity).toLocaleString() + '원';
       }
       const formData = inputRef.value.getFormData();
-      formData.value.totalAmount = Number(total).toLocaleString()+'원';
+      formData.value.totalPrice = Number(total).toLocaleString()+'원';
     }
   },
   { deep: true }
 );
 
-const getSupplierInfo = async (empId) => {
+const getBranchInfo = async (empId) => {
   const req = await axios.get('/api/orders/user/compInfo', {
     params: {
       empId: empId
     }
   });
 
-  //공급업체 정보
-  if (req.data.compType == '100003')
+  //지점 정보
+  if (req.data.compType == '100002')
     return req.data;
-  return {};
+  return undefined;
 }
 
 onBeforeMount(async () => {
-  const dueDate = new Date();
-  dueDate.setDate(dueDate.getDate() + 8);
-  defaultForm.value.dueDate = convertDate(dueDate);
-
   const user = useAuth().user;
-  defaultForm.value.creatorId = user.value.employeeId;
-  defaultForm.value.creatorName = user.value.empName;
+  defaultForm.value.empId = user.value.employeeId;
+  defaultForm.value.empName = user.value.empName;
+  // console.log(user);
 
-  const supplierInfo = await getSupplierInfo(user.value.employeeId);
-  defaultForm.value.orderFrom = supplierInfo.compName;
-  defaultForm.value.orderFromId = supplierInfo.compId;
+  const branchInfo = await getBranchInfo(user.value.employeeId);
+  if (branchInfo) {
+    defaultForm.value.compName = branchInfo.compName;
+    defaultForm.value.compId = branchInfo.compId;
+  } else {
+    // TODO : 다른 alert() 함수를 사용하면 변경
+    alert("지점 정보가 없습니다. 관리자에게 문의하세요.");
+  }
 });
 
 onMounted(() => {
@@ -264,13 +243,13 @@ onMounted(() => {
 </script>
 <template>
   <ConfirmDialog />
-  <InputDataTable ref="inputRef" title="발주서정보" tableTitle="제품 목록"
+  <InputDataTable ref="inputRef" title="주문정보" tableTitle="상품목록"
     :defaultForm="defaultForm" :formSchema="formSchema"
     :defaultTable="defaultTable" :columns="columns"
-    @tableSearch="tableSearch"
+    @formSearch="formSearch" @tableSearch="tableSearch"
     @submit="saveFormHandler" />
-    
-  <DialogModal title="제품 모달" :selectionMode="'single'"
+
+  <DialogModal title="상품 모달" :selectionMode="'single'" placeholder="Name Search..."
     :display="itemModalVisible" :return="itemModalReturn"
     :headers="itemModalHeaders" :items="itemModalItems"
     @close="itemCloseModal" @confirm="itemConfirmModal" @search-modal="itemSearchModal" />

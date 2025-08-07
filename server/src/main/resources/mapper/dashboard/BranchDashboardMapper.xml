@@ -1,0 +1,348 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.olivin.app.dashboard.mapper.BranchDashboardMapper">
+
+    <!-- 지점 정보 조회 -->
+    <select id="getBranchInfo" resultType="map">
+        SELECT 
+            c.COMP_ID,
+            c.COMP_NAME,
+            c.COMP_TYPE,
+            c.ADDRESS,
+            c.PHONE,
+            dc.CODE_NAME as COMP_TYPE_NAME
+        FROM COMPANYS c
+        LEFT JOIN DATA_CODES dc ON c.COMP_TYPE = dc.CODE_VALUE
+        WHERE c.COMP_ID = #{compId}
+    </select>
+
+    <!-- 지점별 당일 매출 -->
+    <select id="getTodaySales" resultType="java.math.BigDecimal">
+        SELECT NVL(SUM(so.TOTAL_PRICE), 0) 
+        FROM SALES_ORDERS so
+        WHERE so.COMP_ID = #{compId}
+        AND TRUNC(SYSDATE) = TRUNC(SYSDATE)
+        AND so.STATUS = '020001'
+    </select>
+
+    <!-- 지점별 전일 매출 -->
+    <select id="getYesterdaySales" resultType="java.math.BigDecimal">
+        SELECT NVL(SUM(so.TOTAL_PRICE), 0) 
+        FROM SALES_ORDERS so
+        WHERE so.COMP_ID = #{compId}
+        AND TRUNC(SYSDATE) - 1 = TRUNC(SYSDATE) - 1
+        AND so.STATUS = '020001'
+    </select>
+
+    <!-- 지점별 월간 매출 -->
+    <select id="getMonthlySales" resultType="java.math.BigDecimal">
+        SELECT NVL(SUM(so.TOTAL_PRICE), 0) 
+        FROM SALES_ORDERS so
+        WHERE so.COMP_ID = #{compId}
+        AND TO_CHAR(SYSDATE, 'YYYY-MM') = TO_CHAR(SYSDATE, 'YYYY-MM')
+        AND so.STATUS = '020001'
+    </select>
+
+    <!-- 지점별 월간 매출 목표 -->
+    <select id="getMonthlyTarget" resultType="java.math.BigDecimal">
+        SELECT sp.TARGET_AMOUNT / 3 as MONTHLY_TARGET
+        FROM SALES_PLAN sp
+        WHERE sp.COMP_ID = #{compId}
+        AND sp.YEAR = EXTRACT(YEAR FROM SYSDATE)
+        AND sp.QUARTER = CEIL(EXTRACT(MONTH FROM SYSDATE) / 3)
+    </select>
+
+    <!-- 지점별 현재 재고 총액 -->
+    <select id="getCurrentInventoryValue" resultType="java.math.BigDecimal">
+        SELECT NVL(SUM(ipd.REMAIN_QUANTITY * p.PURCHASE_PRICE), 0) as INVENTORY_VALUE
+        FROM INBND_PRODUCT_D ipd
+        INNER JOIN INBND_PRODUCT ip ON ipd.INBND_PRODUCT_NO = ip.INBND_PRODUCT_NO
+        INNER JOIN INBND i ON ip.INBND_NO = i.INBND_NO
+        INNER JOIN PRODUCTS p ON ip.PRODUCT_ID = p.PRODUCT_ID
+        WHERE i.INBND_TO = #{compId}
+        AND ipd.REMAIN_QUANTITY > 0
+        AND ipd.INBND_STATUS = '000001'
+    </select>
+
+    <!-- 지점별 최근 7일 매출 트렌드 -->
+    <select id="getWeeklySalesTrend" resultType="map">
+        SELECT 
+            TO_CHAR(date_range.sale_date, 'MM-DD') as SALE_DATE,
+            NVL(daily_sales.DAILY_SALES, 0) as DAILY_SALES
+        FROM (
+            SELECT TRUNC(SYSDATE) - LEVEL + 1 as sale_date
+            FROM DUAL
+            CONNECT BY LEVEL &lt;= 7
+        ) date_range
+        LEFT JOIN (
+            SELECT 
+                TRUNC(SYSDATE) as SALE_DATE,
+                SUM(TOTAL_PRICE) as DAILY_SALES
+            FROM SALES_ORDERS
+            WHERE COMP_ID = #{compId}
+            AND STATUS = '020001'
+            AND TRUNC(SYSDATE) BETWEEN TRUNC(SYSDATE) - 6 AND TRUNC(SYSDATE)
+            GROUP BY TRUNC(SYSDATE)
+        ) daily_sales ON date_range.sale_date = daily_sales.SALE_DATE
+        ORDER BY date_range.sale_date
+    </select>
+
+    <!-- 지점별 카테고리별 매출 구성 -->
+    <select id="getCategorySalesDistribution" resultType="map">
+        SELECT 
+            p.CATEGORY_MAIN as CATEGORY,
+            SUM(sod.PRICE * sod.QUANTITY) as SALES
+        FROM SALES_ORDERS_DETAIL sod
+        INNER JOIN SALES_ORDERS so ON sod.SO_ID = so.SO_ID
+        INNER JOIN PRODUCTS p ON sod.PRODUCT_ID = p.PRODUCT_ID
+        WHERE so.COMP_ID = #{compId}
+        AND so.STATUS = '020001'
+        AND TO_CHAR(SYSDATE, 'YYYY-MM') = TO_CHAR(SYSDATE, 'YYYY-MM')
+        GROUP BY p.CATEGORY_MAIN
+        ORDER BY SALES DESC
+    </select>
+
+    <!-- 지점별 전체 재고 품목 수 -->
+    <select id="getTotalInventoryItems" resultType="integer">
+        SELECT COUNT(DISTINCT ip.PRODUCT_ID) as TOTAL_ITEMS
+        FROM INBND_PRODUCT_D ipd
+        INNER JOIN INBND_PRODUCT ip ON ipd.INBND_PRODUCT_NO = ip.INBND_PRODUCT_NO
+        INNER JOIN INBND i ON ip.INBND_NO = i.INBND_NO
+        WHERE i.INBND_TO = #{compId}
+        AND ipd.REMAIN_QUANTITY > 0
+        AND ipd.INBND_STATUS = '000001'
+    </select>
+
+    <!-- 지점별 발주 필요 상품 수 -->
+    <select id="getLowStockItemsCount" resultType="integer">
+        <![CDATA[
+        SELECT COUNT(*) as LOW_STOCK_COUNT
+        FROM (
+            SELECT 
+                ip.PRODUCT_ID,
+                SUM(ipd.REMAIN_QUANTITY) as CURRENT_STOCK,
+                p.SAFETY_STOCK
+            FROM INBND_PRODUCT_D ipd
+            INNER JOIN INBND_PRODUCT ip ON ipd.INBND_PRODUCT_NO = ip.INBND_PRODUCT_NO
+            INNER JOIN INBND i ON ip.INBND_NO = i.INBND_NO
+            INNER JOIN PRODUCTS p ON ip.PRODUCT_ID = p.PRODUCT_ID
+            WHERE i.INBND_TO = #{compId}
+            AND ipd.INBND_STATUS = '000001'
+            GROUP BY ip.PRODUCT_ID, p.SAFETY_STOCK
+            HAVING SUM(ipd.REMAIN_QUANTITY) < p.SAFETY_STOCK
+        )
+        ]]>
+    </select>
+
+    <!-- 지점별 품절 상품 수 -->
+    <select id="getStockoutItemsCount" resultType="integer">
+        <![CDATA[
+        SELECT COUNT(*) as STOCKOUT_COUNT
+        FROM (
+            SELECT ip.PRODUCT_ID
+            FROM INBND_PRODUCT_D ipd
+            INNER JOIN INBND_PRODUCT ip ON ipd.INBND_PRODUCT_NO = ip.INBND_PRODUCT_NO
+            INNER JOIN INBND i ON ip.INBND_NO = i.INBND_NO
+            WHERE i.INBND_TO = #{compId}
+            AND ipd.INBND_STATUS = '000001'
+            GROUP BY ip.PRODUCT_ID
+            HAVING SUM(ipd.REMAIN_QUANTITY) = 0
+        )
+        ]]>
+    </select>
+
+    <!-- 지점별 발주 필요 상품 리스트 -->
+    <select id="getLowStockItems" resultType="map">
+        <![CDATA[
+        SELECT 
+            p.PRODUCT_ID,
+            p.PRODUCT_NAME,
+            dc1.CODE_NAME as CATEGORY_NAME,
+            SUM(ipd.REMAIN_QUANTITY) as CURRENT_STOCK,
+            p.SAFETY_STOCK,
+            p.PURCHASE_PRICE,
+            c.COMP_NAME as SUPPLIER_NAME
+        FROM INBND_PRODUCT_D ipd
+        INNER JOIN INBND_PRODUCT ip ON ipd.INBND_PRODUCT_NO = ip.INBND_PRODUCT_NO
+        INNER JOIN INBND i ON ip.INBND_NO = i.INBND_NO
+        INNER JOIN PRODUCTS p ON ip.PRODUCT_ID = p.PRODUCT_ID
+        LEFT JOIN DATA_CODES dc1 ON p.CATEGORY_MAIN = dc1.CODE_VALUE
+        LEFT JOIN COMPANYS c ON p.COMP_ID = c.COMP_ID
+        WHERE i.INBND_TO = #{compId}
+        AND ipd.INBND_STATUS = '000001'
+        GROUP BY p.PRODUCT_ID, p.PRODUCT_NAME, dc1.CODE_NAME, p.SAFETY_STOCK, p.PURCHASE_PRICE, c.COMP_NAME
+        HAVING SUM(ipd.REMAIN_QUANTITY) < p.SAFETY_STOCK
+        ORDER BY (SUM(ipd.REMAIN_QUANTITY) / p.SAFETY_STOCK) ASC
+        ]]>
+    </select>
+
+    <!-- 지점별 품절 임박 상품 리스트 -->
+    <select id="getCriticalStockItems" resultType="map">
+        <![CDATA[
+        SELECT 
+            p.PRODUCT_ID,
+            p.PRODUCT_NAME,
+            dc1.CODE_NAME as CATEGORY_NAME,
+            SUM(ipd.REMAIN_QUANTITY) as CURRENT_STOCK,
+            p.SAFETY_STOCK,
+            ROUND((SUM(ipd.REMAIN_QUANTITY) / p.SAFETY_STOCK) * 100, 1) as STOCK_RATIO
+        FROM INBND_PRODUCT_D ipd
+        INNER JOIN INBND_PRODUCT ip ON ipd.INBND_PRODUCT_NO = ip.INBND_PRODUCT_NO
+        INNER JOIN INBND i ON ip.INBND_NO = i.INBND_NO
+        INNER JOIN PRODUCTS p ON ip.PRODUCT_ID = p.PRODUCT_ID
+        LEFT JOIN DATA_CODES dc1 ON p.CATEGORY_MAIN = dc1.CODE_VALUE
+        WHERE i.INBND_TO = #{compId}
+        AND ipd.INBND_STATUS = '000001'
+        AND p.SAFETY_STOCK > 0
+        GROUP BY p.PRODUCT_ID, p.PRODUCT_NAME, dc1.CODE_NAME, p.SAFETY_STOCK
+        HAVING SUM(ipd.REMAIN_QUANTITY) > 0 
+        AND SUM(ipd.REMAIN_QUANTITY) <= (p.SAFETY_STOCK * 0.2)
+        ORDER BY (SUM(ipd.REMAIN_QUANTITY) / p.SAFETY_STOCK) ASC
+        ]]>
+    </select>
+
+    <!-- 지점별 매출원가 -->
+    <select id="getCostOfGoodsSold" resultType="java.math.BigDecimal">
+        SELECT NVL(SUM(sod.QUANTITY * p.PURCHASE_PRICE), 0) as COGS
+        FROM SALES_ORDERS_DETAIL sod
+        INNER JOIN SALES_ORDERS so ON sod.SO_ID = so.SO_ID
+        INNER JOIN PRODUCTS p ON sod.PRODUCT_ID = p.PRODUCT_ID
+        WHERE so.COMP_ID = #{compId}
+        AND so.STATUS = '020001'
+        AND TO_CHAR(SYSDATE, 'YYYY-MM') = TO_CHAR(SYSDATE, 'YYYY-MM')
+    </select>
+
+    <!-- 지점별 평균 재고 가치 -->
+    <select id="getAverageInventoryValue" resultType="java.math.BigDecimal">
+        <![CDATA[
+        SELECT NVL(AVG(daily_inventory.INVENTORY_VALUE), 0) as AVG_INVENTORY_VALUE
+        FROM (
+            SELECT 
+                TRUNC(SYSDATE) - LEVEL + 1 as calc_date,
+                (
+                    SELECT NVL(SUM(ipd.REMAIN_QUANTITY * p.PURCHASE_PRICE), 0)
+                    FROM INBND_PRODUCT_D ipd
+                    INNER JOIN INBND_PRODUCT ip ON ipd.INBND_PRODUCT_NO = ip.INBND_PRODUCT_NO
+                    INNER JOIN INBND i ON ip.INBND_NO = i.INBND_NO
+                    INNER JOIN PRODUCTS p ON ip.PRODUCT_ID = p.PRODUCT_ID
+                    WHERE i.INBND_TO = #{compId}
+                    AND ipd.REMAIN_QUANTITY > 0
+                    AND ipd.INBND_STATUS = '000001'
+                ) as INVENTORY_VALUE
+            FROM DUAL
+             CONNECT BY LEVEL <= 30
+        ) daily_inventory
+         ]]>
+    </select>
+
+    <!-- 지점별 상위 판매 상품 TOP 5 -->
+    <select id="getTopSellingProducts" resultType="map">
+        <![CDATA[
+        SELECT * FROM (
+            SELECT 
+                p.PRODUCT_ID,
+                p.PRODUCT_NAME,
+                dc1.CODE_NAME as CATEGORY_NAME,
+                SUM(sod.QUANTITY) as TOTAL_QUANTITY,
+                SUM(sod.PRICE * sod.QUANTITY) as TOTAL_SALES
+            FROM SALES_ORDERS_DETAIL sod
+            INNER JOIN SALES_ORDERS so ON sod.SO_ID = so.SO_ID
+            INNER JOIN PRODUCTS p ON sod.PRODUCT_ID = p.PRODUCT_ID
+            LEFT JOIN DATA_CODES dc1 ON p.CATEGORY_MAIN = dc1.CODE_VALUE
+            WHERE so.COMP_ID = #{compId}
+            AND so.STATUS = '020001'
+            AND TO_CHAR(SYSDATE, 'YYYY-MM') = TO_CHAR(SYSDATE, 'YYYY-MM')
+            GROUP BY p.PRODUCT_ID, p.PRODUCT_NAME, dc1.CODE_NAME
+            ORDER BY TOTAL_SALES DESC
+        ) WHERE ROWNUM <= 5
+        ]]>
+    </select>
+
+    <!-- 지점별 당일 거래 건수 -->
+    <select id="getTodayTransactionCount" resultType="integer">
+        SELECT COUNT(*) as TRANSACTION_COUNT
+        FROM SALES_ORDERS so
+        WHERE so.COMP_ID = #{compId}
+        AND TRUNC(SYSDATE) = TRUNC(SYSDATE)
+        AND so.STATUS = '020001'
+    </select>
+
+    <!-- 지점별 당일 평균 객단가 -->
+    <select id="getTodayAverageOrderValue" resultType="java.math.BigDecimal">
+        SELECT NVL(AVG(so.TOTAL_PRICE), 0) as AVG_ORDER_VALUE
+        FROM SALES_ORDERS so
+        WHERE so.COMP_ID = #{compId}
+        AND TRUNC(SYSDATE) = TRUNC(SYSDATE)
+        AND so.STATUS = '020001'
+    </select>
+
+    <!-- 지점별 중요 알림 목록 -->
+    <select id="getBranchAlerts" resultType="map">
+        SELECT * FROM (
+            -- 품절 알림
+            SELECT 
+                'STOCKOUT' as ALERT_TYPE,
+                'HIGH' as PRIORITY,
+                '품절 발생' as TITLE,
+                p.PRODUCT_NAME || '이(가) 품절되었습니다.' as MESSAGE,
+                SYSDATE as CREATED_AT
+            FROM INBND_PRODUCT_D ipd
+            INNER JOIN INBND_PRODUCT ip ON ipd.INBND_PRODUCT_NO = ip.INBND_PRODUCT_NO
+            INNER JOIN INBND i ON ip.INBND_NO = i.INBND_NO
+            INNER JOIN PRODUCTS p ON ip.PRODUCT_ID = p.PRODUCT_ID
+            WHERE i.INBND_TO = #{compId}
+            AND ipd.INBND_STATUS = '000001'
+            GROUP BY p.PRODUCT_ID, p.PRODUCT_NAME
+            HAVING SUM(ipd.REMAIN_QUANTITY) = 0
+            
+            UNION ALL
+            
+            -- 긴급 발주 필요 알림
+            SELECT 
+                'CRITICAL_STOCK' as ALERT_TYPE,
+                'HIGH' as PRIORITY,
+                '긴급 발주 필요' as TITLE,
+                p.PRODUCT_NAME || '의 재고가 매우 부족합니다. (현재: ' || 
+                SUM(ipd.REMAIN_QUANTITY) || ', 안전재고: ' || p.SAFETY_STOCK || ')' as MESSAGE,
+                SYSDATE as CREATED_AT
+            FROM INBND_PRODUCT_D ipd
+            INNER JOIN INBND_PRODUCT ip ON ipd.INBND_PRODUCT_NO = ip.INBND_PRODUCT_NO
+            INNER JOIN INBND i ON ip.INBND_NO = i.INBND_NO
+            INNER JOIN PRODUCTS p ON ip.PRODUCT_ID = p.PRODUCT_ID
+            WHERE i.INBND_TO = #{compId}
+            AND ipd.INBND_STATUS = '000001'
+            AND p.SAFETY_STOCK > 0
+            GROUP BY p.PRODUCT_ID, p.PRODUCT_NAME, p.SAFETY_STOCK
+            HAVING SUM(ipd.REMAIN_QUANTITY) > 0 
+            AND SUM(ipd.REMAIN_QUANTITY) &lt;= (p.SAFETY_STOCK * 0.2)
+            
+            UNION ALL
+            
+            -- 일반 발주 필요 알림
+            SELECT 
+                'LOW_STOCK' as ALERT_TYPE,
+                'MEDIUM' as PRIORITY,
+                '발주 권장' as TITLE,
+                p.PRODUCT_NAME || '의 재고가 안전재고 이하입니다.' as MESSAGE,
+                SYSDATE as CREATED_AT
+            FROM INBND_PRODUCT_D ipd
+            INNER JOIN INBND_PRODUCT ip ON ipd.INBND_PRODUCT_NO = ip.INBND_PRODUCT_NO
+            INNER JOIN INBND i ON ip.INBND_NO = i.INBND_NO
+            INNER JOIN PRODUCTS p ON ip.PRODUCT_ID = p.PRODUCT_ID
+            WHERE i.INBND_TO = #{compId}
+            AND ipd.INBND_STATUS = '000001'
+            GROUP BY p.PRODUCT_ID, p.PRODUCT_NAME, p.SAFETY_STOCK
+            HAVING SUM(ipd.REMAIN_QUANTITY) &lt; p.SAFETY_STOCK
+            AND SUM(ipd.REMAIN_QUANTITY) > (p.SAFETY_STOCK * 0.2)
+        ) alerts
+        ORDER BY 
+            CASE PRIORITY 
+                WHEN 'HIGH' THEN 1 
+                WHEN 'MEDIUM' THEN 2 
+                ELSE 3 
+            END,
+            CREATED_AT DESC
+    </select>
+
+</mapper>
