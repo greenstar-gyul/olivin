@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch } from 'vue';
+import { ref, watch, computed } from 'vue';
 import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
 
@@ -28,6 +28,10 @@ const props = defineProps({
   checkType: {
     type: String,
     default: 'single'
+  },
+  scrollHeight: {
+    type: String,
+    default: '400px'
   }
 });
 
@@ -117,6 +121,19 @@ const onRowUnselect = (event) => {
   emit('rowUnselect', event.data);
 };
 
+// 선택을 해제하는 메서드
+const clearSelection = () => {
+  selectedItems.value = props.checkType === 'single' ? null : [];
+  console.log('Selection cleared in BasicTable');
+};
+
+// 부모 컴포넌트에서 접근할 수 있도록 expose
+defineExpose({
+  clearSelection
+});
+
+const header = computed(() => props.header);
+
 </script>
 <template>
   <!-- 📋 검색 조회 테이블 영역 -->
@@ -136,7 +153,7 @@ const onRowUnselect = (event) => {
     
     <!-- DataTable (PrimeVue) -->
     <DataTable v-model:selection="selectedItems" :value="props.data" :dataKey="props.dataKey" showGridlines scrollable
-      scrollHeight="400px" tableStyle="min-width: 50rem" @rowSelect="onRowSelect" @rowUnselect="onRowUnselect"
+      :scrollHeight="props.scrollHeight" tableStyle="min-width: 50rem" @rowSelect="onRowSelect" @rowUnselect="onRowUnselect"
       :selectionMode="props.checked ? props.checkType : null">
 
       <Column v-if="props.checked" :selectionMode="props.checkType" headerStyle="width: 3rem"></Column>

@@ -7,7 +7,7 @@
 수정이력 :
 - 2025.07.30 : 최초 작성
 - 2025.08.01 : 재고 조회 LOT 단위로 출력하도록 수정
-- 20
+- 2025.08.07 : 본사 재고 조회 페이지 변경으로 인한 수정
 -->
 <mapper namespace="com.olivin.app.inventory.mapper.HeadInventoryMapper">
     <!-- 본사 재고 전체 조회 -->
@@ -53,6 +53,7 @@
         ORDER BY p.product_id
     </select>
      -->
+    <!-- 본사 재고 전체 조회, 테스트용 -->
     <select id="selectAllHeadInventory" resultType="HeadInventoryVO">
         WITH lot_stocks AS (
             SELECT inp.product_id,
@@ -62,21 +63,21 @@
                     JOIN inbnd inb ON inb.inbnd_no = SUBSTR(ipd.inbnd_d_no, 1, 13)
                     JOIN inbnd_product inp ON inp.inbnd_product_no = ipd.inbnd_product_no
             WHERE  ipd.inbnd_status = '000001'
-                AND  inb.inbnd_to = 'COM10001'
+              AND  inb.inbnd_to = 'COM10001'
             GROUP BY inp.product_id, ipd.lot_no
         )
         SELECT p.product_id,
-            p.product_name,
-            ls.lot_no,
-            get_datacode_name(p.category_main) as category_main,
-            get_datacode_name(p.category_sub) as category_sub,
-            p.vendor_name,
-            p.product_spec,
-            NVL(SUM(ls.stock_quantity), 0) AS stock_quantity,
-            p.safety_stock
+               p.product_name,
+               ls.lot_no,
+               get_datacode_name(p.category_main) as category_main,
+               get_datacode_name(p.category_sub) as category_sub,
+               p.vendor_name,
+               p.product_spec,
+               NVL(SUM(ls.stock_quantity), 0) AS stock_quantity,
+               p.safety_stock
         FROM   products p LEFT JOIN lot_stocks ls ON p.product_id = ls.product_id
         GROUP BY p.product_id, p.product_name, ls.lot_no, p.category_main, p.category_sub, 
-                p.vendor_name, p.product_spec, p.pack_qty, p.safety_stock
+                 p.vendor_name, p.product_spec, p.pack_qty, p.safety_stock
         ORDER BY p.product_id
     </select>
 
@@ -133,40 +134,65 @@
                 p.vendor_name, p.product_spec, p.pack_qty, p.safety_stock
         ORDER BY p.product_id
     </select> -->
+    <!-- 메인 조회 테이블 -->
     <select id="selectHeadInventoryList" parameterType="HeadInventoryVO" resultType="HeadInventoryVO">
         WITH lot_stocks AS (
             SELECT inp.product_id,
-                    ipd.lot_no,
-                    SUM(ipd.remain_quantity) AS stock_quantity
+                   ipd.lot_no,
+                   SUM(ipd.remain_quantity) AS stock_quantity
             FROM   inbnd_product_d ipd 
-                    JOIN inbnd inb ON inb.inbnd_no = SUBSTR(ipd.inbnd_d_no, 1, 13)
-                    JOIN inbnd_product inp ON inp.inbnd_product_no = ipd.inbnd_product_no
+                   JOIN inbnd inb ON inb.inbnd_no = SUBSTR(ipd.inbnd_d_no, 1, 13)
+                   JOIN inbnd_product inp ON inp.inbnd_product_no = ipd.inbnd_product_no
             WHERE  ipd.inbnd_status = '000001'
-                AND  inb.inbnd_to = 'COM10001'
+              AND  inb.inbnd_to = 'COM10001'
             GROUP BY inp.product_id, ipd.lot_no
         )
         SELECT p.product_id,
-            p.product_name,
-            ls.lot_no,
-            get_datacode_name(p.category_main) as category_main,
-            get_datacode_name(p.category_sub) as category_sub,
-            p.vendor_name,
-            p.product_spec,
-            NVL(SUM(ls.stock_quantity), 0) AS stock_quantity,
-            p.safety_stock
+               p.product_name,
+               get_datacode_name(p.category_main) as category_main,
+               get_datacode_name(p.category_sub) as category_sub,
+               p.vendor_name,
+               NVL(SUM(ls.stock_quantity), 0) AS stock_quantity,
+               p.safety_stock
         FROM   products p LEFT JOIN lot_stocks ls ON p.product_id = ls.product_id
         WHERE  1=1
         <if test="productName != null and productName != ''">
-            AND p.product_name LIKE '%' || #{productName} || '%'
+          AND p.product_name LIKE '%' || #{productName} || '%'
         </if>
         <if test="categorySub != null and categorySub != ''">
-            AND get_datacode_name(category_sub) = #{categorySub}
+          AND get_datacode_name(category_sub) = #{categorySub}
         </if>
         <if test="vendorName != null and vendorName != ''">
-            AND p.vendor_name LIKE '%' || #{vendorName} || '%'
+          AND p.vendor_name LIKE '%' || #{vendorName} || '%'
         </if>
-        GROUP BY p.product_id, p.product_name, ls.lot_no, p.category_main, p.category_sub, 
-                p.vendor_name, p.product_spec, p.pack_qty, p.safety_stock
+        GROUP BY p.product_id, p.product_name, p.category_main, p.category_sub, 
+                 p.vendor_name, p.pack_qty, p.safety_stock
         ORDER BY p.product_id
+    </select>
+
+    <!-- LOT별 조회 테이블. 상품 코드로 LOT별 재고 조회 -->
+    <select id="selectHeadInventoryLot" parameterType="String" resultType="HeadInventoryVO">
+        WITH lot_stocks AS (
+            SELECT inp.product_id,
+                   ipd.lot_no,
+                   SUM(ipd.remain_quantity) AS stock_quantity
+            FROM   inbnd_product_d ipd 
+                   JOIN inbnd inb ON inb.inbnd_no = SUBSTR(ipd.inbnd_d_no, 1, 13)
+                   JOIN inbnd_product inp ON inp.inbnd_product_no = ipd.inbnd_product_no
+            WHERE  ipd.inbnd_status = '000001'
+              AND  inb.inbnd_to = 'COM10001'
+            GROUP BY inp.product_id, ipd.lot_no
+        )
+        SELECT p.product_id,
+               p.product_name,
+               ls.lot_no,
+               p.vendor_name,
+               p.product_spec,
+               NVL(SUM(ls.stock_quantity), 0) AS stock_quantity
+        FROM   products p LEFT JOIN lot_stocks ls ON p.product_id = ls.product_id
+        WHERE  p.product_id = #{productId}
+        GROUP BY p.product_id, p.product_name, ls.lot_no, 
+                 p.vendor_name, p.product_spec, p.pack_qty
+        ORDER BY ls.lot_no
     </select>
 </mapper>
