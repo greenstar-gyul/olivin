@@ -342,15 +342,7 @@ const resetList = () => {
   loadStockData();
 }
 
-// 사용자 권한에 따른 필터 설정
-const setupFilters = () => {
-  console.log('Setting up filters for user:', user.value);
-  // console.log(searchFormRef.value.searchOptions.store);
-}
-
 onMounted(() => {
-  // 사용자 권한에 따른 필터 설정
-  setupFilters();
   // 재고 데이터 로드
   loadStockData();
 });

@@ -15,4 +15,5 @@ import com.olivin.app.sales.service.SalesHistoryVO;
  */
 public interface SalesHistoryMapper {
     List<SalesHistoryVO> selectHistoryAll();
+    List<SalesHistoryVO> selectSalesHistoryList(SalesHistoryVO salesHistoryVO);
 }
