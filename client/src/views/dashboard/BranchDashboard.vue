@@ -1,23 +1,8 @@
 <template>
-  <div class="branch-dashboard">
+  <div class="hq-dashboard">
     <!-- 헤더 -->
     <div class="dashboard-header">
-      <h1 class="dashboard-title">
-        {{ branchName }} 대시보드
-        <span class="branch-badge" v-if="branchType">{{ branchType }}</span>
-      </h1>
-      
-      <!-- 본사용 지점 선택 -->
-      <div v-if="isHqUser" class="branch-selector">
-        <label for="branchSelect">지점 선택:</label>
-        <select id="branchSelect" v-model="selectedBranchId" @change="onBranchChange">
-          <option value="">전체 지점 통합</option>
-          <option v-for="branch in availableBranches" :key="branch.COMP_ID" :value="branch.COMP_ID">
-            {{ branch.COMP_NAME }}
-          </option>
-        </select>
-      </div>
-      
+      <h1 class="dashboard-title">본사 SCM 대시보드</h1>
       <div class="header-actions">
         <button @click="refreshData" class="refresh-button" :disabled="isLoading">
           <span v-if="!isLoading">🔄 새로고침</span>
@@ -35,47 +20,51 @@
       <button @click="errorMessage = ''" class="close-error">✕</button>
     </div>
 
-    <!-- KPI 카드들 -->
+    <!-- 🔥 수정된 KPI 카드들 -->
     <div class="kpi-section">
       <div class="kpi-grid">
-        <div class="kpi-card">
+        <div class="kpi-card sales">
           <div class="kpi-content">
-            <h3>금일 매출</h3>
-            <div class="kpi-value">{{ kpiData.todaySales || '로딩 중...' }}</div>
-            <div :class="['kpi-change', getChangeClass(kpiData.dailyGrowth)]">
-              전일 대비 {{ kpiData.dailyGrowth || '계산 중...' }}
+            <h3>월간 총 매출액</h3>
+            <div class="kpi-value">{{ kpiData.totalSales || '로딩 중...' }}</div>
+            <div :class="['kpi-change', getChangeClass(kpiData.salesGrowth)]">
+              {{ kpiData.salesGrowth || '계산 중...' }}
             </div>
           </div>
+          <div class="kpi-icon">💰</div>
         </div>
 
-        <div class="kpi-card">
+        <div class="kpi-card growth">
           <div class="kpi-content">
-            <h3>월간 매출</h3>
-            <div class="kpi-value">{{ kpiData.monthlySales || '로딩 중...' }}</div>
+            <h3>전월 대비 매출 증감율</h3>
+            <div class="kpi-value">{{ kpiData.revenueGrowthRate || '로딩 중...' }}</div>
             <div class="kpi-change">
-              목표 달성률: {{ kpiData.monthlyAchievement || '계산 중...' }}
+              {{ kpiData.revenueGrowthChange || '전월 대비' }}
             </div>
           </div>
+          <div class="kpi-icon">📈</div>
         </div>
 
-        <div class="kpi-card">
+        <div class="kpi-card outbound">
           <div class="kpi-content">
-            <h3>현재 재고 가치</h3>
-            <div class="kpi-value">{{ kpiData.inventoryValue || '로딩 중...' }}</div>
-            <div class="kpi-change">
-              품목 수: {{ formatNumber(kpiData.totalInventoryItems) }}개
+            <h3>출고 대기 건수</h3>
+            <div class="kpi-value">{{ kpiData.pendingOutboundCount || '로딩 중...' }}</div>
+            <div :class="['kpi-change', getChangeClass(kpiData.outboundCountChange, true)]">
+              {{ kpiData.outboundCountChange || '계산 중...' }}
             </div>
           </div>
+          <div class="kpi-icon">📦</div>
         </div>
 
-        <div class="kpi-card">
+        <div class="kpi-card purchase">
           <div class="kpi-content">
-            <h3>금일 거래</h3>
-            <div class="kpi-value">{{ formatNumber(kpiData.todayTransactions) }}건</div>
-            <div class="kpi-change">
-              객단가: {{ kpiData.averageOrderValue || '계산 중...' }}
+            <h3>대기중인 발주서 수</h3>
+            <div class="kpi-value">{{ kpiData.pendingPurchaseOrderCount || '로딩 중...' }}</div>
+            <div :class="['kpi-change', getChangeClass(kpiData.poCountChange, true)]">
+              {{ kpiData.poCountChange || '계산 중...' }}
             </div>
           </div>
+          <div class="kpi-icon">📋</div>
         </div>
       </div>
     </div>
@@ -83,9 +72,9 @@
     <!-- 차트 섹션 -->
     <div class="charts-section">
       <div class="charts-grid">
-        <!-- 주간 매출 트렌드 차트 -->
+        <!-- 매출 트렌드 차트 -->
         <div class="chart-card">
-          <h3>주간 매출 트렌드 (최근 7일)</h3>
+          <h3>카테고리별 매출 트렌드</h3>
           <div class="chart-container">
             <canvas ref="salesTrendChart"></canvas>
           </div>
@@ -104,87 +93,63 @@
     <!-- 상세 정보 섹션 -->
     <div class="details-section">
       <div class="details-grid">
-        <!-- 상위 판매 상품 -->
+        <!-- 상위 공급업체 -->
         <div class="detail-card">
-          <h3>이번 달 베스트 상품 TOP 5</h3>
-          <div class="items-list">
-            <div v-if="topProducts.length === 0" class="no-data-message">
-              판매 데이터를 불러오는 중입니다...
+          <h3>상위 공급업체 성과 TOP 5</h3>
+          <div class="suppliers-list">
+            <div v-if="topSuppliers.length === 0" class="no-data-message">
+              공급업체 데이터를 불러오는 중입니다...
             </div>
-            <div v-for="(product, index) in topProducts" :key="product.PRODUCT_ID" class="item-row top-product">
-              <div class="rank-badge">{{ index + 1 }}</div>
-              <div class="item-info">
-                <div class="item-name">{{ product.PRODUCT_NAME }}</div>
-                <div class="item-category">{{ product.CATEGORY_NAME }}</div>
+            <div v-for="supplier in topSuppliers" :key="supplier.supplier_name" class="supplier-item">
+              <div class="supplier-info">
+                <div class="supplier-name">{{ supplier.supplier_name }}</div>
+                <div class="supplier-revenue">{{ formatCurrency(supplier.revenue) }}</div>
               </div>
-              <div class="item-stats">
-                <div class="quantity">{{ formatNumber(product.TOTAL_QUANTITY) }}개 판매</div>
-                <div class="sales">{{ formatCurrency(product.TOTAL_SALES) }}</div>
+              <div class="supplier-metrics">
+                <span class="metric">납기: {{ supplier.delivery_rate || 0 }}%</span>
+                <span class="metric">품질: {{ supplier.quality_score || 0 }}점</span>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- 재고 현황 요약 -->
+        <!-- 재고 현황 -->
         <div class="detail-card">
-          <h3>재고 현황 요약</h3>
-          <div class="inventory-summary">
-            <div class="summary-row">
-              <span class="summary-label">전체 품목</span>
-              <span class="summary-value">{{ formatNumber(kpiData.totalInventoryItems) }}개</span>
+          <h3>재고 현황</h3>
+          <div class="inventory-stats">
+            <div class="stat-item">
+              <span class="stat-label">총 품목 수</span>
+              <span class="stat-value">{{ formatNumber(inventoryData.totalItems) }}개</span>
             </div>
-            <div class="summary-row warning">
-              <span class="summary-label">발주 필요</span>
-              <span class="summary-value">{{ formatNumber(kpiData.lowStockItems) }}개</span>
+            <div class="stat-item">
+              <span class="stat-label">안전재고 미달</span>
+              <span class="stat-value warning">{{ formatNumber(inventoryData.lowStockItems) }}개</span>
             </div>
-            <div class="summary-row danger">
-              <span class="summary-label">품절 상품</span>
-              <span class="summary-value">{{ formatNumber(kpiData.stockoutItems) }}개</span>
+            <div class="stat-item">
+              <span class="stat-label">품절 품목</span>
+              <span class="stat-value danger">{{ formatNumber(inventoryData.stockoutItems) }}개</span>
             </div>
-            <div class="summary-row">
-              <span class="summary-label">재고 총액</span>
-              <span class="summary-value">{{ kpiData.inventoryValue }}</span>
+            <div class="stat-item">
+              <span class="stat-label">총 재고 가치</span>
+              <span class="stat-value">{{ inventoryData.totalValue || '계산 중...' }}</span>
             </div>
           </div>
         </div>
 
-        <!-- 알림 센터 (발주 필요 상품 포함) -->
-        <div class="detail-card">
-          <h3>알림 센터</h3>
+        <!-- 긴급 알림 -->
+        <div class="detail-card alerts">
+          <h3>긴급 알림</h3>
           <div class="alerts-list">
-            <div v-if="alerts.length === 0 && lowStockItems.length === 0" class="no-data-message">
-              현재 알림이 없습니다.
+            <div v-if="alerts.length === 0" class="no-data-message">
+              현재 긴급 알림이 없습니다.
             </div>
-            
-            <!-- 발주 필요 상품 알림 -->
-            <div v-for="item in lowStockItems.slice(0, 3)" :key="'stock-' + item.PRODUCT_ID" 
-                 :class="['alert-item', 'urgency-' + (item.urgency || 'medium').toLowerCase()]">
-              <div class="alert-icon">📦</div>
+            <div v-for="alert in alerts" :key="alert.id" :class="['alert-item', alert.priority.toLowerCase()]">
+              <div class="alert-icon">{{ getAlertIcon(alert.alert_type) }}</div>
               <div class="alert-content">
-                <div class="alert-title">발주 필요: {{ item.PRODUCT_NAME }}</div>
-                <div class="alert-message">
-                  현재 재고: {{ formatNumber(item.CURRENT_STOCK) }}개 / 안전재고: {{ formatNumber(item.SAFETY_STOCK) }}개 
-                  ({{ item.stockRatio || '0%' }})
-                </div>
-                <div class="alert-time">{{ item.CATEGORY_NAME }}</div>
+                <div class="alert-title">{{ alert.title }}</div>
+                <div class="alert-message">{{ alert.message }}</div>
+                <div class="alert-time">{{ formatTime(alert.created_at) }}</div>
               </div>
-            </div>
-            
-            <!-- 기타 시스템 알림 -->
-            <div v-for="alert in alerts.slice(0, 5 - Math.min(lowStockItems.length, 3))" 
-                 :key="alert.ALERT_TYPE + alert.MESSAGE" 
-                 :class="['alert-item', alert.priority?.toLowerCase()]">
-              <div class="alert-icon">{{ alert.icon }}</div>
-              <div class="alert-content">
-                <div class="alert-title">{{ alert.TITLE }}</div>
-                <div class="alert-message">{{ alert.MESSAGE }}</div>
-                <div class="alert-time">{{ formatTime(alert.CREATED_AT) }}</div>
-              </div>
-            </div>
-            
-            <!-- 더 많은 발주 필요 상품이 있을 때 -->
-            <div v-if="lowStockItems.length > 3" class="show-more">
-              외 {{ lowStockItems.length - 3 }}개 상품 발주 필요
             </div>
           </div>
         </div>
@@ -194,14 +159,14 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, nextTick, computed } from 'vue'
-import { useAuthStore } from '@/stores/auth'
+import { ref, onMounted, onUnmounted, nextTick } from 'vue'
 import {
   Chart,
   CategoryScale,
   LinearScale,
   PointElement,
   LineElement,
+  BarElement,
   Title,
   Tooltip,
   Legend,
@@ -216,6 +181,7 @@ Chart.register(
   LinearScale,
   PointElement,
   LineElement,
+  BarElement,
   Title,
   Tooltip,
   Legend,
@@ -224,14 +190,15 @@ Chart.register(
   DoughnutController
 )
 
-// 인증 스토어
-const authStore = useAuthStore()
-
 // 반응형 데이터
 const kpiData = ref({})
-const branchInfo = ref({})
-const lowStockItems = ref([])
-const topProducts = ref([])
+const topSuppliers = ref([])
+const inventoryData = ref({
+  totalItems: 0,
+  lowStockItems: 0,
+  stockoutItems: 0,
+  totalValue: '0원'
+})
 const alerts = ref([])
 const lastUpdated = ref('')
 const isLoading = ref(false)
@@ -246,35 +213,57 @@ let trendChartInstance = null
 let categoryChartInstance = null
 let refreshInterval = null
 
-// 본사 사용자 여부 확인
-const isHqUser = computed(() => 
-  ['system_admin', 'general_manager'].includes(authStore.roleName)
-)
-
-// 선택된 지점 (본사용)
-const selectedBranchId = ref('')
-const availableBranches = ref([])
-
-// 지점 정보
-const branchName = computed(() => branchInfo.value?.COMP_NAME || '지점')
-const branchType = computed(() => branchInfo.value?.COMP_TYPE_NAME || '')
-
-// API URL 생성 헬퍼
-const buildApiUrl = (endpoint) => {
-  if (isHqUser.value && selectedBranchId.value) {
-    return `http://localhost:3049/api/dashboard/branch${endpoint}?compId=${selectedBranchId.value}`
-  }
-  return `http://localhost:3049/api/dashboard/branch${endpoint}`
-}
+// API 데이터 저장용
+let cachedTrendData = []
 
 // 공통 API 호출 함수
 const fetchData = async (url, dataName) => {
   try {
     console.log(`Fetching ${dataName} from:`, url)
-    const response = await fetch(url)
+    
+    // 🔥 auth 스토어에서 토큰 가져오기
+    const getAuthToken = () => {
+      try {
+        const authData = localStorage.getItem('auth')
+        if (authData) {
+          const parsedAuth = JSON.parse(authData)
+          return parsedAuth.token
+        }
+        return null
+      } catch (error) {
+        console.error('토큰 추출 실패:', error)
+        return null
+      }
+    }
+    
+    const token = getAuthToken()
+    console.log('토큰 확인:', token ? '있음' : '❌ 없음')
+    
+    if (!token) {
+      throw new Error('인증 토큰이 없습니다. 다시 로그인해주세요.')
+    }
+    
+    // 🔥 헤더에 토큰 포함
+    const headers = {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    }
+    
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: headers
+    })
+    
     if (!response.ok) {
+      if (response.status === 401) {
+        console.warn('토큰 만료, 로그인 페이지로 이동')
+        localStorage.removeItem('auth')
+        window.location.href = '/login'
+        return
+      }
       throw new Error(`HTTP error! status: ${response.status}`)
     }
+    
     const data = await response.json()
     console.log(`${dataName} 응답:`, data)
     return data
@@ -284,7 +273,7 @@ const fetchData = async (url, dataName) => {
   }
 }
 
-// 주간 매출 트렌드 차트 생성
+// 매출 트렌드 차트 생성 - 만원 단위로 수정
 const createSalesTrendChart = (trendData) => {
   if (!salesTrendChart.value || !trendData || trendData.length === 0) {
     console.log('매출 트렌드 차트 생성 불가: 데이터 없음')
@@ -294,39 +283,76 @@ const createSalesTrendChart = (trendData) => {
   try {
     const ctx = salesTrendChart.value.getContext('2d')
     
+    // 기존 차트 파괴
     if (trendChartInstance) {
       trendChartInstance.destroy()
     }
 
-    const labels = trendData.map(item => item.SALE_DATE)
-    const data = trendData.map(item => Math.round(item.DAILY_SALES / 1000))
+    // 현재 월 기준으로 최근 6개월 생성
+    const currentDate = new Date()
+    const currentYear = currentDate.getFullYear()
+    const currentMonth = currentDate.getMonth() + 1 // 0-based이므로 +1
+    
+    const recentMonths = []
+    for (let i = 5; i >= 0; i--) {
+      const targetDate = new Date(currentYear, currentMonth - 1 - i, 1)
+      const monthStr = `${targetDate.getFullYear()}-${String(targetDate.getMonth() + 1).padStart(2, '0')}`
+      recentMonths.push(monthStr)
+    }
+    
+    console.log('표시할 월:', recentMonths) // 디버깅용
+    
+    const datasets = trendData.map((item, index) => {
+      const colors = ['#48bb78', '#4299e1', '#ed8936', '#f56565', '#9f7aea', '#38b2ac']
+      
+      // 각 카테고리별로 최근 6개월 데이터 매핑 (만원 단위로 변환)
+      const categoryData = recentMonths.map(month => {
+        const dataIndex = [...new Set(cachedTrendData.map(item => item.MONTH))].sort().indexOf(month)
+        const value = dataIndex >= 0 && item.data[dataIndex] ? item.data[dataIndex] : 0
+        return Math.round(value / 10) // 천원 → 만원 단위로 변환 (1000원 단위를 10으로 나누기)
+      })
+      
+      return {
+        label: item.category,
+        data: categoryData,
+        borderColor: colors[index % colors.length],
+        backgroundColor: colors[index % colors.length] + '20',
+        tension: 0.4,
+        fill: false,
+        pointRadius: 6,
+        pointHoverRadius: 8,
+        borderWidth: 3
+      }
+    })
+
+    // 전체 데이터에서 최대값 구하기 (적절한 Y축 범위 설정용)
+    const allValues = datasets.flatMap(dataset => dataset.data)
+    const maxValue = Math.max(...allValues)
+    const yAxisMax = Math.ceil(maxValue * 1.1 / 10) * 10 // 10 단위로 올림하여 여유 공간 확보
 
     trendChartInstance = new Chart(ctx, {
       type: 'line',
       data: {
-        labels: labels,
-        datasets: [{
-          label: '일별 매출',
-          data: data,
-          borderColor: '#4299e1',
-          backgroundColor: '#4299e1' + '20',
-          tension: 0.4,
-          fill: true,
-          pointRadius: 6,
-          pointHoverRadius: 8,
-          borderWidth: 3
-        }]
+        labels: recentMonths,
+        datasets: datasets
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
-          title: { display: false },
-          legend: { display: false },
+          title: {
+            display: false
+          },
+          legend: {
+            position: 'bottom'
+          },
           tooltip: {
+            mode: 'index',
+            intersect: false,
             callbacks: {
               label: function(context) {
-                return context.parsed.y.toLocaleString('ko-KR') + '천원'
+                const value = context.parsed.y.toLocaleString('ko-KR')
+                return context.dataset.label + ': ' + value + '만원'
               }
             }
           }
@@ -336,29 +362,40 @@ const createSalesTrendChart = (trendData) => {
             display: true,
             title: {
               display: true,
-              text: '날짜'
+              text: '월'
             },
-            grid: { color: '#e2e8f0' }
+            grid: {
+              color: '#e2e8f0'
+            }
           },
           y: {
             display: true,
             title: {
               display: true,
-              text: '매출액 (천원)'
+              text: '매출액 (만원)'
             },
             beginAtZero: true,
-            grid: { color: '#e2e8f0' },
+            max: yAxisMax,
+            grid: {
+              color: '#e2e8f0'
+            },
             ticks: {
+              stepSize: 10, // 10만원 간격으로 고정
               callback: function(value) {
-                return value.toLocaleString('ko-KR') + '천원'
+                return value.toLocaleString('ko-KR') + '만원'
               }
             }
           }
+        },
+        interaction: {
+          mode: 'nearest',
+          axis: 'x',
+          intersect: false
         }
       }
     })
     
-    console.log('매출 트렌드 차트 생성 완료')
+    console.log('매출 트렌드 차트 생성 완료 (만원 단위)')
   } catch (error) {
     console.error('라인 차트 생성 실패:', error)
   }
@@ -371,12 +408,13 @@ const createCategorySalesChart = (categoryData) => {
   try {
     const ctx = categorySalesChart.value.getContext('2d')
     
+    // 기존 차트 파괴
     if (categoryChartInstance) {
       categoryChartInstance.destroy()
     }
 
-    const labels = categoryData.map(item => item.CATEGORY)
-    const data = categoryData.map(item => item.SALES)
+    const labels = categoryData.map(item => item.category)
+    const data = categoryData.map(item => item.sales)
 
     categoryChartInstance = new Chart(ctx, {
       type: 'doughnut',
@@ -386,7 +424,7 @@ const createCategorySalesChart = (categoryData) => {
           data: data,
           backgroundColor: [
             '#48bb78',
-            '#4299e1', 
+            '#4299e1',
             '#ed8936',
             '#f56565',
             '#9f7aea',
@@ -400,15 +438,19 @@ const createCategorySalesChart = (categoryData) => {
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
-          title: { display: false },
-          legend: { position: 'bottom' },
+          title: {
+            display: false
+          },
+          legend: {
+            position: 'bottom'
+          },
           tooltip: {
             callbacks: {
               label: function(context) {
                 const total = context.dataset.data.reduce((a, b) => a + b, 0)
                 const percentage = total > 0 ? ((context.parsed / total) * 100).toFixed(1) : '0.0'
                 const value = context.parsed.toLocaleString('ko-KR')
-                return context.label + ': ' + value + '원 (' + percentage + '%)'
+                return context.label + ': ' + value + '천원 (' + percentage + '%)'
               }
             }
           }
@@ -420,26 +462,23 @@ const createCategorySalesChart = (categoryData) => {
   }
 }
 
-// API 호출 함수들
-const fetchBranchInfo = async () => {
-  try {
-    const url = buildApiUrl('/info')
-    const data = await fetchData(url, '지점 정보')
-    if (data && typeof data === 'object') {
-      branchInfo.value = data
-    }
-  } catch (error) {
-    console.error('지점 정보 로딩 실패:', error)
-    errorMessage.value = '지점 정보를 불러오는 중 오류가 발생했습니다.'
-  }
-}
-
+// 🔥 수정된 KPI 데이터 조회
 const fetchKpiData = async () => {
   try {
-    const url = buildApiUrl('/kpi')
-    const data = await fetchData(url, 'KPI')
+    const data = await fetchData('http://localhost:3049/api/dashboard/hq/kpi', 'KPI')
+    
     if (data && typeof data === 'object') {
-      kpiData.value = data
+      // 🔥 새로운 KPI 데이터 매핑
+      kpiData.value = {
+        totalSales: data.totalSales || '0원',
+        salesGrowth: data.salesGrowth || '+0.0%',
+        revenueGrowthRate: data.revenueGrowthRate || '+0.0%',
+        revenueGrowthChange: data.revenueGrowthChange || '전월 대비',
+        pendingOutboundCount: data.pendingOutboundCount || '0건',
+        outboundCountChange: data.outboundCountChange || '+0건',
+        pendingPurchaseOrderCount: data.pendingPurchaseOrderCount || '0건',
+        poCountChange: data.poCountChange || '+0건'
+      }
     }
   } catch (error) {
     console.error('KPI 데이터 로딩 실패:', error)
@@ -447,66 +486,106 @@ const fetchKpiData = async () => {
   }
 }
 
+// 매출 트렌드 데이터 조회
 const fetchSalesTrend = async () => {
   try {
-    const url = buildApiUrl('/sales-trend')
-    const data = await fetchData(url, '매출 트렌드')
+    const data = await fetchData('http://localhost:3049/api/dashboard/hq/sales-trend', '매출 트렌드')
+    
     if (data && Array.isArray(data) && data.length > 0) {
+      cachedTrendData = data
+      const processedData = processSalesTrendData(data)
       await nextTick()
-      createSalesTrendChart(data)
+      createSalesTrendChart(processedData)
     }
   } catch (error) {
     console.error('매출 트렌드 데이터 로딩 실패:', error)
   }
 }
 
+// 카테고리별 매출 데이터 조회 - 수정된 버전
 const fetchCategorySales = async () => {
   try {
-    const url = buildApiUrl('/category-sales')
-    const data = await fetchData(url, '카테고리 매출')
+    const data = await fetchData('http://localhost:3049/api/dashboard/hq/category-sales', '카테고리 매출')
+    
     if (data && Array.isArray(data) && data.length > 0) {
+      const processedData = data.map(item => ({
+        category: item.CATEGORY || item.category || '알 수 없음',  // 대문자 필드명 매핑
+        sales: typeof item.SALES === 'number' ? Math.round(item.SALES / 1000) : 0 // SALES 대문자로 수정
+      }))
+      console.log('처리된 카테고리 데이터:', processedData)
       await nextTick()
-      createCategorySalesChart(data)
+      createCategorySalesChart(processedData)
+    } else {
+      console.log('카테고리 매출 데이터가 비어있습니다.')
     }
   } catch (error) {
     console.error('카테고리 매출 데이터 로딩 실패:', error)
+    // 에러가 발생해도 빈 차트라도 보여주기
     await nextTick()
     createCategorySalesChart([])
   }
 }
 
-const fetchLowStockItems = async () => {
+// 공급업체 데이터 조회
+const fetchTopSuppliers = async () => {
   try {
-    const url = buildApiUrl('/low-stock')
-    const data = await fetchData(url, '발주 필요 상품')
-    if (data && Array.isArray(data)) {
-      lowStockItems.value = data
+    const data = await fetchData('http://localhost:3049/api/dashboard/hq/suppliers', '공급업체')
+    
+    if (data && Array.isArray(data) && data.length > 0) {
+      topSuppliers.value = data.map(supplier => ({
+        ...supplier,
+        supplier_name: supplier.supplier_name || '알 수 없음',
+        revenue: supplier.revenue || 0,
+        delivery_rate: supplier.delivery_rate || 0,
+        quality_score: supplier.quality_score || 0
+      }))
+    } else {
+      topSuppliers.value = []
     }
   } catch (error) {
-    console.error('발주 필요 상품 데이터 로딩 실패:', error)
-    lowStockItems.value = []
+    console.error('공급업체 데이터 로딩 실패:', error)
+    topSuppliers.value = []
   }
 }
 
-const fetchTopProducts = async () => {
+// 재고 데이터 조회
+const fetchInventoryData = async () => {
   try {
-    const url = buildApiUrl('/top-products')
-    const data = await fetchData(url, '상위 판매 상품')
-    if (data && Array.isArray(data)) {
-      topProducts.value = data
+    const data = await fetchData('http://localhost:3049/api/dashboard/hq/inventory', '재고')
+    
+    if (data && typeof data === 'object') {
+      inventoryData.value = {
+        totalItems: data.totalItems || 0,
+        lowStockItems: data.lowStockItems || 0,
+        stockoutItems: data.stockoutItems || 0,
+        totalValue: data.totalInventoryValue || '0원'  // 백엔드에서 이미 formatting됨
+      }
     }
   } catch (error) {
-    console.error('상위 판매 상품 데이터 로딩 실패:', error)
-    topProducts.value = []
+    console.error('재고 데이터 로딩 실패:', error)
   }
 }
 
+// 알림 데이터 조회 - 수정된 버전
 const fetchAlerts = async () => {
   try {
-    const url = buildApiUrl('/alerts')
-    const data = await fetchData(url, '알림')
-    if (data && Array.isArray(data)) {
-      alerts.value = data
+    const data = await fetchData('http://localhost:3049/api/dashboard/hq/alerts', '알림')
+    
+    if (data && Array.isArray(data) && data.length > 0) {
+      alerts.value = data.map((alert, index) => ({
+        ...alert,
+        id: alert.id || `alert-${index}`,
+        // 백엔드 대문자 필드를 소문자로 매핑
+        title: alert.TITLE || alert.title || '알림',
+        message: alert.MESSAGE || alert.message || '',
+        created_at: alert.CREATED_AT || alert.created_at ? new Date(alert.CREATED_AT || alert.created_at) : new Date(),
+        priority: (alert.PRIORITY || alert.priority || 'LOW').toLowerCase(),
+        alert_type: alert.ALERT_TYPE || alert.alert_type || 'INFO'
+      }))
+      console.log('처리된 알림 데이터:', alerts.value)
+    } else {
+      alerts.value = []
+      console.log('알림 데이터가 비어있습니다.')
     }
   } catch (error) {
     console.error('알림 데이터 로딩 실패:', error)
@@ -514,23 +593,36 @@ const fetchAlerts = async () => {
   }
 }
 
-// 본사용 지점 목록 조회
-const fetchAvailableBranches = async () => {
-  if (!isHqUser.value) return
+// 매출 트렌드 데이터 처리 - 만원 단위로 수정
+const processSalesTrendData = (apiData) => {
+  console.log('매출 트렌드 원본 데이터:', apiData)
   
-  try {
-    const data = await fetchData('http://localhost:3049/api/dashboard/branch/branches', '지점 목록')
-    if (data && Array.isArray(data)) {
-      availableBranches.value = data
-    }
-  } catch (error) {
-    console.error('지점 목록 조회 실패:', error)
+  if (!apiData || !Array.isArray(apiData) || apiData.length === 0) {
+    return []
   }
-}
-
-// 지점 변경 이벤트
-const onBranchChange = () => {
-  loadAllData()
+  
+  // 월 추출
+  const months = [...new Set(apiData.map(item => item.MONTH))].sort()
+  
+  // 카테고리별 데이터 그룹화
+  const categoryMap = {}
+  
+  apiData.forEach(item => {
+    const categoryName = item.CATEGORY_NAME || '기타'
+    const month = item.MONTH || '2024-01'
+    const sales = Math.round((item.SALES || 0) / 1000) // 원을 천원으로 변환 (차트에서 다시 만원으로 변환)
+    
+    if (!categoryMap[categoryName]) {
+      categoryMap[categoryName] = {}
+    }
+    categoryMap[categoryName][month] = sales
+  })
+  
+  // 차트 형식으로 변환
+  return Object.keys(categoryMap).map(category => ({
+    category: category,
+    data: months.map(month => categoryMap[category][month] || 0)
+  }))
 }
 
 // 유틸리티 함수들
@@ -539,6 +631,8 @@ const formatCurrency = (amount) => {
   
   if (amount >= 100000000) {
     return (amount / 100000000).toFixed(1) + '억원'
+  } else if (amount >= 10000000) {
+    return (amount / 10000000).toFixed(1) + '천만원'
   } else if (amount >= 10000) {
     return (amount / 10000).toFixed(0) + '만원'
   } else {
@@ -550,6 +644,12 @@ const formatNumber = (num) => {
   return (num || 0).toLocaleString('ko-KR')
 }
 
+const formatGrowth = (value, suffix = '%') => {
+  if (value === null || value === undefined) return '계산 중...'
+  const formatted = Number(value).toFixed(1)
+  return (value >= 0 ? '+' : '') + formatted + suffix
+}
+
 const formatTime = (date) => {
   if (date instanceof Date) {
     return date.toLocaleString('ko-KR')
@@ -557,10 +657,27 @@ const formatTime = (date) => {
   return new Date(date).toLocaleString('ko-KR')
 }
 
-const getChangeClass = (value) => {
+const getChangeClass = (value, inverse = false) => {
   if (!value || value === '계산 중...') return ''
   const numValue = parseFloat(value)
+  if (inverse) {
+    return numValue <= 0 ? 'positive' : 'negative'
+  }
   return numValue >= 0 ? 'positive' : 'negative'
+}
+
+// 🔥 수정된 getAlertIcon 함수
+const getAlertIcon = (alertType) => {
+  const icons = {
+    'PENDING_OUTBOUND': '🚚',
+    'PENDING_PURCHASE_ORDER': '📝',
+    'STOCKOUT_WARNING': '📦',
+    'DELIVERY_DELAY': '⏰',
+    'LOW_TURNOVER': '🔄',
+    'LOW_STOCK': '⚠️',
+    'INFO': 'ℹ️'
+  }
+  return icons[alertType] || '⚠️'
 }
 
 // 전체 데이터 로딩
@@ -569,33 +686,30 @@ const loadAllData = async () => {
   errorMessage.value = ''
   
   try {
-    console.log('지점 대시보드 데이터 로딩 시작')
+    console.log('대시보드 데이터 로딩 시작')
     
-    // 지점 정보를 먼저 로딩
-    await fetchBranchInfo()
-    
-    // 기본 데이터 병렬 로딩
+    // 기본 데이터 병렬 로딩 (에러가 나도 다른 것들은 계속 로딩)
     const results = await Promise.allSettled([
       fetchKpiData(),
-      fetchLowStockItems(),
-      fetchTopProducts(),
+      fetchInventoryData(),
+      fetchTopSuppliers(),
       fetchAlerts()
     ])
     
-    // 결과 확인
+    // 결과 확인 (선택적)
     results.forEach((result, index) => {
-      const apiNames = ['KPI', '발주 필요 상품', '상위 판매 상품', '알림']
+      const apiNames = ['KPI', '재고', '공급업체', '알림']
       if (result.status === 'rejected') {
         console.warn(`${apiNames[index]} API 실패:`, result.reason)
       }
     })
     
-    // 차트 데이터 순차 로딩
+    // 차트 데이터 순차 로딩 (DOM 요소가 필요하므로)
     await fetchSalesTrend()
     await fetchCategorySales()
     
     lastUpdated.value = new Date().toLocaleString('ko-KR')
-    console.log('지점 대시보드 데이터 로딩 완료')
+    console.log('대시보드 데이터 로딩 완료')
   } catch (error) {
     console.error('데이터 로딩 중 오류:', error)
     if (!errorMessage.value) {
@@ -614,25 +728,21 @@ const refreshData = () => {
 
 // 컴포넌트 마운트
 onMounted(async () => {
-  console.log('지점 대시보드 컴포넌트 마운트됨')
-  
-  if (isHqUser.value) {
-    await fetchAvailableBranches()
-  }
+  console.log('HQ 대시보드 컴포넌트 마운트됨')
   
   await nextTick()
   await loadAllData()
   
-  // 3분마다 자동 새로고침
+  // 5분마다 자동 새로고침
   refreshInterval = setInterval(() => {
     console.log('자동 새로고침 실행')
     loadAllData()
-  }, 3 * 60 * 1000)
+  }, 5 * 60 * 1000)
 })
 
 // 컴포넌트 언마운트
 onUnmounted(() => {
-  console.log('지점 대시보드 컴포넌트 언마운트됨')
+  console.log('HQ 대시보드 컴포넌트 언마운트됨')
   
   if (refreshInterval) {
     clearInterval(refreshInterval)
@@ -647,7 +757,7 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-.branch-dashboard {
+.hq-dashboard {
   padding: 20px;
   background: #f5f7fa;
   min-height: 100vh;
@@ -667,39 +777,6 @@ onUnmounted(() => {
   font-weight: 700;
   color: #1a202c;
   margin: 0;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.branch-badge {
-  background: #4299e1;
-  color: white;
-  padding: 4px 12px;
-  border-radius: 20px;
-  font-size: 14px;
-  font-weight: 500;
-}
-
-.branch-selector {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin: 0 20px;
-}
-
-.branch-selector label {
-  font-weight: 500;
-  color: #4a5568;
-}
-
-.branch-selector select {
-  padding: 8px 12px;
-  border: 1px solid #e2e8f0;
-  border-radius: 6px;
-  background: white;
-  font-size: 14px;
-  cursor: pointer;
 }
 
 .header-actions {
@@ -735,6 +812,7 @@ onUnmounted(() => {
   font-size: 14px;
 }
 
+/* 에러 배너 */
 .error-banner {
   background: #fed7d7;
   border: 1px solid #fc8181;
@@ -772,18 +850,83 @@ onUnmounted(() => {
   border-radius: 12px;
   padding: 24px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.chart-card h3 {
-  margin: 0 0 20px 0;
-  font-size: 18px;
-  font-weight: 600;
-  color: #1a202c;
-}
-
-.chart-container {
-  height: 300px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
   position: relative;
+  overflow: hidden;
+}
+
+.kpi-card::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+}
+
+/* 🔥 새로운 KPI 카드 컬러 */
+.kpi-card.sales::before {
+  background: #48bb78;
+}
+
+.kpi-card.growth::before {
+  background: #4299e1;
+}
+
+.kpi-card.outbound::before {
+  background: #ed8936;
+}
+
+.kpi-card.purchase::before {
+  background: #9f7aea;
+}
+
+.kpi-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.kpi-content {
+  flex: 1;
+}
+
+.kpi-content h3 {
+  margin: 0 0 8px 0;
+  font-size: 14px;
+  font-weight: 500;
+  color: #718096;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.kpi-value {
+  font-size: 28px;
+  font-weight: 700;
+  color: #1a202c;
+  margin-bottom: 4px;
+}
+
+.kpi-change {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.kpi-change.positive {
+  color: #48bb78;
+}
+
+.kpi-change.negative {
+  color: #f56565;
+}
+
+/* KPI 아이콘 스타일 */
+.kpi-icon {
+  font-size: 2.5rem;
+  opacity: 0.3;
+  margin-left: 16px;
 }
 
 /* 차트 섹션 */
@@ -817,9 +960,6 @@ onUnmounted(() => {
 }
 
 /* 상세 정보 섹션 */
-.details-section {
-  margin-bottom: 30px;
-}
 .details-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
@@ -831,14 +971,6 @@ onUnmounted(() => {
   border-radius: 12px;
   padding: 24px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.detail-card.urgent {
-  border-left: 4px solid #f56565;
-}
-
-.detail-card.alerts {
-  border-left: 4px solid #4299e1;
 }
 
 .detail-card h3 {
@@ -858,140 +990,57 @@ onUnmounted(() => {
   border-radius: 8px;
 }
 
-/* 아이템 리스트 */
-.items-list {
+/* 공급업체 목록 */
+.suppliers-list {
   space-y: 12px;
 }
 
-.item-row {
+.supplier-item {
+  padding: 16px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  margin-bottom: 12px;
+  transition: all 0.2s ease;
+}
+
+.supplier-item:hover {
+  background: #e2e8f0;
+  transform: translateX(4px);
+}
+
+.supplier-info {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 0;
-  border-bottom: 1px solid #e2e8f0;
+  margin-bottom: 8px;
 }
 
-.item-row:last-child {
-  border-bottom: none;
-}
-
-.item-row.urgency-high {
-  background: linear-gradient(90deg, rgba(245, 101, 101, 0.1) 0%, transparent 100%);
-  border-left: 3px solid #f56565;
-  padding-left: 12px;
-  margin-left: -12px;
-}
-
-.item-row.urgency-medium {
-  background: linear-gradient(90deg, rgba(255, 136, 0, 0.1) 0%, transparent 100%);
-  border-left: 3px solid #ff8800;
-  padding-left: 12px;
-  margin-left: -12px;
-}
-
-.item-info {
-  flex: 1;
-}
-
-.item-name {
+.supplier-name {
   font-weight: 600;
   color: #1a202c;
-  margin-bottom: 4px;
 }
 
-.item-category {
-  font-size: 12px;
-  color: #718096;
-}
-
-.item-stock {
-  text-align: right;
-  font-size: 12px;
-}
-
-.current-stock {
-  color: #1a202c;
-  font-weight: 500;
-}
-
-.safety-stock {
-  color: #718096;
-  margin: 2px 0;
-}
-
-.stock-ratio {
+.supplier-revenue {
   font-weight: 600;
-  padding: 2px 6px;
-  border-radius: 4px;
-  font-size: 11px;
+  color: #48bb78;
 }
 
-.stock-ratio.urgency-high {
-  background: #fed7d7;
-  color: #c53030;
-}
-
-.stock-ratio.urgency-medium {
-  background: #feebc8;
-  color: #c05621;
-}
-
-.stock-ratio.urgency-low {
-  background: #f0fff4;
-  color: #38a169;
-}
-
-/* 상위 판매 상품 */
-.item-row.top-product {
-  align-items: center;
-  gap: 12px;
-}
-
-.rank-badge {
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+.supplier-metrics {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 12px;
-  font-weight: 600;
-  flex-shrink: 0;
+  gap: 16px;
 }
 
-.item-stats {
-  text-align: right;
-  font-size: 12px;
-}
-
-.quantity {
+.metric {
+  font-size: 14px;
   color: #718096;
-  margin-bottom: 2px;
 }
 
-.sales {
-  color: #1a202c;
-  font-weight: 600;
-}
-
-.show-more {
-  text-align: center;
-  color: #4299e1;
-  font-size: 12px;
-  font-weight: 500;
-  padding: 8px;
-  margin-top: 8px;
-  border-top: 1px solid #e2e8f0;
-}
-
-/* 재고 현황 요약 */
-.inventory-summary {
+/* 재고 현황 */
+.inventory-stats {
   space-y: 12px;
 }
 
-.summary-row {
+.stat-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -1000,41 +1049,33 @@ onUnmounted(() => {
   transition: all 0.2s ease;
 }
 
-.summary-row:last-child {
+.stat-item:last-child {
   border-bottom: none;
 }
 
-.summary-row:hover {
+.stat-item:hover {
   padding-left: 8px;
 }
 
-.summary-row.warning {
-  color: #ed8936;
-}
-
-.summary-row.danger {
-  color: #f56565;
-}
-
-.summary-label {
+.stat-label {
   font-weight: 500;
   color: #718096;
 }
 
-.summary-value {
+.stat-value {
   font-weight: 600;
   color: #1a202c;
 }
 
-.summary-value.warning {
+.stat-value.warning {
   color: #ed8936;
 }
 
-.summary-value.danger {
+.stat-value.danger {
   color: #f56565;
 }
 
-/* 알림 센터 */
+/* 알림 */
 .alerts-list {
   space-y: 12px;
 }
@@ -1052,17 +1093,17 @@ onUnmounted(() => {
   transform: translateX(4px);
 }
 
-.alert-item.urgency-high {
+.alert-item.high {
   background: #fed7d7;
   border-left: 4px solid #f56565;
 }
 
-.alert-item.urgency-medium {
+.alert-item.medium {
   background: #feebc8;
   border-left: 4px solid #ed8936;
 }
 
-.alert-item.urgency-low {
+.alert-item.low {
   background: #f0f4f8;
   border-left: 4px solid #718096;
 }
@@ -1091,6 +1132,15 @@ onUnmounted(() => {
 .alert-time {
   font-size: 12px;
   color: #718096;
+}
+
+/* 로딩 상태 */
+.kpi-value:empty::after,
+.stat-value:empty::after {
+  content: '로딩 중...';
+  color: #a0aec0;
+  font-size: 16px;
+  font-weight: normal;
 }
 
 /* 애니메이션 */
@@ -1123,7 +1173,7 @@ onUnmounted(() => {
 }
 
 @media (max-width: 768px) {
-  .branch-dashboard {
+  .hq-dashboard {
     padding: 15px;
   }
   
@@ -1140,6 +1190,10 @@ onUnmounted(() => {
     gap: 10px;
   }
   
+  .refresh-button {
+    width: 100%;
+  }
+  
   .dashboard-title {
     font-size: 24px;
   }
@@ -1148,98 +1202,112 @@ onUnmounted(() => {
     grid-template-columns: 1fr;
   }
   
-  .branch-selector {
-    margin: 0;
+  .kpi-card {
+    padding: 20px;
+  }
+  
+  .kpi-icon {
+    font-size: 2rem;
+  }
+  
+  .kpi-value {
+    font-size: 24px;
+  }
+  
+  .charts-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .chart-container {
+    height: 250px;
+  }
+  
+  .details-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .supplier-metrics {
+    flex-direction: column;
+    gap: 4px;
+  }
+  
+  .error-banner {
     flex-direction: column;
     align-items: flex-start;
-    gap: 5px;
+    gap: 10px;
+  }
+  
+  .close-error {
+    align-self: flex-end;
   }
 }
-</style> 0.1);
-  display: flex;
-  align-items: center;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-  position: relative;
-  overflow: hidden;
+
+/* 인쇄 스타일 */
+@media print {
+  .hq-dashboard {
+    background: white;
+  }
+  
+  .refresh-button,
+  .close-error {
+    display: none;
+  }
+  
+  .kpi-card,
+  .chart-card,
+  .detail-card {
+    box-shadow: none;
+    border: 1px solid #e2e8f0;
+    break-inside: avoid;
+  }
+  
+  .chart-container {
+    height: 200px;
+  }
 }
 
-.kpi-card::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 4px;
+/* 다크 모드 지원 (선택적) */
+@media (prefers-color-scheme: dark) {
+  .hq-dashboard {
+    background: #1a202c;
+  }
+  
+  .dashboard-title {
+    color: #f7fafc;
+  }
+  
+  .kpi-card,
+  .chart-card,
+  .detail-card {
+    background: #2d3748;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  }
+  
+  .kpi-value,
+  .stat-value,
+  .supplier-name,
+  .alert-title {
+    color: #f7fafc;
+  }
+  
+  .kpi-content h3,
+  .stat-label,
+  .metric,
+  .alert-message {
+    color: #a0aec0;
+  }
+  
+  .supplier-item,
+  .no-data-message {
+    background: #374151;
+  }
+  
+  .supplier-item:hover {
+    background: #4a5568;
+  }
+  
+  .stat-item {
+    border-bottom-color: #4a5568;
+  }
 }
-
-.kpi-card.today-sales::before {
-  background: #48bb78;
-}
-
-.kpi-card.monthly-sales::before {
-  background: #4299e1;
-}
-
-.kpi-card.inventory::before {
-  background: #ed8936;
-}
-
-.kpi-card.customer::before {
-  background: #f56565;
-}
-
-.kpi-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
-.kpi-icon {
-  font-size: 32px;
-  margin-right: 16px;
-}
-
-.kpi-content h3 {
-  margin: 0 0 8px 0;
-  font-size: 14px;
-  font-weight: 500;
-  color: #718096;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.kpi-value {
-  font-size: 28px;
-  font-weight: 700;
-  color: #1a202c;
-  margin-bottom: 4px;
-}
-
-.kpi-change {
-  font-size: 14px;
-  font-weight: 600;
-}
-
-.kpi-change.positive {
-  color: #48bb78;
-}
-
-.kpi-change.negative {
-  color: #f56565;
-}
-
-/* 차트 섹션 */
-.charts-section {
-  margin-bottom: 40px;
-}
-
-.charts-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
-  gap: 20px;
-}
-
-.chart-card {
-  background: white;
-  border-radius: 12px;
-  padding: 24px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0,
+</style>

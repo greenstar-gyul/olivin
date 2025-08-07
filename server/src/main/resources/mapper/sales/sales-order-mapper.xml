@@ -5,7 +5,7 @@
     'SOR'
     </sql>
     <!-- select -->
-    <select id="selectAllList" resultType="SalesOrdersVO" parameterType="SalesOrdersVO">
+    <select id="selectAllList" resultType="SalesOrdersVO" parameterType="SearchSalesOrdersVO">
         SELECT
             so.so_id,
             so.comp_id,
@@ -22,6 +22,29 @@
             sales_orders so
         JOIN companys c ON (so.comp_id = c.comp_id)
         JOIN employees e ON (so.emp_id = e.employee_id)
+        <where>
+        	<if test="soId != null and soId != ''">
+                AND so.so_id LIKE '%'||#{soId}||'%'
+            </if>
+        	<if test="compName != null and compName != ''">
+                AND c.comp_name LIKE '%'||#{compName}||'%'
+            </if>
+        	<if test="empName != null and empName != ''">
+                AND e.emp_name LIKE '%'||#{empName}||'%'
+            </if>
+        	<if test="paymentType != null and paymentType != ''">
+                AND so.payment_type = #{paymentType}
+            </if>
+        	<if test="status != null and status != ''">
+                AND so.status = #{status}
+            </if>
+            <if test="soDateFrom != null">
+	            AND so.so_date &gt;= #{soDateFrom}
+	        </if>
+	        <if test="soDateTo != null">
+	            AND so.so_date &lt;= #{soDateTo}
+	        </if>
+        </where>
         ORDER BY so.so_id DESC
     </select>
     

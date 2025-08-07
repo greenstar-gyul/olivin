@@ -151,7 +151,7 @@ const header = computed(() => props.header);
       </div>
     </div>
     
-    <!-- DataTable (PrimeVue) -->
+    <!-- DataTable (PrimeVue) - scrollHeight props 사용 -->
     <DataTable v-model:selection="selectedItems" :value="props.data" :dataKey="props.dataKey" showGridlines scrollable
       :scrollHeight="props.scrollHeight" tableStyle="min-width: 50rem" @rowSelect="onRowSelect" @rowUnselect="onRowUnselect"
       :selectionMode="props.checked ? props.checkType : null">

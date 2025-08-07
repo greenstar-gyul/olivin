@@ -1,6 +1,5 @@
 package com.olivin.app.sales.service.impl;
 
-import java.util.Date;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
@@ -10,6 +9,7 @@ import com.olivin.app.sales.mapper.SalesOrdersMapper;
 import com.olivin.app.sales.service.SalesOrdersDetailVO;
 import com.olivin.app.sales.service.SalesOrdersService;
 import com.olivin.app.sales.service.SalesOrdersVO;
+import com.olivin.app.sales.service.SearchSalesOrdersVO;
 
 import lombok.RequiredArgsConstructor;
 
@@ -28,8 +28,8 @@ public class SalesOrdersServiceImpl implements SalesOrdersService {
 	private final SalesOrdersMapper salesOrdersMapper;
 	
 	@Override
-	public List<SalesOrdersVO> getAllOrders(SalesOrdersVO ordersVO) {
-		return salesOrdersMapper.selectAllList(ordersVO);
+	public List<SalesOrdersVO> getAllOrders(SearchSalesOrdersVO searchsVO) {
+		return salesOrdersMapper.selectAllList(searchsVO);
 	}
 	
 	@Override

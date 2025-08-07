@@ -73,7 +73,7 @@ public class SecurityConfig {
                 .requestMatchers("/error").permitAll()
                 .requestMatchers("/test**").permitAll()  
                 .requestMatchers("/standard/**").hasAnyRole("SYSTEM_ADMIN", "GENERAL_MANAGER")
-                
+                .requestMatchers("/roles/**").hasAnyRole("SYSTEM_ADMIN", "GENERAL_MANAGER")
                 // WebSocket 연결
                 .requestMatchers("/ws/**").permitAll()
                 

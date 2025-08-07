@@ -12,7 +12,7 @@ import java.util.List;
  */
 public interface SalesOrdersService {
 	//주문서 조회
-	List<SalesOrdersVO> getAllOrders(SalesOrdersVO ordersVO);
+	List<SalesOrdersVO> getAllOrders(SearchSalesOrdersVO searchVO);
 	SalesOrdersVO getOneOrders(String orderId);
 	List<SalesOrdersDetailVO> getDetailOrders(String orderId);
 	//주문서 등록

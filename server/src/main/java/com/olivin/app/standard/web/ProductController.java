@@ -3,6 +3,7 @@ package com.olivin.app.standard.web;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.ArrayList;
 import java.util.Date;  // 추가된 import
 import java.util.HashMap;
 import java.util.List;
@@ -110,28 +111,59 @@ public class ProductController {
     }
     
     /**
-     * 제품 검색 (GET 방식, 파라미터 기반) - 직원 이름 조인 포함
+     * 제품 검색 (GET 방식, 파라미터 기반) - 기존 코드에 파라미터 검증만 추가
      */
+    // ProductController.java의 searchProducts 메서드에서 날짜 처리 부분만 수정
+
     @GetMapping("/search")
     public ResponseEntity<List<ProductVO>> searchProducts(@RequestParam Map<String, Object> params) {
-        // 로깅: 검색 파라미터 확인
-        System.out.println("검색 파라미터: " + params);
-        
-        List<ProductVO> products = productService.searchProducts(params);
-        
-        // 로깅: 검색 결과의 직원 정보 확인
-        System.out.println("검색 결과 제품 수: " + products.size());
-        if (!products.isEmpty()) {
-            System.out.println("첫 번째 검색 결과:");
-            ProductVO firstProduct = products.get(0);
-            System.out.println("제품ID: " + firstProduct.getProductId());
-            System.out.println("등록자ID: " + firstProduct.getRegUser());
-            System.out.println("등록자명: " + firstProduct.getRegUserName());
+        try {
+            System.out.println("검색 파라미터: " + params);
+            
+            // 날짜 파라미터 처리 (Oracle 호환)
+            Map<String, Object> processedParams = new HashMap<>(params);
+            
+            // regDateFrom 처리
+            if (params.containsKey("regDateFrom") && params.get("regDateFrom") != null) {
+                String dateFrom = params.get("regDateFrom").toString().trim();
+                if (!dateFrom.isEmpty()) {
+                    try {
+                        // YYYY-MM-DD 형식을 Oracle DATE로 변환
+                        java.sql.Date sqlDateFrom = java.sql.Date.valueOf(dateFrom);
+                        processedParams.put("regDateFrom", sqlDateFrom);
+                    } catch (IllegalArgumentException e) {
+                        System.err.println("잘못된 시작일 형식: " + dateFrom);
+                        processedParams.remove("regDateFrom");
+                    }
+                }
+            }
+            
+            // regDateTo 처리
+            if (params.containsKey("regDateTo") && params.get("regDateTo") != null) {
+                String dateTo = params.get("regDateTo").toString().trim();
+                if (!dateTo.isEmpty()) {
+                    try {
+                        // YYYY-MM-DD 형식을 Oracle DATE로 변환
+                        java.sql.Date sqlDateTo = java.sql.Date.valueOf(dateTo);
+                        processedParams.put("regDateTo", sqlDateTo);
+                    } catch (IllegalArgumentException e) {
+                        System.err.println("잘못된 종료일 형식: " + dateTo);
+                        processedParams.remove("regDateTo");
+                    }
+                }
+            }
+            
+            System.out.println("처리된 파라미터: " + processedParams);
+            
+            List<ProductVO> products = productService.searchProducts(processedParams);
+            return ResponseEntity.ok(products);
+            
+        } catch (Exception e) {
+            System.err.println("검색 처리 중 오류: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(new ArrayList<>());
         }
-        
-        return ResponseEntity.ok(products);
     }
-    
     /**
      * 특정 제품 조회 - 직원 이름 조인 포함
      */

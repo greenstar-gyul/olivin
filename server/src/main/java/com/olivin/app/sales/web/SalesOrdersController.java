@@ -12,13 +12,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.olivin.app.order.service.OrdersDTO;
-import com.olivin.app.plan.service.SalesPlanService;
-import com.olivin.app.plan.web.SalesPlanController;
 import com.olivin.app.sales.service.SalesOrdersDTO;
 import com.olivin.app.sales.service.SalesOrdersDetailVO;
 import com.olivin.app.sales.service.SalesOrdersService;
 import com.olivin.app.sales.service.SalesOrdersVO;
+import com.olivin.app.sales.service.SearchSalesOrdersVO;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -39,7 +37,7 @@ public class SalesOrdersController {
 	private final SalesOrdersService salesOrdersService;
 	
 	@GetMapping("/sales/orders")
-	public List<SalesOrdersVO> ordersList(@ModelAttribute SalesOrdersVO search) {
+	public List<SalesOrdersVO> ordersList(@ModelAttribute SearchSalesOrdersVO search) {
 		log.debug("order = {}", search);
 		return salesOrdersService.getAllOrders(search);
 	}

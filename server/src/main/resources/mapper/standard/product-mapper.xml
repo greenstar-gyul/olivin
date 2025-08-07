@@ -227,31 +227,40 @@
         LEFT JOIN EMPLOYEES upd_emp ON p.UPDATE_USER = upd_emp.EMPLOYEE_ID
         <where>
             <if test="productName != null and productName != ''">
-                AND p.PRODUCT_NAME LIKE CONCAT('%', #{productName}, '%')
+                AND UPPER(p.PRODUCT_NAME) LIKE UPPER('%' || #{productName,jdbcType=VARCHAR} || '%')
             </if>
             <if test="vendorName != null and vendorName != ''">
-                AND p.VENDOR_NAME LIKE CONCAT('%', #{vendorName}, '%')
+                AND UPPER(p.VENDOR_NAME) LIKE UPPER('%' || #{vendorName,jdbcType=VARCHAR} || '%')
             </if>
             <if test="categoryMain != null and categoryMain != ''">
-                AND p.CATEGORY_MAIN = #{categoryMain}
+                AND p.CATEGORY_MAIN = #{categoryMain,jdbcType=VARCHAR}
             </if>
             <if test="categorySub != null and categorySub != ''">
-                AND p.CATEGORY_SUB = #{categorySub}
+                AND p.CATEGORY_SUB = #{categorySub,jdbcType=VARCHAR}
             </if>
             <if test="compId != null and compId != ''">
-                AND p.COMP_ID = #{compId}
+                AND p.COMP_ID = #{compId,jdbcType=VARCHAR}
             </if>
-            <if test="packQty != null and packQty != ''">
-                AND p.PACK_QTY = #{packQty}
+            <if test="packQty != null">
+                AND p.PACK_QTY = #{packQty,jdbcType=NUMERIC}
             </if>
             <if test="regUser != null and regUser != ''">
-                AND p.REG_USER LIKE CONCAT('%', #{regUser}, '%')
+                AND (UPPER(p.REG_USER) LIKE UPPER('%' || #{regUser,jdbcType=VARCHAR} || '%')
+                    OR UPPER(reg_emp.EMP_NAME) LIKE UPPER('%' || #{regUser,jdbcType=VARCHAR} || '%'))
             </if>
-            <if test="regDateFrom != null and regDateFrom != ''">
+            <if test="status != null and status != ''">
+                AND p.STATUS = #{status,jdbcType=VARCHAR}
+            </if>
+            <!-- 수정후: -->
+            <if test="regDateFrom != null">
+                <![CDATA[
                 AND p.REG_DATE >= #{regDateFrom}
+                ]]>
             </if>
-            <if test="regDateTo != null and regDateTo != ''">
-                AND p.REG_DATE &lt;= #{regDateTo}
+            <if test="regDateTo != null">
+                <![CDATA[
+                AND p.REG_DATE <= #{regDateTo}
+                ]]>
             </if>
         </where>
         ORDER BY p.PRODUCT_ID ASC
