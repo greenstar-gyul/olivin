@@ -9,7 +9,7 @@ const emit = defineEmits(['searchData', 'saveData', 'approve', 'reject', 'rowSel
 
 const props = defineProps({
   filters: {
-    type: Array,
+    type: Object,  // ✅ Array에서 Object로 변경
     required: true
   },
   items: {
@@ -112,12 +112,12 @@ const categorySubOptions = {
   ]
 };
 
-// ✅ 검색 조건 카테고리 변경 처리 함수
+// ✅ 검색 조건 카테고리 변경 처리 함수 - props.filters.filters로 접근
 const handleSearchCategoryMainChange = (categoryMainValue) => {
   console.log('승인 페이지 검색 조건 카테고리 변경됨:', categoryMainValue);
   
-  // 검색 조건의 세부카테고리 옵션 업데이트
-  const categorySubFilter = props.filters.find(f => f.name === 'categorySub');
+  // ✅ props.filters.filters로 접근하도록 수정
+  const categorySubFilter = props.filters.filters?.find(f => f.name === 'categorySub');
   if (categorySubFilter) {
     categorySubFilter.options = categorySubOptions[categoryMainValue] || [];
     console.log('승인 페이지 검색 조건 세부카테고리 옵션 업데이트됨:', categorySubFilter.options);
@@ -131,6 +131,11 @@ const handleSearchCategoryMainChange = (categoryMainValue) => {
 
 // ✅ StandardInput과 동일한 이벤트 처리
 const searchData = (searchOptions) => {
+  // ✅ 검색 조건 카테고리 변경 처리
+  if (searchOptions.categoryMain) {
+    handleSearchCategoryMainChange(searchOptions.categoryMain);
+  }
+  
   emit('searchData', searchOptions);
 };
 

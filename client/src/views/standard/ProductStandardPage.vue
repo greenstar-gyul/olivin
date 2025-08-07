@@ -188,7 +188,7 @@ const unitOptions = [
   { name: 'pack', value: '130005' }
 ];
 
-// 검색 조건
+// ✅ 검색 조건 (원래 구조 복원)
 const filters = ref({
   title: '조회 조건',
   filters: [
@@ -383,45 +383,95 @@ const loadProducts = async () => {
   }
 };
 
-// ✅ 검색 처리 (검색 조건의 카테고리 변경도 처리)
+// 기존 searchData 함수에서 날짜 처리 부분만 수정하세요
+
 const searchData = async (searchOptions) => {
   try {
+    // 기존 파라미터 처리 코드는 그대로 두고...
     const params = {};
     
     if (searchOptions.productName?.trim()) params.productName = searchOptions.productName.trim();
     if (searchOptions.vendorName?.trim()) params.vendorName = searchOptions.vendorName.trim();
-    if (searchOptions.categoryMain?.trim()) {
-      params.categoryMain = searchOptions.categoryMain.trim();
-      
-      // ✅ 검색 조건 변경 시 세부카테고리 옵션 업데이트
-      const categorySubFilter = filters.value.filters.find(f => f.name === 'categorySub');
-      if (categorySubFilter) {
-        categorySubFilter.options = categorySubOptions[searchOptions.categoryMain] || [];
-        console.log('검색 조건 세부카테고리 옵션 업데이트됨');
-      }
-    }
+    if (searchOptions.categoryMain?.trim()) params.categoryMain = searchOptions.categoryMain.trim();
     if (searchOptions.categorySub?.trim()) params.categorySub = searchOptions.categorySub.trim();
     if (searchOptions.compId?.trim()) params.compId = searchOptions.compId.trim();
     if (searchOptions.packQty) params.packQty = searchOptions.packQty;
     if (searchOptions.regUser?.trim()) params.regUser = searchOptions.regUser.trim();
+    
+    // ✅ 날짜 범위 파라미터 처리만 수정 (Oracle 호환)
     if (searchOptions.regDateRangeFrom && searchOptions.regDateRangeTo) {
-      params.regDateFrom = searchOptions.regDateRangeFrom;
-      params.regDateTo = searchOptions.regDateRangeTo;
+      try {
+        // 날짜 객체로 변환하여 검증
+        const fromDate = new Date(searchOptions.regDateRangeFrom);
+        const toDate = new Date(searchOptions.regDateRangeTo);
+        
+        // 유효한 날짜인지 확인
+        if (!isNaN(fromDate.getTime()) && !isNaN(toDate.getTime())) {
+          // YYYY-MM-DD 형식으로 변환 (Oracle에서 인식 가능한 형식)
+          params.regDateFrom = fromDate.toISOString().split('T')[0];
+          params.regDateTo = toDate.toISOString().split('T')[0];
+          
+          console.log('날짜 범위 설정:', {
+            original: { from: searchOptions.regDateRangeFrom, to: searchOptions.regDateRangeTo },
+            converted: { from: params.regDateFrom, to: params.regDateTo }
+          });
+        } else {
+          console.warn('유효하지 않은 날짜:', {
+            from: searchOptions.regDateRangeFrom,
+            to: searchOptions.regDateRangeTo
+          });
+        }
+      } catch (dateError) {
+        console.error('날짜 변환 오류:', dateError);
+        // 에러가 발생해도 검색은 계속 진행 (날짜 조건 제외)
+      }
     }
     
+    // 승인 페이지인 경우 상태 제한
+    if (typeof window !== 'undefined' && window.location.pathname.includes('approval')) {
+      params.status = '040002'; // 승인 대기
+    }
+    
+    console.log('최종 검색 파라미터:', params);
+    
+    // 기존 API 호출 코드는 그대로...
     const response = await axios.get(`${API_BASE_URL}/search`, { params });
-    items.value = response.data.map((product, index) => filterProductData(product, index));
+    
+    if (response.data && Array.isArray(response.data)) {
+      items.value = response.data.map((product, index) => filterProductData(product, index));
+      console.log(`검색 완료: ${items.value.length}개의 제품이 검색되었습니다.`);
+    } else {
+      console.warn('검색 응답이 배열이 아님:', response.data);
+      items.value = [];
+    }
     
   } catch (error) {
     console.error('검색 실패:', error);
-    toast.add({ 
-      severity: 'error', 
-      summary: '오류', 
-      detail: '검색에 실패했습니다.', 
-      life: 3000 
-    });
+    
+    // 에러 메시지 개선
+    let errorMessage = '검색 중 오류가 발생했습니다.';
+    if (error.response?.status === 500) {
+      errorMessage = '서버 내부 오류가 발생했습니다. 검색 조건을 확인해주세요.';
+    } else if (error.response?.status === 400) {
+      errorMessage = '검색 조건이 올바르지 않습니다.';
+    }
+    
+    // Toast 또는 alert 사용
+    if (typeof toast !== 'undefined' && toast.add) {
+      toast.add({ 
+        severity: 'error', 
+        summary: '검색 실패', 
+        detail: errorMessage, 
+        life: 3000 
+      });
+    } else {
+      alert(errorMessage);
+    }
+    
     items.value = [];
   }
+  
+  selectedProduct.value = null;
 };
 
 // 행 선택 처리
