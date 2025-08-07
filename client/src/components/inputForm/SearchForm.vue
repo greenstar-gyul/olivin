@@ -140,7 +140,7 @@ defineExpose({
 
         <!-- Select Input -->
         <Select v-else-if="filter.type === 'select'" :id="'filter-' + rowIndex + '-' + filterIndex"
-          v-model="searchOptions[filter.name]" :options="filter.options"
+          v-model="searchOptions[filter.name]" :options="filter.options" showClear
           optionLabel="name" optionValue="value" :placeholder="filter.placeholder || 'Select option...'" class="flex-1" />
 
         <!-- Item Search -->

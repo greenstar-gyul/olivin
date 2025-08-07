@@ -33,7 +33,6 @@ filters.value.filters = [
   { type: 'text', label: '발주서코드', value: '', placeholder: '발주서코드를 입력하세요.', name: 'orderId' },
   { type: 'select', label: '발주상태', value: '', placeholder: '발주상태를 선택하세요.', name: 'orderStatus',
     options: [
-      { name: '발주상태를 선택하세요.', value: '' },
       { name: '승인대기', value: '030001' },
       { name: '승인', value: '030002' },
       { name: '출고완료', value: '030003' },
@@ -45,7 +44,6 @@ filters.value.filters = [
   { type: 'text', label: '발주명', value: '', placeholder: '발주명을 입력하세요.', name: 'orderTitle' },
   { type: 'select', label: '발주사유', value: '', placeholder: '발주사유를 선택하세요.', name: 'reason',
     options: [
-      { name: '발주사유를 선택하세요.', value: '' },
       { name: '정기 발주', value: '140001' },
       { name: '수요 예측 발주', value: '140002' },
       { name: '재고 부족', value: '140003' },
