@@ -16,50 +16,45 @@ public class HqDashboardService {
     private final HqDashboardMapper hqDashboardMapper;
 
     public Map<String, Object> getKpiData() {
-
-        BigDecimal debugDeliveryRate = hqDashboardMapper.getSupplierDeliveryRate();
-        BigDecimal debugStockoutRate = hqDashboardMapper.getStockoutRate();
-        BigDecimal debugCogs = hqDashboardMapper.getCostOfGoodsSold();
-        BigDecimal debugAvgInventory = hqDashboardMapper.getAverageInventoryValue();
         
-        System.out.println("=== KPI 디버깅 ===");
-        System.out.println("deliveryRate: " + debugDeliveryRate);
-        System.out.println("stockoutRate: " + debugStockoutRate);
-        System.out.println("cogs: " + debugCogs);
-        System.out.println("avgInventory: " + debugAvgInventory);
-
+        System.out.println("=== 새로운 KPI 데이터 조회 시작 ===");
+        
         Map<String, Object> result = new HashMap<>();
         
+        // 1. 월간 총 매출액 & 전월 대비 매출 증감율
         BigDecimal monthlyRevenue = hqDashboardMapper.getMonthlyRevenue();
         BigDecimal previousMonthRevenue = hqDashboardMapper.getPreviousMonthRevenue();
-        BigDecimal revenueGrowth = calculateGrowthRate(monthlyRevenue, previousMonthRevenue);
+        BigDecimal revenueGrowthRate = calculateGrowthRate(monthlyRevenue, previousMonthRevenue);
         
         result.put("totalSales", formatCurrency(monthlyRevenue));
-        result.put("salesGrowth", formatPercentage(revenueGrowth));
+        result.put("salesGrowth", formatPercentage(revenueGrowthRate));
         
-        BigDecimal inventoryTurnover = calculateInventoryTurnover();
-        BigDecimal previousTurnover = calculatePreviousInventoryTurnover();
-        BigDecimal turnoverChange = inventoryTurnover.subtract(previousTurnover);
+        System.out.println("매출 데이터 - 현재: " + monthlyRevenue + ", 이전: " + previousMonthRevenue);
         
-        result.put("inventoryTurnover", inventoryTurnover.setScale(1, RoundingMode.HALF_UP) + "회");
-        result.put("turnoverChange", (turnoverChange.compareTo(BigDecimal.ZERO) >= 0 ? "+" : "") + 
-                                   turnoverChange.setScale(1, RoundingMode.HALF_UP) + "회");
+        // 2. 🔥 새로운 KPI: 전월 대비 매출 증감율 (위에서 이미 계산됨)
+        result.put("revenueGrowthRate", formatPercentage(revenueGrowthRate));
+        result.put("revenueGrowthChange", "매출 증감율"); // 단순 레이블
         
-        BigDecimal deliveryRate = hqDashboardMapper.getSupplierDeliveryRate();
-        BigDecimal previousDeliveryRate = hqDashboardMapper.getPreviousSupplierDeliveryRate();
-        BigDecimal deliveryRateChange = deliveryRate.subtract(previousDeliveryRate);
+        // 3. 🔥 새로운 KPI: 출고 대기 건수
+        Integer pendingOutboundCount = hqDashboardMapper.getPendingOutboundCount();
+        Integer previousPendingOutboundCount = hqDashboardMapper.getPreviousPendingOutboundCount();
+        Integer outboundCountChange = pendingOutboundCount - previousPendingOutboundCount;
         
-        result.put("deliveryRate", deliveryRate.setScale(1, RoundingMode.HALF_UP) + "%");
-        result.put("deliveryRateChange", (deliveryRateChange.compareTo(BigDecimal.ZERO) >= 0 ? "+" : "") + 
-                                       deliveryRateChange.setScale(1, RoundingMode.HALF_UP) + "%");
+        result.put("pendingOutboundCount", pendingOutboundCount + "건");
+        result.put("outboundCountChange", (outboundCountChange >= 0 ? "+" : "") + outboundCountChange + "건");
         
-        BigDecimal stockoutRate = hqDashboardMapper.getStockoutRate();
-        BigDecimal previousStockoutRate = hqDashboardMapper.getPreviousStockoutRate();
-        BigDecimal stockoutRateChange = stockoutRate.subtract(previousStockoutRate);
+        System.out.println("출고 대기 - 현재: " + pendingOutboundCount + ", 이전: " + previousPendingOutboundCount);
         
-        result.put("stockoutRate", stockoutRate.setScale(1, RoundingMode.HALF_UP) + "%");
-        result.put("stockoutRateChange", (stockoutRateChange.compareTo(BigDecimal.ZERO) >= 0 ? "+" : "") + 
-                                       stockoutRateChange.setScale(1, RoundingMode.HALF_UP) + "%");
+        // 4. 🔥 새로운 KPI: 대기중인 발주서 수
+        Integer pendingPOCount = hqDashboardMapper.getPendingPurchaseOrderCount();
+        Integer previousPendingPOCount = hqDashboardMapper.getPreviousPendingPurchaseOrderCount();
+        Integer poCountChange = pendingPOCount - previousPendingPOCount;
+        
+        result.put("pendingPurchaseOrderCount", pendingPOCount + "건");
+        result.put("poCountChange", (poCountChange >= 0 ? "+" : "") + poCountChange + "건");
+        
+        System.out.println("발주서 대기 - 현재: " + pendingPOCount + ", 이전: " + previousPendingPOCount);
+        System.out.println("=== 새로운 KPI 데이터 조회 완료 ===");
         
         return result;
     }
@@ -129,24 +124,33 @@ public class HqDashboardService {
                 alert.put("alert_type", type);
             }
             
+            // 🔥 새로운 알림 타입들 처리
             switch (type) {
+                case "PENDING_OUTBOUND":
+                    alert.put("priority", "HIGH");
+                    alert.put("color", "#4299e1");
+                    break;
+                case "PENDING_PURCHASE_ORDER":
+                    alert.put("priority", "MEDIUM");
+                    alert.put("color", "#ed8936");
+                    break;
                 case "STOCKOUT_WARNING":
                 case "STOCKOUT":
                     alert.put("priority", "HIGH");
-                    alert.put("color", "#FF4444");
+                    alert.put("color", "#f56565");
                     break;
                 case "LOW_STOCK":
                     alert.put("priority", "MEDIUM");
-                    alert.put("color", "#FF8800");
+                    alert.put("color", "#fbd38d");
                     break;
                 case "DELIVERY_DELAY":
                 case "DELAYED_DELIVERY":
                     alert.put("priority", "MEDIUM");
-                    alert.put("color", "#FF8800");
+                    alert.put("color", "#ff8800");
                     break;
                 case "LOW_TURNOVER":
                     alert.put("priority", "LOW");
-                    alert.put("color", "#FFA500");
+                    alert.put("color", "#a0aec0");
                     break;
                 default:
                     alert.put("priority", "LOW");
@@ -157,31 +161,15 @@ public class HqDashboardService {
         return alerts;
     }
 
-    private BigDecimal calculateInventoryTurnover() {
-        BigDecimal cogs = hqDashboardMapper.getCostOfGoodsSold();
-        BigDecimal avgInventory = hqDashboardMapper.getAverageInventoryValue();
-        
-        if (avgInventory.compareTo(BigDecimal.ZERO) == 0) {
-            return BigDecimal.ZERO;
-        }
-        
-        return cogs.divide(avgInventory, 2, RoundingMode.HALF_UP);
-    }
-
-    private BigDecimal calculatePreviousInventoryTurnover() {
-        BigDecimal previousCogs = hqDashboardMapper.getPreviousCostOfGoodsSold();
-        BigDecimal previousAvgInventory = hqDashboardMapper.getPreviousAverageInventoryValue();
-        
-        if (previousAvgInventory.compareTo(BigDecimal.ZERO) == 0) {
-            return BigDecimal.ZERO;
-        }
-        
-        return previousCogs.divide(previousAvgInventory, 2, RoundingMode.HALF_UP);
-    }
+    // 🔥 삭제: 재고 회전율 계산 메서드들
+    /*
+    private BigDecimal calculateInventoryTurnover() { ... }
+    private BigDecimal calculatePreviousInventoryTurnover() { ... }
+    */
 
     private BigDecimal calculateGrowthRate(BigDecimal current, BigDecimal previous) {
         if (previous.compareTo(BigDecimal.ZERO) == 0) {
-            return BigDecimal.ZERO;
+            return current.compareTo(BigDecimal.ZERO) > 0 ? new BigDecimal("100") : BigDecimal.ZERO;
         }
         
         return current.subtract(previous)
@@ -206,6 +194,9 @@ public class HqDashboardService {
     }
 
     private String formatPercentage(BigDecimal percentage) {
+        if (percentage == null) {
+            return "0.0%";
+        }
         String sign = percentage.compareTo(BigDecimal.ZERO) >= 0 ? "+" : "";
         return sign + percentage.setScale(1, RoundingMode.HALF_UP) + "%";
     }

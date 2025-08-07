@@ -11,16 +11,24 @@ public interface HqDashboardMapper {
     // KPI 관련 쿼리
     BigDecimal getMonthlyRevenue();
     BigDecimal getPreviousMonthRevenue();
+    
+    // 🔥 변경: 새로운 KPI 메서드들
+    Integer getPendingOutboundCount();              // 출고 대기 건수
+    Integer getPreviousPendingOutboundCount();      // 이전 출고 대기 건수
+    Integer getPendingPurchaseOrderCount();         // 대기중인 발주서 수
+    Integer getPreviousPendingPurchaseOrderCount(); // 이전 대기중인 발주서 수
+
+    // 🔥 삭제: 기존 KPI 메서드들 (더 이상 사용안함)
+    /*
     BigDecimal getSupplierDeliveryRate();
     BigDecimal getPreviousSupplierDeliveryRate();
     BigDecimal getStockoutRate();
     BigDecimal getPreviousStockoutRate();
-
-    // 재고 회전율 계산용
     BigDecimal getCostOfGoodsSold();
     BigDecimal getAverageInventoryValue();
     BigDecimal getPreviousCostOfGoodsSold();
     BigDecimal getPreviousAverageInventoryValue();
+    */
 
     // 매출 트렌드 관련
     List<Map<String, Object>> getSalesTrendByCategory();

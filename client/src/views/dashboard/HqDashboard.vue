@@ -20,9 +20,10 @@
       <button @click="errorMessage = ''" class="close-error">✕</button>
     </div>
 
-    <!-- KPI 카드들 -->
+    <!-- KPI 카드들 - 새로운 지표 -->
     <div class="kpi-section">
       <div class="kpi-grid">
+        <!-- 1. 월간 총 매출액 (기존 유지) -->
         <div class="kpi-card">
           <div class="kpi-content">
             <h3>월간 총 매출액</h3>
@@ -33,32 +34,35 @@
           </div>
         </div>
 
+        <!-- 2. 전월 대비 매출 증감율 -->
         <div class="kpi-card">
           <div class="kpi-content">
-            <h3>전체 재고 회전율</h3>
-            <div class="kpi-value">{{ kpiData.inventoryTurnover || '로딩 중...' }}</div>
-            <div :class="['kpi-change', getChangeClass(kpiData.turnoverChange)]">
-              {{ kpiData.turnoverChange || '계산 중...' }}
+            <h3>전월 대비 매출 증감율</h3>
+            <div class="kpi-value">{{ kpiData.revenueGrowthRate || '로딩 중...' }}</div>
+            <div :class="['kpi-change', getChangeClass(kpiData.revenueGrowthChange)]">
+              {{ kpiData.revenueGrowthChange || '계산 중...' }}
             </div>
           </div>
         </div>
 
+        <!-- 3. 출고 대기 건수 -->
         <div class="kpi-card">
           <div class="kpi-content">
-            <h3>공급업체 납기준수율</h3>
-            <div class="kpi-value">{{ kpiData.deliveryRate || '로딩 중...' }}</div>
-            <div :class="['kpi-change', getChangeClass(kpiData.deliveryRateChange, true)]">
-              {{ kpiData.deliveryRateChange || '계산 중...' }}
+            <h3>출고 대기 건수</h3>
+            <div class="kpi-value">{{ kpiData.pendingOutboundCount || '로딩 중...' }}</div>
+            <div :class="['kpi-change', getChangeClass(kpiData.outboundCountChange, true)]">
+              {{ kpiData.outboundCountChange || '계산 중...' }}
             </div>
           </div>
         </div>
 
+        <!-- 4. 대기중인 발주서 수 -->
         <div class="kpi-card">
           <div class="kpi-content">
-            <h3>품절률</h3>
-            <div class="kpi-value">{{ kpiData.stockoutRate || '로딩 중...' }}</div>
-            <div :class="['kpi-change', getChangeClass(kpiData.stockoutRateChange, true)]">
-              {{ kpiData.stockoutRateChange || '계산 중...' }}
+            <h3>대기중인 발주서 수</h3>
+            <div class="kpi-value">{{ kpiData.pendingPurchaseOrderCount || '로딩 중...' }}</div>
+            <div :class="['kpi-change', getChangeClass(kpiData.poCountChange, true)]">
+              {{ kpiData.poCountChange || '계산 중...' }}
             </div>
           </div>
         </div>
@@ -89,9 +93,9 @@
     <!-- 상세 정보 섹션 -->
     <div class="details-section">
       <div class="details-grid">
-        <!-- 상위 공급업체 -->
+        <!-- 상위 공급업체 - 발주 건수 기준으로 수정 -->
         <div class="detail-card">
-          <h3>상위 공급업체 성과 TOP 5</h3>
+          <h3>발주 빈도 높은 공급업체 TOP 5</h3>
           <div class="suppliers-list">
             <div v-if="topSuppliers.length === 0" class="no-data-message">
               공급업체 데이터를 불러오는 중입니다...
@@ -99,11 +103,7 @@
             <div v-for="supplier in topSuppliers" :key="supplier.supplier_name" class="supplier-item">
               <div class="supplier-info">
                 <div class="supplier-name">{{ supplier.supplier_name }}</div>
-                <div class="supplier-revenue">{{ formatCurrency(supplier.revenue) }}</div>
-              </div>
-              <div class="supplier-metrics">
-                <span class="metric">납기: {{ supplier.delivery_rate || 0 }}%</span>
-                <span class="metric">품질: {{ supplier.quality_score || 0 }}점</span>
+                <div class="supplier-count">{{ supplier.order_count }}건</div>
               </div>
             </div>
           </div>
@@ -156,6 +156,7 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted, nextTick } from 'vue'
+import axios from '@/service/axios.js'
 import {
   Chart,
   CategoryScale,
@@ -216,16 +217,14 @@ let cachedTrendData = []
 const fetchData = async (url, dataName) => {
   try {
     console.log(`Fetching ${dataName} from:`, url)
-    const response = await fetch(url)
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`)
-    }
-    const data = await response.json()
-    console.log(`${dataName} 응답:`, data)
-    return data
+
+    const response = await axios.get(url)
+    
+    console.log(`${dataName} 응답: `, response.data)
+    return response.data
   } catch (error) {
-    console.error(`${dataName} 로딩 실패:`, error)
-    throw error
+    console.error(`${dataName} API 호출 실패:`, error)
+    throw Error
   }
 }
 
@@ -418,23 +417,30 @@ const createCategorySalesChart = (categoryData) => {
   }
 }
 
-// KPI 데이터 조회
+// KPI 데이터 조회 - 새로운 KPI 필드명으로 수정
 const fetchKpiData = async () => {
   try {
     const data = await fetchData('http://localhost:3049/api/dashboard/hq/kpi', 'KPI')
     
     if (data && typeof data === 'object') {
-      // 백엔드에서 이미 formatting된 문자열로 보내므로 그대로 사용
+      // 새로운 KPI 필드명으로 매핑
       kpiData.value = {
+        // 기존 매출 정보
         totalSales: data.totalSales || '0원',
         salesGrowth: data.salesGrowth || '+0.0%',
-        inventoryTurnover: data.inventoryTurnover || '0.0회',
-        turnoverChange: data.turnoverChange || '+0.0%',
-        deliveryRate: data.deliveryRate || '0.0%',
-        deliveryRateChange: data.deliveryRateChange || '+0.0%',
-        stockoutRate: data.stockoutRate || '0.0%',
-        stockoutRateChange: data.stockoutRateChange || '+0.0%'
+        
+        // 새로운 KPI들
+        revenueGrowthRate: data.revenueGrowthRate || '+0.0%',
+        revenueGrowthChange: data.revenueGrowthChange || '매출 증감율',
+        
+        pendingOutboundCount: data.pendingOutboundCount || '0건',
+        outboundCountChange: data.outboundCountChange || '+0건',
+        
+        pendingPurchaseOrderCount: data.pendingPurchaseOrderCount || '0건',
+        poCountChange: data.poCountChange || '+0건'
       }
+      
+      console.log('KPI 데이터 매핑 완료:', kpiData.value)
     }
   } catch (error) {
     console.error('KPI 데이터 로딩 실패:', error)
@@ -482,21 +488,24 @@ const fetchCategorySales = async () => {
   }
 }
 
-// 공급업체 데이터 조회
+// 🔥 공급업체 데이터 조회 - 새로운 쿼리 기준으로 수정
 const fetchTopSuppliers = async () => {
   try {
     const data = await fetchData('http://localhost:3049/api/dashboard/hq/suppliers', '공급업체')
     
+    console.log('공급업체 원본 데이터:', data) // 디버깅용
+    
     if (data && Array.isArray(data) && data.length > 0) {
       topSuppliers.value = data.map(supplier => ({
-        ...supplier,
-        supplier_name: supplier.supplier_name || '알 수 없음',
-        revenue: supplier.revenue || 0,
-        delivery_rate: supplier.delivery_rate || 0,
-        quality_score: supplier.quality_score || 0
+        // 대소문자 모두 고려해서 매핑
+        supplier_name: supplier.SUPPLIER_NAME || supplier.supplier_name || '알 수 없음',
+        order_count: supplier.ORDER_COUNT || supplier.order_count || 0
       }))
+      
+      console.log('처리된 공급업체 데이터:', topSuppliers.value)
     } else {
       topSuppliers.value = []
+      console.log('공급업체 데이터가 비어있습니다.')
     }
   } catch (error) {
     console.error('공급업체 데이터 로딩 실패:', error)
@@ -522,7 +531,7 @@ const fetchInventoryData = async () => {
   }
 }
 
-// 알림 데이터 조회 - 수정된 버전
+// 알림 데이터 조회 - 새로운 알림 타입 포함
 const fetchAlerts = async () => {
   try {
     const data = await fetchData('http://localhost:3049/api/dashboard/hq/alerts', '알림')
@@ -624,10 +633,12 @@ const getChangeClass = (value, inverse = false) => {
 
 const getAlertIcon = (alertType) => {
   const icons = {
-    'STOCKOUT_WARNING': '📦',
+    'PENDING_OUTBOUND': '📦',
+    'PENDING_PURCHASE_ORDER': '📋',
+    'STOCKOUT_WARNING': '⚠️',
     'DELIVERY_DELAY': '🚚',
     'LOW_TURNOVER': '🔄',
-    'LOW_STOCK': '⚠️',
+    'LOW_STOCK': '📉',
     'INFO': 'ℹ️'
   }
   return icons[alertType] || '⚠️'
@@ -819,19 +830,19 @@ onUnmounted(() => {
   width: 4px;
 }
 
-.kpi-card.sales::before {
+.kpi-card:nth-child(1)::before {
   background: #48bb78;
 }
 
-.kpi-card.inventory::before {
+.kpi-card:nth-child(2)::before {
   background: #4299e1;
 }
 
-.kpi-card.delivery::before {
+.kpi-card:nth-child(3)::before {
   background: #ed8936;
 }
 
-.kpi-card.stockout::before {
+.kpi-card:nth-child(4)::before {
   background: #f56565;
 }
 
@@ -840,9 +851,8 @@ onUnmounted(() => {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
-.kpi-icon {
-  font-size: 32px;
-  margin-right: 16px;
+.kpi-content {
+  width: 100%;
 }
 
 .kpi-content h3 {
@@ -935,7 +945,7 @@ onUnmounted(() => {
   border-radius: 8px;
 }
 
-/* 공급업체 목록 */
+/* 공급업체 목록 - 발주 건수 기준으로 간단화 */
 .suppliers-list {
   space-y: 12px;
 }
@@ -957,7 +967,6 @@ onUnmounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 8px;
 }
 
 .supplier-name {
@@ -965,19 +974,10 @@ onUnmounted(() => {
   color: #1a202c;
 }
 
-.supplier-revenue {
+.supplier-count {
   font-weight: 600;
-  color: #48bb78;
-}
-
-.supplier-metrics {
-  display: flex;
-  gap: 16px;
-}
-
-.metric {
-  font-size: 14px;
-  color: #718096;
+  color: #4299e1;
+  font-size: 16px;
 }
 
 /* 재고 현황 */
@@ -1151,10 +1151,6 @@ onUnmounted(() => {
     padding: 20px;
   }
   
-  .kpi-icon {
-    font-size: 24px;
-  }
-  
   .kpi-value {
     font-size: 24px;
   }
@@ -1169,11 +1165,6 @@ onUnmounted(() => {
   
   .details-grid {
     grid-template-columns: 1fr;
-  }
-  
-  .supplier-metrics {
-    flex-direction: column;
-    gap: 4px;
   }
   
   .error-banner {
