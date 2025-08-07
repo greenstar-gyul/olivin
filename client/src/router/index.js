@@ -269,8 +269,14 @@ const router = createRouter({
                     path: '/sales/history',
                     name: 'salesHistory',
                     component: () => import('@/views/sales/SalesHistoryPage.vue'),
-                }
+                },
                 /* end of sales */
+                {
+                    path: '/roles/manage',
+                    name: 'roleManage',
+                    component: () => import('@/views/roles/Manage.vue'),
+                    meta: { roles: ['system_admin'] }
+                }
             ]
         },
         // 로그인 불필요 페이지들
