@@ -1,10 +1,11 @@
 // LoginResponseVO.java
 package com.olivin.app.auth.service;
 
-import lombok.Data;
-import lombok.AllArgsConstructor;
-import lombok.NoArgsConstructor;
 import java.util.List;
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
 @AllArgsConstructor
@@ -27,6 +28,7 @@ public class LoginResponseVO {
         private String departmentId;      // 부서ID
         private String deptName;        // 부서명
         private String compId;         // 회사ID
+        private String compName;       // 회사명
     }
     
     @Data
