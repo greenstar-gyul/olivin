@@ -3,6 +3,7 @@ package com.olivin.app.inventory.web;
 import java.util.List;
 
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -38,5 +39,11 @@ public class HeadInventoryController {
     @GetMapping("/inventory/headStock/search")
     public List<HeadInventoryVO> searchHeadInventory(HeadInventoryVO headInventoryVO) {
         return headInventoryService.selectHeadInventoryList(headInventoryVO);
+    }
+
+    // This endpoint retrieves lot information for a specific product
+    @GetMapping("/inventory/headStock/lot/{productId}")
+    public List<HeadInventoryVO> getHeadInventoryLot(@PathVariable String productId) {
+        return headInventoryService.selectHeadInventoryLot(productId);
     }
 }

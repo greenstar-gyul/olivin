@@ -10,7 +10,7 @@ import { useAuth } from '@/composables/useAuth';
 const { user } = useAuth();
 
 // 조회 폼의 헤더 정보 (조회 테이블 컬럼 이름)
-const header = ref({
+const mainHeader = ref({
   title: '재고 현황', // 조회 폼 제목
   header: { // 테이블의 헤더 정보
     productId: '제품번호', 
@@ -27,17 +27,17 @@ const header = ref({
 });
 
 // 조회할 데이터
-const items = ref([]);
+const mainItems = ref([]);
 
 // 검색 조건 필터 설정
 const filters = ref({});
-filters.value.title = '재고 검색'; // 검색 조건 폼 제목
-filters.value.filters = [ // 검색 조건 필터 목록
-  { type: 'item-search', label: '제품명', value: '', placeholder: '제품번호 / 제품명 검색', name: 'productModal' },
-  { type: 'item-search', label: '제품분류', value: '', placeholder: '제품분류 선택', name: 'productType' },
-  { type: 'item-search', label: '공급사', value: '', placeholder: '공급사 검색', name: 'publisher' },
-  { type: 'item-search', label: '지점', value: '', placeholder: '지점명 검색', name: 'store' },
-];
+  filters.value.title = '재고 검색'; // 검색 조건 폼 제목
+  filters.value.filters = [ // 검색 조건 필터 목록
+    { type: 'item-search', label: '제품명', value: '', placeholder: '제품번호 / 제품명 검색', name: 'productModal' },
+    { type: 'item-search', label: '제품분류', value: '', placeholder: '제품분류 선택', name: 'productType' },
+    { type: 'item-search', label: '공급사', value: '', placeholder: '공급사 검색', name: 'publisher' },
+    { type: 'item-search', label: '지점', value: '', placeholder: '지점명 검색', name: 'store' },
+  ];
 
 // 모달창의 테이블 헤더 정보
 // field: 테이블의 각 컬럼에 해당하는 데이터의 키
@@ -86,20 +86,37 @@ const storeItems = ref([]);
 
 const loadStockData = async () => {
   try {
-    // 모든 재고 데이터를 가져오기 (제한 없음)
-    const response = await axios.get('/api/inventory/branchStock/all');
-    
-    items.value = response.data;
-    console.log('Stock data loaded:', items.value);
-    
+    let searchComp = '';
     // 지점 직원이면 검색폼에 자신의 지점명을 기본값으로 설정
     if (user.value && user.value.compId && user.value.compId !== 'COM10001') {
-      setTimeout(() => {
-        if (searchFormRef.value?.searchFormRef?.searchOptions) {
-          searchFormRef.value.searchFormRef.searchOptions.store = user.value.compName || user.value.compId;
-        }
-      }, 100);
+      if (searchFormRef.value?.searchOptions) {
+        searchFormRef.value.searchOptions.store = user.value.compName;
+        searchComp = user.value.compName;
+      }
     }
+    // 본사 직원이면 검색폼에 가장 첫번째 지점명을 기본값으로 설정
+    else if (user.value && user.value.compId === 'COM10001') {
+      if (searchFormRef.value?.searchOptions) {
+        const response = await axios.get('/api/search/branches/all');
+        const firstData = await response.data[0]; 
+
+        searchFormRef.value.searchOptions.store = firstData.compName;
+        searchComp = firstData.compName;
+      }
+    }
+
+    // 모든 재고 데이터를 가져오기 (제한 없음)
+    const response = await axios.get('/api/inventory/branchStock/search', {
+      params: {
+        productName: '',
+        categorySub: '',
+        vendorName: '',
+        compName: searchComp
+      }
+    });
+    
+    mainItems.value = response.data;
+    console.log('Stock data loaded:', mainItems.value);
     
   } catch (error) {
     console.error('Error loading stock data:', error);
@@ -220,8 +237,8 @@ const searchFormRef = ref(null);
 
 const updateFilterValue = (filterName, selectedItem) => {
   // SearchForm의 searchOptions에 직접 값 설정
-  if (searchFormRef.value.searchFormRef.searchOptions) {
-    searchFormRef.value.searchFormRef.searchOptions[filterName] = selectedItem;
+  if (searchFormRef.value.searchOptions) {
+    searchFormRef.value.searchOptions[filterName] = selectedItem;
   }
 };
 
@@ -314,8 +331,8 @@ const searchStocks = async (searchOptions) => {
     const response = await axios.get('/api/inventory/branchStock/search', {
       params: params
     });
-    items.value = response.data;
-    console.log('Stocks searched:', items.value);
+    mainItems.value = response.data;
+    console.log('Stocks searched:', mainItems.value);
   } catch (error) {
     console.error('Error searching stocks:', error);
   }
@@ -327,9 +344,8 @@ const resetList = () => {
 
 // 사용자 권한에 따른 필터 설정
 const setupFilters = () => {
-  // 모든 사용자가 모든 필터를 사용할 수 있도록 설정
-  // 지점 직원도 다른 지점의 재고를 조회할 수 있음
   console.log('Setting up filters for user:', user.value);
+  // console.log(searchFormRef.value.searchOptions.store);
 }
 
 onMounted(() => {
@@ -341,7 +357,9 @@ onMounted(() => {
 
 </script>
 <template>
-  <SearchTable ref="searchFormRef" :filters="filters" :items="items" :header="header" @searchData="searchData" @open-search-modal="handleOpenModal" @resetSearchOptions="resetList"></SearchTable>
+  <SearchForm ref="searchFormRef" :filters="filters" @searchData="searchData" @openSearchModal="handleOpenModal" @resetSearchOptions="resetList" ></SearchForm>
+  <BasicTable :data="mainItems" :header="mainHeader"></BasicTable>
+  
   <DialogModal v-model:display="productModalVisible" :items="productItems" :headers="productHeaders" title="제품 검색"
     selectionMode="single" @close="closeProductModal" @confirm="confirmProductModal" @search-modal="searchProducts" />
   <DialogModal v-model:display="typeModalVisible" :items="typeItems" :headers="typeHeaders" title="제품 분류 검색"
