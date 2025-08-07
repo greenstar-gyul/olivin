@@ -69,6 +69,13 @@ const model = ref([
             { label: '거래처원장', icon: 'pi pi-fw pi-book', to: '/views/account' },
         ]
     },
+    {
+        label: '권한',
+        to: '/roles',
+        items: [
+            { label: '권한 관리', icon: 'pi pi-fw pi-users', to: '/roles/manage' },
+        ]
+    },
     {   
         label: '컴포넌트 테스트',
         to: '/test',
