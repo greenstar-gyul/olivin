@@ -82,13 +82,13 @@
 	            AND order_date &gt;= #{orderDateFrom}
 	        </if>
 	        <if test="orderDateTo != null">
-	            AND order_date &lt;= #{orderDateTo}
+	            AND order_date &lt; #{orderDateTo}+1
 	        </if>
 	        <if test="dueDateFrom != null">
 	            AND due_date &gt;= #{dueDateFrom}
 	        </if>
 	        <if test="dueDateTo != null">
-	            AND due_date &lt;= #{dueDateTo}
+	            AND due_date &lt; #{dueDateTo}+1
 	        </if>
         </where>
         ORDER BY order_id DESC

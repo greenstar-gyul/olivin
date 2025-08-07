@@ -4,6 +4,7 @@ import java.util.List;
 
 import com.olivin.app.sales.service.SalesOrdersDetailVO;
 import com.olivin.app.sales.service.SalesOrdersVO;
+import com.olivin.app.sales.service.SearchSalesOrdersVO;
 
 /**
  * 주문서에 관련된 mapper를 저장되는 인터페이스<br>
@@ -15,7 +16,7 @@ import com.olivin.app.sales.service.SalesOrdersVO;
  */
 public interface SalesOrdersMapper {
 	//주문서 조회
-	public List<SalesOrdersVO> selectAllList(SalesOrdersVO ordersVO);
+	public List<SalesOrdersVO> selectAllList(SearchSalesOrdersVO searchVO);
 	public SalesOrdersVO selectOneBySoId(String soId);
 	public List<SalesOrdersDetailVO> selectDetailsBySoId(String soId);
 	//주문서 등록

@@ -33,7 +33,7 @@ const defaultTable = ref([]);
 const columns = {
   title: '상품 목록',
   header: {
-    productId: 'ID',
+    productId: '제품코드',
     productName: '제품명',
     categoryName: '카탈로그',
     vendorName: '공급사',
