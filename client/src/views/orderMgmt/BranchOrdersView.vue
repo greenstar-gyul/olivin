@@ -56,13 +56,19 @@ filters.value.filters = [
   { type: 'dateRange', label: '납기예정일', value: '', name: 'dueDate',
     fromPlaceholder: '예: 2025-07-01', toPlaceholder: '예: 2025-07-31' },
   { type: 'text', label: '지점명', value: '', placeholder: '지점명을 입력하세요.', name: 'orderFrom' },
-
 ];
+
+const filterOptions = ref({}); // 검색 조건 기본값
 
 const searchData = (searchOptions) => {
   console.log('Searching with options:', searchOptions);
   getOrdersData(searchOptions);
 };
+
+const resetSearchData = () => {
+  const searchFormRef = searchDetailTableRef.value.searchFormRef;
+  searchFormRef.searchOptions = { ...filterOptions.value }; //기본값으로 초기화
+}
 
 const getOrdersData = async (options) => {
   const req = await axios.get('/api/orders/branch', {
@@ -99,21 +105,45 @@ const getBranchInfo = async (empId) => {
   return undefined;
 }
 
-onMounted(async () => {
+const defaultFilterOptions = async (userInfo) => {
+  const options = {};
+  filters.value.filters.forEach(filter => {
+    if (filter.type === 'dateRange') {
+      options[`${filter.name}From`] = '';
+      options[`${filter.name}To`] = '';
+    } else {
+      options[filter.name] = '';
+    }
+  }); //filtrer의 name을 key로 사용
+
+  // 기본 날짜 설정
+  const defaultOrderDateFrom = new Date();
   // 1년 전부터 조회하기 위해 기본 날짜 설정
-  const searchOptions = searchDetailTableRef.value.searchFormRef.searchOptions;
-  if (searchOptions) {
-    const defaultOrderDateFrom = new Date();
-    defaultOrderDateFrom.setFullYear(defaultOrderDateFrom.getFullYear() - 1);
+  defaultOrderDateFrom.setFullYear(defaultOrderDateFrom.getFullYear() - 1);
+  options.orderDateFrom = defaultOrderDateFrom;
 
-    const branchInfo = await getBranchInfo(useAuth().user.value.employeeId);
-    searchOptions.orderFrom = branchInfo?.compName || '';
+  // 지점 정보 기져오기
+  const branchInfo = await getBranchInfo(userInfo.employeeId);
+  options.orderFrom = branchInfo?.compName || '';
 
-    searchOptions.orderDateFrom = defaultOrderDateFrom;
-    getOrdersData(searchOptions);
-  }
+  // 검색조건 기본값 설정
+  filterOptions.value = { ...options };
+}
+
+onMounted(async () => {
+  //사용자 정보
+  const userInfo = useAuth().user.value;
+  // 검색조건 기본값 설정
+  await defaultFilterOptions(userInfo);
+  resetSearchData();
+  // 지점 발주서 정보 조회
+  getOrdersData(filterOptions.value);
 });
 </script>
 <template>
-  <SearchDetailTable ref="searchDetailTableRef" :filters="filters" :items="items" :header="header" @searchData="searchData" @actionHandler="actionHandler"></SearchDetailTable>
+  <SearchDetailTable ref="searchDetailTableRef" :filters="filters" 
+    :items="items" :header="header" 
+    @searchData="searchData" @resetSearchOptions="resetSearchData"
+    @actionHandler="actionHandler"
+  />
 </template>

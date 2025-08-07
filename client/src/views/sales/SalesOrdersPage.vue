@@ -1,8 +1,9 @@
 <script setup>
 import { onMounted, ref } from 'vue';
 import BasicTable from '@/components/table/BasicTable.vue';
-import axios from '@/service/axios';
 import SearchForm from '@/components/inputForm/SearchForm.vue';
+import { useAuth } from '@/composables/useAuth';
+import axios from '@/service/axios';
 
 const searchFormRef = ref(null);
 
@@ -84,12 +85,14 @@ const filters = ref({
   ]
 });
 
+const filterOptions = ref({}); // 검색 조건 기본값
+
 const searchData = async (searchValue) => {
   getSalesOrders(searchValue);
 };
 
-const resetSearchOptions = () => {
-
+const resetSearchData = () => {
+  searchFormRef.value.searchOptions = { ...filterOptions.value }; //기본값으로 초기화
 };
 
 const getSalesOrders = async (searchValue) => {
@@ -110,20 +113,58 @@ const getSalesOrders = async (searchValue) => {
   }
 };
 
-onMounted(async () => {
-  // 1년 전부터 조회하기 위해 기본 날짜 설정
-  const searchOptions = searchFormRef.value.searchOptions;
-  if (searchOptions) {
-    const defaultOrderDateFrom = new Date();
-    defaultOrderDateFrom.setFullYear(defaultOrderDateFrom.getFullYear() - 1);
+const getBranchInfo = async (empId) => {
+  const req = await axios.get('/api/orders/user/compInfo', {
+    params: {
+      empId: empId
+    }
+  });
 
-    searchOptions.soDateFrom = defaultOrderDateFrom;
-    getSalesOrders(searchOptions);
-  }
+  //지점 정보
+  if (req.data.compType == '100002')
+    return req.data;
+  return undefined;
+}
+
+const defaultFilterOptions = async (userInfo) => {
+  const options = {};
+  filters.value.filters.forEach(filter => {
+    if (filter.type === 'dateRange') {
+      options[`${filter.name}From`] = '';
+      options[`${filter.name}To`] = '';
+    } else {
+      options[filter.name] = '';
+    }
+  }); //filtrer의 name을 key로 사용
+
+  // 기본 날짜 설정
+  const defaultOrderDateFrom = new Date();
+  // 1년 전부터 조회하기 위해 기본 날짜 설정
+  defaultOrderDateFrom.setFullYear(defaultOrderDateFrom.getFullYear() - 1);
+  options.soDateFrom = defaultOrderDateFrom;
+
+  // 지점 정보 기져오기
+  const branchInfo = await getBranchInfo(userInfo.employeeId);
+  options.compName = branchInfo?.compName || '';
+
+  // 검색조건 기본값 설정
+  filterOptions.value = { ...options };
+}
+
+onMounted(async () => {
+  //사용자 정보
+  const userInfo = useAuth().user.value;
+  // 검색조건 기본값 설정
+  await defaultFilterOptions(userInfo);
+  resetSearchData();
+  // 주문서 정보 조회
+  getSalesOrders(filterOptions.value);
 });
 </script>
 <template>
-  <SearchForm ref="searchFormRef" :filters="filters" @searchData="searchData" @resetSearchOptions="resetSearchOptions"></SearchForm>
+  <SearchForm ref="searchFormRef" :filters="filters" 
+    @searchData="searchData" @resetSearchOptions="resetSearchData"
+  />
   <BasicTable :data="masterItems" :header="masterHeader" :checked="true" :dataKey="'soId'" @rowSelect="onRowSelect" @rowUnselect="onRowUnselect"></BasicTable>
   <BasicTable :data="detailItems" :header="detailHeader"></BasicTable>
 </template>

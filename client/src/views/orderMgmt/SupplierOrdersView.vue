@@ -4,6 +4,7 @@ import { onMounted, ref } from 'vue';
 import { convertDate } from '@/utils/dateUtils';
 import { useRouter } from 'vue-router';
 import axios from '@/service/axios';
+import { useAuth } from '@/composables/useAuth';
 
 const router = useRouter();
 
@@ -54,13 +55,20 @@ filters.value.filters = [
   },
   { type: 'dateRange', label: '납기예정일', value: '', name: 'dueDate',
     fromPlaceholder: '예: 2025-07-01', toPlaceholder: '예: 2025-07-31' },
-  { type: 'text', label: '공급업체명', value: '', placeholder: '공급업체명을 입력하세요.', name: 'orderForm' },
+  { type: 'text', label: '공급업체명', value: '', placeholder: '공급업체명을 입력하세요.', name: 'orderFrom' },
 
 ];
+
+const filterOptions = ref({}); // 검색 조건 기본값
 
 const searchData = (searchOptions) => {
   console.log('Searching with options:', searchOptions);
   getOrdersData(searchOptions);
+};
+
+const resetSearchData = () => {
+  const searchFormRef = searchDetailTableRef.value.searchFormRef;
+  searchFormRef.searchOptions = { ...filterOptions.value }; //기본값으로 초기화
 };
 
 const getOrdersData = async (options) => {
@@ -85,17 +93,60 @@ const actionHandler = (rowData) => {
   router.push(`/orders/view/${rowData.orderId}`);
 }
 
-onMounted(() => {
+const getSupplierInfo = async (empId) => {
+  const req = await axios.get('/api/orders/user/compInfo', {
+    params: {
+      empId: empId
+    }
+  });
+
+  //지점 정보
+  if (req.data.compType == '100003')
+    return req.data;
+  return undefined;
+}
+
+const defaultFilterOptions = async (userInfo) => {
+  const options = {};
+  filters.value.filters.forEach(filter => {
+    if (filter.type === 'dateRange') {
+      options[`${filter.name}From`] = '';
+      options[`${filter.name}To`] = '';
+    } else {
+      options[filter.name] = '';
+    }
+  }); //filtrer의 name을 key로 사용
+
+  // 기본 날짜 설정
+  const defaultOrderDateFrom = new Date();
   // 1년 전부터 조회하기 위해 기본 날짜 설정
-  const searchOptions = searchDetailTableRef.value.searchFormRef.searchOptions;
-  if (searchOptions) {
-    const defaultOrderDateFrom = new Date();
-    defaultOrderDateFrom.setFullYear(defaultOrderDateFrom.getFullYear() - 1);
-    searchOptions.orderDateFrom = defaultOrderDateFrom;
-    getOrdersData(searchOptions);
-  }
+  defaultOrderDateFrom.setFullYear(defaultOrderDateFrom.getFullYear() - 1);
+  options.orderDateFrom = defaultOrderDateFrom;
+
+  // 지점 정보 기져오기
+  const supplierInfo = await getSupplierInfo(userInfo.employeeId);
+  options.orderFrom = supplierInfo?.compName || '';
+
+  options.orderStatus = '030002'; // 기본 상태: 승인
+
+  // 검색조건 기본값 설정
+  filterOptions.value = { ...options };
+}
+
+onMounted(async () => {
+  //사용자 정보
+  const userInfo = useAuth().user.value;
+  // 검색조건 기본값 설정
+  await defaultFilterOptions(userInfo);
+  resetSearchData();
+  // 지점 발주서 정보 조회
+  getOrdersData(filterOptions.value);
 });
 </script>
 <template>
-  <SearchDetailTable ref="searchDetailTableRef" :filters="filters" :items="items" :header="header" @searchData="searchData" @actionHandler="actionHandler"></SearchDetailTable>
+  <SearchDetailTable ref="searchDetailTableRef" :filters="filters" 
+    :items="items" :header="header" 
+    @searchData="searchData" @resetSearchOptions="resetSearchData"
+    @actionHandler="actionHandler"
+  />
 </template>
