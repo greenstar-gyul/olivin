@@ -10,13 +10,12 @@ const header = ref({
   header: { // 테이블의 헤더 정보
     productId: '제품번호', 
     productName: '제품명', 
-    lotNo: 'LOT',
     categoryMain: '대분류', 
     categorySub: '소분류', 
     vendorName: '공급사', 
-    productSpec: '규격', 
     stockQuantity: '재고수량(박스)', 
     safetyStock: '안전 재고(박스)', 
+    productSpec: '규격', 
   },
   rightAligned: ['stockQuantity', 'safetyStock'] // 오른쪽 정렬할 컬럼 리스트
 });
@@ -26,12 +25,12 @@ const items = ref([]);
 
 // 검색 조건 필터 설정
 const filters = ref({});
-filters.value.title = '재고 검색'; // 검색 조건 폼 제목
-filters.value.filters = [ // 검색 조건 필터 목록
-  { type: 'item-search', label: '매출번호', value: '', placeholder: '매출 검색', name: 'salesSearchModal' },
-  { type: 'dateRange', label: '매출일자', value: '', fromPlaceholder: '', name: 'salesDates' },
-  { type: 'select', label: '매출상태', value: '', placeholder: '공급사 검색', name: 'publisher' },
-  // { type: 'item-search', label: '지점', value: '', placeholder: '지점명 검색', name: 'store' },
+filters.value.title = '매출 검색'; // 검색 조건 폼 제목
+filters.value.filters = [
+  { type: 'dateRange', label: '매출기간', value: '', fromPlaceholder: '', name: 'salesDates' },
+  { type: 'item-search', label: '제품명', value: '', placeholder: '제품 검색', name: 'products' },
+  { type: 'item-search', label: '제품분류', value: '', placeholder: '제품분류 검색', name: 'productType' },
+  { type: 'item-search', label: '지점명', value: '', placeholder: '지점명 검색', name: 'store' },
 ];
 
 /*
@@ -82,28 +81,6 @@ const storeHeaders = ref([
 ]);
 
 const storeItems = ref([]);
-
-// 필터 설정
-const setFilters = async () => {
-  try {
-    const response = await axios.get('/api/search/sales/status');
-    const salesStatuses = await response.data;
-
-    filters.value.title = '매출 검색'; // 검색 조건 폼 제목
-    filters.value.filters = [
-      { type: 'item-search', label: '매출번호', value: '', placeholder: '매출 검색', name: 'salesSearchModal' },
-      { type: 'dateRange', label: '매출일자', value: '', fromPlaceholder: '', name: 'salesDates' },
-      { type: 'select', label: '매출상태', value: '', placeholder: '공급사 검색', name: 'salesStatus', options: [
-        ...salesStatuses.map(status => ({ name: status.name, value: status.name }))
-      ] },
-      { type: 'item-search', label: '제품명', value: '', placeholder: '제품 검색', name: 'products' },
-      { type: 'item-search', label: '제품분류', value: '', placeholder: '제품분류 검색', name: 'productType' },
-      { type: 'item-search', label: '지점명', value: '', placeholder: '지점명 검색', name: 'store' },
-    ];
-  } catch (error) {
-    console.error('Error setting filters:', error);
-  }
-}
 
 // =====
 
@@ -169,7 +146,7 @@ const loadSalesItems = async () => {
 // 검색 폼에서 검색 버튼 클릭 시 호출되는 함수
 const searchData = async (searchOptions) => {
   console.log('Searching with options:', searchOptions);
-  await searchStocks(searchOptions);
+  await searchSalesHistory(searchOptions);
   
 };
 
@@ -178,7 +155,7 @@ const searchData = async (searchOptions) => {
 const handleOpenModal = (filterName) => {
   console.log('Open modal for filter:', filterName);
   switch (filterName) {
-    case 'productModal':
+    case 'products':
       loadProductItems();
       productModalVisible.value = true;
       break;
@@ -233,7 +210,7 @@ const updateFilterValue = (filterName, selectedItem) => {
 const confirmProductModal = (selectedItems) => {
   console.log('Selected items from product modal:', selectedItems);
   if (selectedItems) {
-    updateFilterValue('productModal', selectedItems.productName);
+    updateFilterValue('products', selectedItems.productName);
   }
   productModalVisible.value = false;
 };
@@ -251,7 +228,7 @@ const confirmTypeModal = (selectedItems) => {
 const confirmStoreModal = (selectedItems) => {
   console.log('Selected items from store modal:', selectedItems);
   if (selectedItems) {
-    updateFilterValue('store', selectedItems);
+    updateFilterValue('store', selectedItems.compName);
   }
   storeModalVisible.value = false;
 };
@@ -314,15 +291,21 @@ const searchSales = async (searchValue) => {
   }
 };
 
+/***********************
+ * 판매 이력 검색 함수 *
+ ***********************/
+
 // 조회 버튼 클릭했을 때 실제 실행되는 함수
-const searchStocks = async (searchOptions) => {
+const searchSalesHistory = async (searchOptions) => {
   try {
     console.log('Searching stocks with options:', searchOptions);
     const response = await axios.get('/api/inventory/headStock/search', {
       params: {
         productName: searchOptions.productModal || '',
         categorySub: searchOptions.productType || '',
-        vendorName: searchOptions.publisher || '',
+        compName: searchOptions.compName || '',
+        salesDatesFrom: searchOptions.salesDatesFrom || '',
+        salesDatesTo: searchOptions.salesDatesTo || ''
       }
     });
     items.value = await response.data; // 서버에서 받은 데이터를 items에 저장
@@ -333,12 +316,11 @@ const searchStocks = async (searchOptions) => {
 };
 
 const resetList = () => {
-  loadStockData();
+
 }
 
 onMounted(() => {
-  setFilters();
-  loadStockData();
+
 });
 
 </script>
@@ -348,8 +330,6 @@ onMounted(() => {
     selectionMode="single" @close="closeProductModal" @confirm="confirmProductModal" @search-modal="searchProducts" />
   <DialogModal v-model:display="typeModalVisible" :items="typeItems" :headers="typeHeaders" title="제품 분류 검색"
     selectionMode="single" @close="closeTypeModal" @confirm="confirmTypeModal" @search-modal="searchProductTypes" />
-  <DialogModal v-model:display="salesModalVisible" :items="salesItems" :headers="salesHeaders" title="매출 검색"
-    selectionMode="single" @close="closeSalesModal" @confirm="confirmSalesModal" @search-modal="searchSales"/>
   <DialogModal v-model:display="storeModalVisible" :items="storeItems" :headers="storeHeaders" title="지점 검색"
     selectionMode="single" @close="closeStoreModal" @confirm="confirmStoreModal" />
 </template>
