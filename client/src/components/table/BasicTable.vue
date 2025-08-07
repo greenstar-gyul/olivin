@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch } from 'vue';
+import { ref, watch, computed } from 'vue';
 import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
 
@@ -31,7 +31,7 @@ const props = defineProps({
   },
   scrollHeight: {
     type: String,
-    default: '400px'  // 기본값 400px로 기존 테이블들 영향없음
+    default: '400px'
   }
 });
 
@@ -121,6 +121,19 @@ const onRowUnselect = (event) => {
   emit('rowUnselect', event.data);
 };
 
+// 선택을 해제하는 메서드
+const clearSelection = () => {
+  selectedItems.value = props.checkType === 'single' ? null : [];
+  console.log('Selection cleared in BasicTable');
+};
+
+// 부모 컴포넌트에서 접근할 수 있도록 expose
+defineExpose({
+  clearSelection
+});
+
+const header = computed(() => props.header);
+
 </script>
 <template>
   <!-- 📋 검색 조회 테이블 영역 -->
@@ -150,16 +163,16 @@ const onRowUnselect = (event) => {
         <!-- 날짜포맷변경을 위해 추가한 파트 -->
         <template #body="slotProps">
           <!-- 숫자형 데이터는 오른쪽 정렬하고 3자리 콤마 추가 -->
-          <!-- <span v-if="header.rightAligned && header.rightAligned.includes(item)" class="text-right block">
-            {{ slotProps.data[item].toLocaleString() }} -->
-          <!-- </span> -->
+          <span v-if="header.rightAligned && header.rightAligned.includes(item)" class="text-right block">
+            {{ slotProps.data[item].toLocaleString() }}
+          </span>
           <!-- 일반 텍스트 데이터는 기본 정렬 -->
-          <!-- <span v-else>
-            {{ slotProps.data[item] }}
-          </span> -->
-          <span>
+          <span v-else>
             {{ slotProps.data[item] }}
           </span>
+          <!-- <span>
+            {{ slotProps.data[item] }}
+          </span> -->
         </template>
       </Column>
     </DataTable>

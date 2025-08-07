@@ -7,32 +7,30 @@
 작성일 : 2025.07.30
 수정이력 :
 - 2025.07.30 : 최초 작성
+- 2025.08.07 : 지점 검색 조건 변경
 -->
 <mapper namespace="com.olivin.app.common.mapper.BranchCompanySearchMapper">
-    <!-- 상품 전체 조회 -->
+    <!-- 지점 전체 조회 -->
     <select id="selectAllCompanies" resultType="BranchCompanySearchVO">
         SELECT comp_id
              , comp_name
              , phone
              , note
         FROM   companys
-        WHERE  comp_type = '100001'  -- 본사
-           OR  comp_type = '100002'  -- 지점
+        WHERE  comp_type = '100002'  -- 지점
         ORDER BY comp_id
     </select>
 
-    <!-- 조건에 맞는 상품 분류 조회 -->
+    <!-- 조건에 맞는 지점 조회 -->
     <select id="selectBranchCompanyList" parameterType="String" resultType="BranchCompanySearchVO">
         SELECT comp_id
              , comp_name
              , phone
              , note
         FROM   companys
-        WHERE  (comp_type = '100001'  -- 본사
-           OR  comp_type = '100002'  -- 지점)
+        WHERE  comp_type = '100002'  -- 지점
         <if test="searchValue != null and searchValue != ''">
-          AND (comp_name LIKE '%' || #{searchValue} || '%'
-           OR comp_id LIKE '%' || #{searchValue} || '%')
+          AND  comp_name LIKE '%' || #{searchValue} || '%'
         </if>
         ORDER BY comp_id
     </select>
