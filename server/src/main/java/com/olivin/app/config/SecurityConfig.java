@@ -72,6 +72,7 @@ public class SecurityConfig {
                 .requestMatchers("/actuator/health").permitAll()
                 .requestMatchers("/error").permitAll()
                 .requestMatchers("/test**").permitAll()  
+                .requestMatchers("/uikit/**").hasAnyRole("SYSTEM_ADMIN", "GENERAL_MANAGER")
                 .requestMatchers("/standard/**").hasAnyRole("SYSTEM_ADMIN", "GENERAL_MANAGER")
                 .requestMatchers("/roles/**").hasAnyRole("SYSTEM_ADMIN", "GENERAL_MANAGER")
                 // WebSocket 연결
