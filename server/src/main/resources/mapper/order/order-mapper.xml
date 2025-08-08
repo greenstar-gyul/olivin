@@ -6,19 +6,19 @@
     </sql>
     <!--  -->
     <select id="selectCompInfo" resultType="UserCompanyVO" parameterType="string">
-		SELECT
-			e.employee_id,
-			e.comp_id,
-			e.emp_name,
-			c.comp_name,
-			c.comp_type,
-			c.note
-		FROM
-			employees e
-				LEFT JOIN companys c ON e.comp_id = c.comp_id
-		WHERE employee_id = #{empId}
+        SELECT
+            e.employee_id,
+            e.comp_id,
+            e.emp_name,
+            c.comp_name,
+            c.comp_type,
+            c.note
+        FROM
+            employees e
+                LEFT JOIN companys c ON e.comp_id = c.comp_id
+        WHERE employee_id = #{empId}
     </select>
-	<!-- select -->
+    <!-- select -->
     <select id="selectAllList" resultType="OrdersVO" parameterType="SearchOrdersVO">
         SELECT
             order_id,
@@ -76,20 +76,20 @@
                 AND order_status = #{orderStatus}
             </if>
             <if test="reason != null and reason != ''">
-            	AND reason = #{reason}
+                AND reason = #{reason}
             </if>
-	        <if test="orderDateFrom != null">
-	            AND order_date &gt;= #{orderDateFrom}
-	        </if>
-	        <if test="orderDateTo != null">
-	            AND order_date &lt; #{orderDateTo}+1
-	        </if>
-	        <if test="dueDateFrom != null">
-	            AND due_date &gt;= #{dueDateFrom}
-	        </if>
-	        <if test="dueDateTo != null">
-	            AND due_date &lt; #{dueDateTo}+1
-	        </if>
+            <if test="orderDateFrom != null">
+                AND order_date &gt;= #{orderDateFrom}
+            </if>
+            <if test="orderDateTo != null">
+                AND order_date &lt; #{orderDateTo}+1
+            </if>
+            <if test="dueDateFrom != null">
+                AND due_date &gt;= #{dueDateFrom}
+            </if>
+            <if test="dueDateTo != null">
+                AND due_date &lt; #{dueDateTo}+1
+            </if>
         </where>
         ORDER BY order_id DESC
     </select>
@@ -122,7 +122,7 @@
         WHERE
             order_id = #{orderId}
     </select>
-    
+
     <select id="selectDetailsByOrderId" resultType="OrdersDetailVO" parameterType="string">
         SELECT
             o.po_id,
@@ -158,10 +158,9 @@
             purchase_orders_d od ON o.order_id = od.order_id
         WHERE
             o.order_id = #{orderId}
-    </select> -->
-    
-    
-	<!-- insert -->
+    </select> -->    
+
+    <!-- insert -->
     <insert id="insertOne" parameterType="OrdersVO">
         <selectKey keyProperty="orderId" resultType="string" order="BEFORE">
         SELECT
@@ -171,21 +170,21 @@
         WHERE order_id LIKE <include refid="orderIdPrefix"/> || TO_CHAR(SYSDATE, 'YYYYMMDD') || '%'
         </selectKey>
         INSERT INTO purchase_orders (
-           order_id,
-           order_title,
-           creator_id,
-           creator_name,
-           order_type,
-           order_from_id,
-           order_from,
-           order_to_id,
-           order_to,
-           reason,
-           order_date,
-           order_status,
-           total_amount,
-           due_date,
-           note
+            order_id,
+            order_title,
+            creator_id,
+            creator_name,
+            order_type,
+            order_from_id,
+            order_from,
+            order_to_id,
+            order_to,
+            reason,
+            order_date,
+            order_status,
+            total_amount,
+            due_date,
+            note
         ) VALUES (
             #{orderId},
             #{orderTitle},
@@ -230,16 +229,51 @@
             #{price}
         )
     </insert>
-	
-	
-	<!-- delete -->
+    
+    <insert id="ordersRejectionDetail" parameterType="RejectionVO">
+        INSERT INTO rejection_orders (
+            rejection_id,
+            rejection_reson,
+            rejection_user,
+            rejection_date,
+            order_id
+        ) VALUES (
+            'REJ'||#{orderId},
+            #{rejectionReson},
+            #{rejectionUser},
+            SYSDATE,
+            #{orderId}
+        )
+    </insert>
+
+    <!-- update -->
+    <update id="ordersApproval" parameterType="String">
+        UPDATE purchase_orders
+        SET 
+            approver_id = #{empId},
+            approver_name = (SELECT emp_name
+                             FROM employees
+                             WHERE employee_id = #{empId}),
+            approval_date = SYSDATE,
+            order_status = '030002'
+        WHERE order_id = #{orderId}
+    </update>
+    
+    <update id="ordersRejection" parameterType="String">
+        UPDATE purchase_orders
+        SET 
+        order_status = '030004'
+        WHERE order_id = #{orderId}
+    </update>
+
+    <!-- delete -->
     <delete id="deleteOrder" parameterType="string">
         DELETE FROM
             purchase_orders
         WHERE
             order_id = #{orderId}
     </delete>
-    
+
     <delete id="deleteOrderDetails" parameterType="string">
         DELETE FROM
             purchase_orders_d

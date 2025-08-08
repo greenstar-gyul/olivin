@@ -4,13 +4,15 @@ import DialogModal from '@/components/overray/DialogModal.vue';
 import { onBeforeMount, onMounted, ref, watch } from 'vue';
 import { convertDate } from '@/utils/dateUtils';
 import { useAuth } from '../../composables/useAuth';
-import { useConfirm } from 'primevue';
+import { useConfirm, useToast } from 'primevue';
 import axios from '@/service/axios';
+
+const confirm = useConfirm(); //confirm
+const toast = useToast();     //toast
 
 /* Form Data */
 
 const inputRef = ref(null);
-const confirm = useConfirm();
 
 // 폼 기본값
 const defaultForm = ref({
@@ -154,8 +156,12 @@ const itemConfirmModal = async (selectedItems) => {
   });
 
   if (same.length > 0) {
-    // TODO : 다른 alert() 함수를 사용하면 변경
-    alert("이미 동일한 제품이 있습니다.");
+    toast.add({
+      severity: 'warn',
+      summary: '경고',
+      detail: '이미 동일한 제품이 있습니다.',
+      life: 2000
+    });
   } else {
     const product = await axios.get(`/api/products/${selectedItems.productId}`);
 
@@ -189,8 +195,12 @@ const tableSearch = async (item, fieldName, data) => {
   // console.log('table search', item);
   // console.log('data', fieldName);
   if (!supModalReturn.value?.item) {
-    // TODO : 다른 alert() 함수를 사용하면 변경
-    alert("공급업체를 입력하세요.");
+    toast.add({
+      severity: 'warn',
+      summary: '경고',
+      detail: '공급업체를 먼저 입력해주세요.',
+      life: 2000
+    });
     return;
   }
 
@@ -231,17 +241,35 @@ const saveFormHandler = async (formData, tableData) => {
   for (const form in formData) {
     if (!formData[form]) {
       if (form == 'note') continue;
-      // TODO : 다른 alert() 함수를 사용하면 변경
-      alert("폼에 정보에 비어있는 데이터가 있습니다.");
+      toast.add({
+        severity: 'error',
+        summary: '오류',
+        detail: '폼에 정보에 비어있는 데이터가 있습니다.',
+        life: 2000
+      });
       return;
     }
+  }
+
+  if (tableData.length === 0) {
+    toast.add({
+      severity: 'error',
+      summary: '오류',
+      detail: '테이블 정보가 없습니다.',
+      life: 2000
+    });
+    return;
   }
 
   for (const table of tableData) {
     for (const data in table) {
       if (!table[data]) {
-        // TODO : 다른 alert() 함수를 사용하면 변경
-        alert("테이블에 비어있는 데이터가 있습니다.");
+        toast.add({
+          severity: 'error',
+          summary: '오류',
+          detail: '테이블에 비어있는 데이터가 있습니다.',
+          life: 2000
+        });
         return;
       }
     }
@@ -249,7 +277,7 @@ const saveFormHandler = async (formData, tableData) => {
 
   confirm.require({
     icon: 'pi pi-info-circle',
-    header: '발주서를 등록',
+    header: '발주서 등록',
     message: '발주서를 등록하시겠습니까?',
     rejectProps: {
       label: '취소',
@@ -263,6 +291,12 @@ const saveFormHandler = async (formData, tableData) => {
       fetchOrders(formData, tableData);
     },
     reject: () => {
+      toast.add({
+        severity: 'error',
+        summary: '오류',
+        detail: '발주서 등록이 취소되었습니다.',
+        life: 2000
+      });
       return;
     }
   });
@@ -285,11 +319,7 @@ watch(
 );
 
 const getHeadInfo = async () => {
-  const req = await axios.get(`/api/search/company/head`, {
-    params : {
-      searchValue: ''
-    }
-  });
+  const req = await axios.get(`/api/search/company/head`);
   return req.data[0];
 }
 
@@ -320,11 +350,11 @@ onMounted(async () => {
     @formSearch="formSearch" @tableSearch="tableSearch"
     @submit="saveFormHandler" />
 
-  <DialogModal title="공급업체 모달" :selectionMode="'single'"
+  <DialogModal title="공급업체 정보" :selectionMode="'single'"
     :display="supModalVisible" :return="supModalReturn" 
     :headers="supModalHeaders" :items="supModalItems" 
      @close="supCloseModal" @confirm="supConfirmModal" @search-modal="subSearchModal" />
-  <DialogModal title="제품 모달" :selectionMode="'single'"
+  <DialogModal title="제품 정보" :selectionMode="'single'"
     :display="itemModalVisible" :return="itemModalReturn"
     :headers="itemModalHeaders" :items="itemModalItems"
     @close="itemCloseModal" @confirm="itemConfirmModal" @search-modal="itemSearchModal" />

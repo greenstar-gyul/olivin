@@ -3,13 +3,15 @@ import { onBeforeMount, onMounted, ref, watch } from 'vue';
 import InputDataTable from '@/components/common/InputDataTable.vue';
 import { convertDate } from '@/utils/dateUtils';
 import { useAuth } from '@/composables/useAuth';
-import { useConfirm } from 'primevue';
+import { useConfirm, useToast } from 'primevue';
 import axios from '@/service/axios';
+
+const confirm = useConfirm(); //confirm
+const toast = useToast();    //toast
 
 /* Form Data */
 
 const inputRef = ref(null);
-const confirm = useConfirm();
 
 // 폼 기본값
 const defaultForm = ref({
@@ -68,27 +70,43 @@ const itemModalItems = ref([]);
 const itemModalHeaders = ref([
   { field: 'productName', header: '상품명' },
   { field: 'categoryMain', header: '대분류' },
-  { field: 'categorySub', header: '소분류' },
-  { field: 'vendorName', header: '공급사명' },
   { field: 'productSpec', header: '규격' },
+  { field: 'stockQuantity', header: '재고수량(박스)' },
+  { field: 'safetyStock', header: '안전재고(박스)' },
 ]);
 
 const getItemModalItems = async (searchValue) => {
   let req;
   if (searchValue) {
-    req = await axios.get('/api/search/products', {
+    req = await axios.get('/api/inventory/headStock', {
       params: {
-        searchValue
+        productName: searchValue
       }
     });
   } else {
-    req = await axios.get('/api/search/products/all');
+    req = await axios.get('/api/inventory/headStock/all');
   }
 
   if (req?.data) {
-    return req.data.filter((e) => {
-      return e.vendorName == defaultForm.value.orderFrom;
+    const filtered = req.data.filter((e) => {
+      return e.vendorName === defaultForm.value.orderFrom;
     });
+
+    // 같은 상품명을 기준으로 그룹핑 후 재고수량/안전재고 합산
+    const merged = Object.values(
+      filtered.reduce((acc, cur) => {
+        const key = cur.productName; // 상품명 기준
+        if (!acc[key]) {
+          acc[key] = { ...cur }; // 처음 등장 → 복사
+        } else {
+          acc[key].stockQty += cur.stockQty; // 재고수량 합산
+          acc[key].safeStock += cur.safeStock; // 안전재고 합산
+        }
+        return acc;
+      }, {})
+    );
+
+    return merged;
   } else {
     return req;
   }
@@ -107,15 +125,19 @@ const itemConfirmModal = async (selectedItems) => {
   });
 
   if (same.length > 0) {
-    // TODO : 다른 alert() 함수를 사용하면 변경
-    alert("이미 동일한 제품이 있습니다.");
+    toast.add({
+      severity: 'warn',
+      summary: '경고',
+      detail: '이미 동일한 제품이 있습니다.',
+      life: 2000
+    });
   } else {
     const product = await axios.get(`/api/products/${selectedItems.productId}`);
 
     modalData.item[modalData.fieldName] = selectedItems.productName;
     modalData.item['productId'] = selectedItems.productId;
     modalData.item['categoryMain'] = selectedItems.categoryMain;
-    modalData.item['price'] = selectedItems.purchasePrice;
+    modalData.item['price'] = product.data.purchasePrice;
     modalData.item['packQty'] = product.data.packQty;
   
   }
@@ -141,11 +163,7 @@ const tableSearch = async (item, fieldName, data) => {
 
 const fetchOrders = async (formData, tableData) => {
   //본사 정보
-  const headRes = await axios.get(`/api/search/company/head`, {
-    params : {
-      searchValue: ''
-    }
-  });
+  const headRes = await axios.get(`/api/search/company/head`);
   const headInfo = headRes.data[0];
   //총 가격
   let totalAmount = Number(formData.totalAmount.replace(/[,원]/g, ''));
@@ -178,17 +196,35 @@ const saveFormHandler = async (formData, tableData) => {
   for (const form in formData) {
     if (!formData[form]) {
       if (form == 'note') continue;
-      // TODO : 다른 alert() 함수를 사용하면 변경
-      alert("폼에 정보에 비어있는 데이터가 있습니다.");
+      toast.add({
+        severity: 'error',
+        summary: '오류',
+        detail: '폼에 비어있는 데이터가 있습니다.',
+        life: 2000
+      });
       return;
     }
+  }
+  
+  if (tableData.length === 0) {
+    toast.add({
+      severity: 'error',
+      summary: '오류',
+      detail: '테이블 정보가 없습니다.',
+      life: 2000
+    });
+    return;
   }
 
   for (const table of tableData) {
     for (const data in table) {
       if (!table[data]) {
-        // TODO : 다른 alert() 함수를 사용하면 변경
-        alert("테이블에 비어있는 데이터가 있습니다.");
+        toast.add({
+          severity: 'error',
+          summary: '오류',
+          detail: '테이블에 비어있는 데이터가 있습니다.',
+          life: 2000
+        });
         return;
       }
     }
@@ -196,7 +232,7 @@ const saveFormHandler = async (formData, tableData) => {
 
   confirm.require({
     icon: 'pi pi-info-circle',
-    header: '제안서를 등록',
+    header: '제안서 등록',
     message: '제안서를 등록하시겠습니까?',
     rejectProps: {
       label: '취소',
@@ -210,6 +246,12 @@ const saveFormHandler = async (formData, tableData) => {
       fetchOrders(formData, tableData);
     },
     reject: () => {
+      toast.add({
+        severity: 'error',
+        summary: '오류',
+        detail: '제안서 등록이 취소되었습니다.',
+        life: 2000
+      });
       return;
     }
   });
@@ -269,8 +311,8 @@ onMounted(() => {
     :defaultTable="defaultTable" :columns="columns"
     @tableSearch="tableSearch"
     @submit="saveFormHandler" />
-    
-  <DialogModal title="제품 모달" :selectionMode="'single'"
+
+  <DialogModal title="제품 정보" :selectionMode="'single'"
     :display="itemModalVisible" :return="itemModalReturn"
     :headers="itemModalHeaders" :items="itemModalItems"
     @close="itemCloseModal" @confirm="itemConfirmModal" @search-modal="itemSearchModal" />

@@ -1,4 +1,6 @@
 <script setup>
+import { convertDate } from '@/utils/dateUtils';
+
 const props = defineProps({
   title: { 
     type: String,
@@ -73,15 +75,24 @@ const searchItem = (item, fieldName) => {
                 :placeholder="element.placeholder || 'Enter number...'" :fluid="true" />
               
               <template v-else>
-                <span v-if="element.data === 'number'" class="text-right">
-                  {{ Number(formData[element.id]).toLocaleString() }}
-                </span>
-                <span v-else-if="element.data === 'date'" class="text-right">
-                  {{ new Date(formData[element.id]).toLocaleDateString() }}
-                </span>
-                <span v-else class="text-left">
-                  {{ formData[element.id] }}
-                </span>
+                <InputText v-if="element.data === 'number'" 
+                  class="text-left" 
+                  :value="Number(formData[element.id]).toLocaleString()" 
+                  variant="filled"
+                  readonly
+                />
+                <InputText v-else-if="element.data === 'date'"
+                  class="text-left" 
+                  :value="convertDate(formData[element.id])"
+                  variant="filled"
+                  readonly
+                />
+                <InputText v-else
+                  class="text-left" 
+                  :value="formData[element.id]"
+                  variant="filled"
+                  readonly
+                />
               </template>
             </div>
           </div>
