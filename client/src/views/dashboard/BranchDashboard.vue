@@ -9,6 +9,26 @@
         <p class="branch-subtitle">
           {{ branchInfo.COMP_TYPE_NAME || '' }} | {{ branchInfo.ADDRESS || '' }}
         </p>
+        
+        <!-- 본사용 지점 선택 드롭다운 -->
+        <div v-if="isHeadquarter && availableBranches.length > 0" class="branch-selector">
+          <label for="branchSelect">조회할 지점:</label>
+          <select 
+            id="branchSelect" 
+            v-model="selectedBranchId" 
+            @change="onBranchChange"
+            class="branch-select"
+          >
+            <option value="">지점을 선택하세요</option>
+            <option 
+              v-for="branch in availableBranches" 
+              :key="branch.COMP_ID" 
+              :value="branch.COMP_ID"
+            >
+              {{ branch.COMP_NAME }} ({{ branch.COMP_ID }})
+            </option>
+          </select>
+        </div>
       </div>
       <div class="header-actions">
         <button @click="refreshData" class="refresh-button" :disabled="isLoading">
@@ -36,7 +56,7 @@
             <h3>당일 매출</h3>
             <div class="kpi-value">{{ kpiData.todaySales || '로딩 중...' }}</div>
             <div :class="['kpi-change', getChangeClass(kpiData.dailyGrowth)]">
-              전일대비 {{ kpiData.dailyGrowth || '계산 중...' }}
+              전일대비 {{ kpiData.dailyGrowth || '데이터 없음' }}
             </div>
           </div>
         </div>
@@ -46,8 +66,8 @@
           <div class="kpi-content">
             <h3>월간 매출</h3>
             <div class="kpi-value">{{ kpiData.monthlySales || '로딩 중...' }}</div>
-            <div class="kpi-change">
-              목표달성률 {{ kpiData.monthlyAchievement || '계산 중...' }}
+            <div :class="['kpi-change', getChangeClass(kpiData.monthlyGrowth)]">
+              전월대비 {{ kpiData.monthlyGrowth || '데이터 없음' }}
             </div>
           </div>
         </div>
@@ -69,7 +89,7 @@
             <h3>당일 거래</h3>
             <div class="kpi-value">{{ formatNumber(kpiData.todayTransactions) }}건</div>
             <div class="kpi-change">
-              평균 객단가 {{ kpiData.averageOrderValue || '계산 중...' }}
+              평균 객단가 {{ kpiData.averageOrderValue || '데이터 없음' }}
             </div>
           </div>
         </div>
@@ -194,7 +214,7 @@ import {
   DoughnutController
 } from 'chart.js'
 
-// Chart.js 컴포넌트 등록
+// Chart.js 등록
 Chart.register(
   CategoryScale,
   LinearScale,
@@ -220,6 +240,12 @@ const lastUpdated = ref('')
 const isLoading = ref(false)
 const errorMessage = ref('')
 
+// 지점 선택 관련
+const currentUser = ref({})
+const availableBranches = ref([])
+const selectedBranchId = ref('')
+const isHeadquarter = ref(false)
+
 // 차트 참조
 const salesTrendChart = ref(null)
 const categorySalesChart = ref(null)
@@ -236,12 +262,75 @@ const API_BASE_URL = 'http://localhost:3049/api/dashboard/branch'
 const fetchData = async (url, dataName) => {
   try {
     console.log(`Fetching ${dataName} from:`, url)
-    const response = await axios.get(url)
+    
+    // 본사인 경우 지점 ID를 쿼리 파라미터로 추가
+    let finalUrl = url
+    if (isHeadquarter.value && selectedBranchId.value) {
+      const separator = url.includes('?') ? '&' : '?'
+      finalUrl = `${url}${separator}compId=${selectedBranchId.value}`
+    }
+    
+    console.log(`Final URL: ${finalUrl}`)
+    
+    const response = await axios.get(finalUrl)
     console.log(`${dataName} 응답:`, response.data)
     return response.data
   } catch (error) {
     console.error(`${dataName} API 호출 실패:`, error)
     throw error
+  }
+}
+
+// 현재 사용자 정보 조회
+const fetchCurrentUser = async () => {
+  try {
+    const response = await axios.get('/api/auth/me')
+    currentUser.value = response.data.data.user
+    
+    // 본사 권한 체크
+    const userRole = response.data.data.role?.roleName || ''
+    const userCompId = currentUser.value.compId || ''
+    
+    isHeadquarter.value = userRole.includes('system_admin') || 
+                         userRole.includes('general_manager') || 
+                         userCompId === 'COM10001'
+    
+    console.log('현재 사용자:', currentUser.value)
+    console.log('본사 권한:', isHeadquarter.value)
+    
+    if (!isHeadquarter.value) {
+      selectedBranchId.value = userCompId
+    }
+    
+  } catch (error) {
+    console.error('사용자 정보 조회 실패:', error)
+    errorMessage.value = '사용자 정보를 불러올 수 없습니다.'
+  }
+}
+
+// 지점 목록 조회 (본사 전용)
+const fetchAvailableBranches = async () => {
+  if (!isHeadquarter.value) return
+  
+  try {
+    const response = await axios.get(`${API_BASE_URL}/branches`)
+    availableBranches.value = response.data || []
+    console.log('사용 가능한 지점들:', availableBranches.value)
+    
+    if (availableBranches.value.length > 0 && !selectedBranchId.value) {
+      selectedBranchId.value = availableBranches.value[0].COMP_ID
+    }
+  } catch (error) {
+    console.error('지점 목록 조회 실패:', error)
+    availableBranches.value = []
+  }
+}
+
+// 지점 변경 시 호출
+const onBranchChange = () => {
+  console.log('선택된 지점 변경:', selectedBranchId.value)
+  if (selectedBranchId.value) {
+    loadAllData()
   }
 }
 
@@ -270,159 +359,6 @@ const fetchKpiData = async () => {
   } catch (error) {
     console.error('KPI 데이터 로딩 실패:', error)
     errorMessage.value = 'KPI 데이터를 불러오는 중 오류가 발생했습니다.'
-  }
-}
-
-// 주간 매출 트렌드 차트 생성
-const createSalesTrendChart = async () => {
-  try {
-    const data = await fetchData(`${API_BASE_URL}/sales-trend`, '매출 트렌드')
-    
-    if (!salesTrendChart.value || !data || !Array.isArray(data)) {
-      console.log('매출 트렌드 차트 생성 불가: 데이터 없음')
-      return
-    }
-
-    const ctx = salesTrendChart.value.getContext('2d')
-    
-    // 기존 차트 파괴
-    if (trendChartInstance) {
-      trendChartInstance.destroy()
-    }
-
-    const labels = data.map(item => item.SALE_DATE)
-    const salesData = data.map(item => Math.round((item.DAILY_SALES || 0) / 10000)) // 만원 단위
-
-    trendChartInstance = new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels: labels,
-        datasets: [{
-          label: '일별 매출',
-          data: salesData,
-          borderColor: '#4299e1',
-          backgroundColor: '#4299e1' + '20',
-          tension: 0.4,
-          fill: true,
-          pointRadius: 6,
-          pointHoverRadius: 8,
-          borderWidth: 3
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          title: {
-            display: false
-          },
-          legend: {
-            display: false
-          },
-          tooltip: {
-            callbacks: {
-              label: function(context) {
-                return context.parsed.y.toLocaleString('ko-KR') + '만원'
-              }
-            }
-          }
-        },
-        scales: {
-          x: {
-            display: true,
-            title: {
-              display: true,
-              text: '날짜'
-            },
-            grid: {
-              color: '#e2e8f0'
-            }
-          },
-          y: {
-            display: true,
-            title: {
-              display: true,
-              text: '매출액 (만원)'
-            },
-            beginAtZero: true,
-            grid: {
-              color: '#e2e8f0'
-            },
-            ticks: {
-              callback: function(value) {
-                return value.toLocaleString('ko-KR') + '만원'
-              }
-            }
-          }
-        }
-      }
-    })
-  } catch (error) {
-    console.error('매출 트렌드 차트 생성 실패:', error)
-  }
-}
-
-// 카테고리별 매출 구성 차트 생성
-const createCategorySalesChart = async () => {
-  try {
-    const data = await fetchData(`${API_BASE_URL}/category-sales`, '카테고리 매출')
-    
-    if (!categorySalesChart.value || !data || !Array.isArray(data)) {
-      console.log('카테고리 매출 차트 생성 불가: 데이터 없음')
-      return
-    }
-
-    const ctx = categorySalesChart.value.getContext('2d')
-    
-    // 기존 차트 파괴
-    if (categoryChartInstance) {
-      categoryChartInstance.destroy()
-    }
-
-    const labels = data.map(item => item.CATEGORY || '기타')
-    const salesData = data.map(item => Math.round((item.SALES || 0) / 1000)) // 천원 단위
-
-    categoryChartInstance = new Chart(ctx, {
-      type: 'doughnut',
-      data: {
-        labels: labels,
-        datasets: [{
-          data: salesData,
-          backgroundColor: [
-            '#48bb78',
-            '#4299e1', 
-            '#ed8936',
-            '#f56565',
-            '#9f7aea',
-            '#38b2ac'
-          ],
-          borderWidth: 2,
-          borderColor: '#ffffff'
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          title: {
-            display: false
-          },
-          legend: {
-            position: 'bottom'
-          },
-          tooltip: {
-            callbacks: {
-              label: function(context) {
-                const value = context.raw.toLocaleString('ko-KR')
-                return context.label + ': ' + value + '천원'
-              }
-            }
-          }
-        }
-      }
-    })
-  } catch (error) {
-    console.error('카테고리 매출 차트 생성 실패:', error)
   }
 }
 
@@ -483,15 +419,233 @@ const fetchAlerts = async () => {
   }
 }
 
+// 매출 트렌드 차트 생성
+const createSalesTrendChart = async () => {
+  try {
+    const data = await fetchData(`${API_BASE_URL}/sales-trend`, '매출 트렌드')
+    
+    if (!salesTrendChart.value) {
+      console.error('매출 트렌드 차트 Canvas 요소를 찾을 수 없습니다.')
+      return
+    }
+
+    if (!data || !Array.isArray(data) || data.length === 0) {
+      console.warn('매출 트렌드 데이터가 없습니다:', data)
+      createEmptyTrendChart()
+      return
+    }
+
+    const ctx = salesTrendChart.value.getContext('2d')
+    
+    if (trendChartInstance) {
+      trendChartInstance.destroy()
+    }
+
+    const labels = data.map(item => item.SALE_DATE || '날짜 미상')
+    const salesData = data.map(item => Math.round((item.DAILY_SALES || 0) / 10000))
+
+    console.log('차트 라벨:', labels)
+    console.log('차트 데이터:', salesData)
+
+    trendChartInstance = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: '일별 매출',
+          data: salesData,
+          borderColor: '#4299e1',
+          backgroundColor: '#4299e1' + '20',
+          tension: 0.4,
+          fill: true,
+          pointRadius: 6,
+          pointHoverRadius: 8,
+          borderWidth: 3
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          title: { display: false },
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                return context.parsed.y.toLocaleString('ko-KR') + '만원'
+              }
+            }
+          }
+        },
+        scales: {
+          x: {
+            display: true,
+            title: { display: true, text: '날짜' },
+            grid: { color: '#e2e8f0' }
+          },
+          y: {
+            display: true,
+            title: { display: true, text: '매출액 (만원)' },
+            beginAtZero: true,
+            grid: { color: '#e2e8f0' },
+            ticks: {
+              callback: function(value) {
+                return value.toLocaleString('ko-KR') + '만원'
+              }
+            }
+          }
+        }
+      }
+    })
+    
+    console.log('매출 트렌드 차트 생성 완료')
+  } catch (error) {
+    console.error('매출 트렌드 차트 생성 실패:', error)
+    createEmptyTrendChart()
+  }
+}
+
+// 빈 차트 생성
+const createEmptyTrendChart = () => {
+  if (!salesTrendChart.value) return
+  
+  const ctx = salesTrendChart.value.getContext('2d')
+  
+  if (trendChartInstance) {
+    trendChartInstance.destroy()
+  }
+
+  trendChartInstance = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: ['데이터 없음'],
+      datasets: [{
+        label: '일별 매출',
+        data: [0],
+        borderColor: '#a0aec0',
+        backgroundColor: '#a0aec0' + '20',
+        tension: 0.4,
+        fill: true
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { display: true, title: { display: true, text: '날짜' } },
+        y: { display: true, title: { display: true, text: '매출액 (만원)' }, beginAtZero: true }
+      }
+    }
+  })
+}
+
+// 카테고리 매출 차트 생성
+const createCategorySalesChart = async () => {
+  try {
+    const data = await fetchData(`${API_BASE_URL}/category-sales`, '카테고리 매출')
+    
+    if (!categorySalesChart.value) {
+      console.error('카테고리 매출 차트 Canvas 요소를 찾을 수 없습니다.')
+      return
+    }
+
+    if (!data || !Array.isArray(data) || data.length === 0) {
+      console.warn('카테고리 매출 데이터가 없습니다:', data)
+      createEmptyCategoryChart()
+      return
+    }
+
+    const ctx = categorySalesChart.value.getContext('2d')
+    
+    if (categoryChartInstance) {
+      categoryChartInstance.destroy()
+    }
+
+    const labels = data.map(item => item.CATEGORY || '기타')
+    const salesData = data.map(item => Math.round((item.SALES || 0) / 1000))
+
+    console.log('카테고리 라벨:', labels)
+    console.log('카테고리 데이터:', salesData)
+
+    categoryChartInstance = new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels: labels,
+        datasets: [{
+          data: salesData,
+          backgroundColor: ['#48bb78', '#4299e1', '#ed8936', '#f56565', '#9f7aea', '#38b2ac'],
+          borderWidth: 2,
+          borderColor: '#ffffff'
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          title: { display: false },
+          legend: { position: 'bottom' },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                const value = context.raw.toLocaleString('ko-KR')
+                return context.label + ': ' + value + '천원'
+              }
+            }
+          }
+        }
+      }
+    })
+    
+    console.log('카테고리 매출 차트 생성 완료')
+  } catch (error) {
+    console.error('카테고리 매출 차트 생성 실패:', error)
+    createEmptyCategoryChart()
+  }
+}
+
+// 빈 카테고리 차트 생성
+const createEmptyCategoryChart = () => {
+  if (!categorySalesChart.value) return
+  
+  const ctx = categorySalesChart.value.getContext('2d')
+  
+  if (categoryChartInstance) {
+    categoryChartInstance.destroy()
+  }
+
+  categoryChartInstance = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: ['데이터 없음'],
+      datasets: [{
+        data: [1],
+        backgroundColor: ['#a0aec0'],
+        borderWidth: 2,
+        borderColor: '#ffffff'
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { position: 'bottom' } }
+    }
+  })
+}
+
 // 전체 데이터 로딩
 const loadAllData = async () => {
+  if (isHeadquarter.value && !selectedBranchId.value) {
+    console.log('지점이 선택되지 않음')
+    return
+  }
+  
   isLoading.value = true
   errorMessage.value = ''
   
   try {
     console.log('지점 대시보드 데이터 로딩 시작')
     
-    // 기본 데이터 병렬 로딩
     const results = await Promise.allSettled([
       fetchBranchInfo(),
       fetchKpiData(),
@@ -501,7 +655,6 @@ const loadAllData = async () => {
       fetchAlerts()
     ])
     
-    // 결과 확인
     results.forEach((result, index) => {
       const apiNames = ['지점정보', 'KPI', '발주필요상품', '품절임박상품', '상위판매상품', '알림']
       if (result.status === 'rejected') {
@@ -509,7 +662,6 @@ const loadAllData = async () => {
       }
     })
     
-    // 차트 데이터 로딩
     await nextTick()
     await createSalesTrendChart()
     await createCategorySalesChart()
@@ -527,38 +679,24 @@ const loadAllData = async () => {
 }
 
 // 유틸리티 함수들
-const formatNumber = (num) => {
-  return (num || 0).toLocaleString('ko-KR')
-}
-
-const formatSales = (amount) => {
-  return Math.round((amount || 0) / 10000).toLocaleString()
-}
-
+const formatNumber = (num) => (num || 0).toLocaleString('ko-KR')
+const formatSales = (amount) => Math.round((amount || 0) / 10000).toLocaleString()
 const formatTime = (date) => {
-  if (date instanceof Date) {
-    return date.toLocaleString('ko-KR')
-  }
+  if (date instanceof Date) return date.toLocaleString('ko-KR')
   return new Date(date).toLocaleString('ko-KR')
 }
-
 const getChangeClass = (value) => {
-  if (!value || value === '계산 중...') return ''
+  if (!value || value === '데이터 없음') return ''
   const numValue = parseFloat(value)
   return numValue >= 0 ? 'positive' : 'negative'
 }
-
 const getAlertIcon = (alertType) => {
   const icons = {
-    'STOCKOUT': '📦',
-    'CRITICAL_STOCK': '⚠️',
-    'LOW_STOCK': '📉',
-    'ORDER_REQUIRED': '🛒',
-    'INFO': 'ℹ️'
+    'STOCKOUT': '📦', 'CRITICAL_STOCK': '⚠️', 'LOW_STOCK': '📉',
+    'ORDER_REQUIRED': '🛒', 'INFO': 'ℹ️'
   }
   return icons[alertType] || '⚠️'
 }
-
 const getUrgencyClass = (urgency) => {
   switch (urgency) {
     case 'HIGH': return 'high'
@@ -577,9 +715,15 @@ const refreshData = () => {
 // 컴포넌트 마운트
 onMounted(async () => {
   console.log('지점 대시보드 컴포넌트 마운트됨')
+  
+  await fetchCurrentUser()
+  
+  if (isHeadquarter.value) {
+    await fetchAvailableBranches()
+  }
+  
   await loadAllData()
   
-  // 5분마다 자동 새로고침
   refreshInterval = setInterval(() => {
     console.log('자동 새로고침 실행')
     loadAllData()
@@ -590,15 +734,9 @@ onMounted(async () => {
 onUnmounted(() => {
   console.log('지점 대시보드 컴포넌트 언마운트됨')
   
-  if (refreshInterval) {
-    clearInterval(refreshInterval)
-  }
-  if (trendChartInstance) {
-    trendChartInstance.destroy()
-  }
-  if (categoryChartInstance) {
-    categoryChartInstance.destroy()
-  }
+  if (refreshInterval) clearInterval(refreshInterval)
+  if (trendChartInstance) trendChartInstance.destroy()
+  if (categoryChartInstance) categoryChartInstance.destroy()
 })
 </script>
 
@@ -628,7 +766,40 @@ onUnmounted(() => {
 .branch-subtitle {
   color: #718096;
   font-size: 16px;
-  margin: 0;
+  margin: 0 0 16px 0;
+}
+
+.branch-selector {
+  margin-top: 16px;
+}
+
+.branch-selector label {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  color: #4a5568;
+  margin-bottom: 8px;
+}
+
+.branch-select {
+  padding: 8px 12px;
+  border: 2px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 14px;
+  background: white;
+  color: #1a202c;
+  min-width: 250px;
+  transition: all 0.2s ease;
+}
+
+.branch-select:focus {
+  outline: none;
+  border-color: #4299e1;
+  box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.1);
+}
+
+.branch-select:hover {
+  border-color: #cbd5e0;
 }
 
 .header-actions {
@@ -1070,45 +1241,6 @@ onUnmounted(() => {
   
   .chart-container {
     height: 200px;
-  }
-}
-
-/* 다크 모드 지원 (선택적) */
-@media (prefers-color-scheme: dark) {
-  .branch-dashboard {
-    background: #1a202c;
-  }
-  
-  .header-left h1.dashboard-title {
-    color: #f7fafc;
-  }
-  
-  .kpi-card,
-  .chart-card,
-  .detail-card {
-    background: #2d3748;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-  }
-  
-  .kpi-value,
-  .item-name,
-  .alert-title {
-    color: #f7fafc;
-  }
-  
-  .kpi-content h3,
-  .item-detail,
-  .alert-message {
-    color: #a0aec0;
-  }
-  
-  .item-row,
-  .no-data-message {
-    background: #374151;
-  }
-  
-  .item-row:hover {
-    background: #4a5568;
   }
 }
 </style>
