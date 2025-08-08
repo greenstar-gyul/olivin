@@ -274,7 +274,7 @@ const router = createRouter({
                     path: '/sales/orders',
                     name: 'salesOrders',
                     component: () => import('@/views/sales/SalesOrdersMgmt.vue'),
-                    meta: { roles: ['ROLE_STORE_MANAGER', 'ROLE_EMPLOYEE'] }
+                    // meta: { roles: ['ROLE_STORE_MANAGER', 'ROLE_EMPLOYEE'] }
                 },
                 {
                     path: '/sales/orders/view',
@@ -285,6 +285,11 @@ const router = createRouter({
                     path: '/sales/history',
                     name: 'salesHistory',
                     component: () => import('@/views/sales/SalesHistoryPage.vue'),
+                },
+                {
+                    path: '/sales/closing',
+                    name: 'salesClosing',
+                    component: () => import('@/views/sales/DailyClosingPage.vue'),
                 },
                 /* end of sales */
                 {

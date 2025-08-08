@@ -103,7 +103,7 @@ defineExpose({
     <div 
       v-for="(row, rowIndex) in groupedFilters" 
       :key="rowIndex" 
-      class="grid grid-cols-4 gap-4 mb-4"
+      class="grid grid-cols-4 gap-2 mb-2"
     >
       <div 
         v-for="(filter, filterIndex) in row" 
@@ -157,7 +157,7 @@ defineExpose({
       <!-- 빈 공간은 Grid에서 자동으로 처리됨 -->
     </div>
 
-    <div class="flex justify-center gap-3 mt-6">
+    <div class="flex justify-center gap-3 mt-0">
       <Button label="초기화" severity="secondary" @click="resetSearchOptions" />
       <Button label="조회" @click="confirm" />
     </div>

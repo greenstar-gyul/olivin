@@ -11,12 +11,12 @@
                    p.sell_price,
                    SUM(sod.quantity) as quantity,
                    SUM(sod.quantity * sod.price) as total_price,
-                   p.product_spec
+                   p.product_spec || get_datacode_name(p.unit) as product_spec
             FROM   sales_orders so JOIN sales_orders_detail sod ON so.so_id = sod.so_id
                                    JOIN products p ON sod.product_id = p.product_id
                                    JOIN companys c ON so.comp_id = c.comp_id
             WHERE c.comp_type = '100002'
-            GROUP BY p.product_id, p.product_name, p.category_main, p.category_sub, c.comp_name, p.sell_price, p.product_spec
+            GROUP BY p.product_id, p.product_name, p.category_main, p.category_sub, c.comp_name, p.sell_price, p.product_spec, p.unit
     </select>
 
     <!-- 조건에 맞는 판매 이력 조회 -->
@@ -29,7 +29,7 @@
                    p.sell_price,
                    SUM(sod.quantity) as quantity,
                    SUM(sod.quantity * sod.price) as total_price,
-                   p.product_spec
+                   p.product_spec || get_datacode_name(p.unit) as product_spec
             FROM   sales_orders so JOIN sales_orders_detail sod ON so.so_id = sod.so_id
                                    JOIN products p ON sod.product_id = p.product_id
                                    JOIN companys c ON so.comp_id = c.comp_id
@@ -59,7 +59,7 @@
             AND so.so_date <= #{salesDatesTo}
         ]]>
         </if>
-            GROUP BY p.product_id, p.product_name, p.category_main, p.category_sub, c.comp_name, p.sell_price, p.product_spec
+            GROUP BY p.product_id, p.product_name, p.category_main, p.category_sub, c.comp_name, p.sell_price, p.product_spec, p.unit
         ORDER BY c.comp_name, p.product_id
     </select>
 </mapper>
