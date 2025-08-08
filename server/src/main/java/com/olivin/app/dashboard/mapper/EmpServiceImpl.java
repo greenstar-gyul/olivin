@@ -45,6 +45,7 @@ public class EmpServiceImpl implements EmpService{
 
   @Override
   public List<EmpVO> searchEmps(String searchValue) {
-    return empMapper.searchEmps(searchValue);
+    // return empMapper.searchEmps(searchValue);
+    return null;
   }
 }
