@@ -20,7 +20,16 @@
    </select>
    
    <!-- 등록 -->
-   <insert id="insertEmp" parameterType="EmpVO">
+   <insert id="insertCompanyIfNotExists" parameterType="EmpVO">
+    MERGE INTO companys c
+    USING (SELECT #{compId} AS comp_id, #{compName} AS comp_name FROM dual) input
+    ON (c.comp_id = input.comp_id)
+    WHEN NOT MATCHED THEN
+        INSERT (comp_id, comp_name)
+        VALUES (input.comp_id, input.comp_name)
+    </insert>
+
+    <insert id="insertEmp" parameterType="EmpVO">
     INSERT INTO employees (
         employee_id,
         emp_name,
@@ -28,16 +37,22 @@
         email,
         password,
         phone,
-        position
+        position,
+        comp_id,
+        department_id
+    ) VALUES (
+        #{employeeId},
+        #{empName},
+        #{empType},
+        #{email},
+        #{password},
+        #{phone},
+        #{position},
+        #{compId},
+        #{departmentId}
     )
-    VALUES #{employeeId},
-           #{empName},
-           #{empType},
-           #{email},
-           #{password},
-           #{phone},
-           #{position}
-   </insert>
+    </insert>
+
 
    <!-- 수정 -->
    <update id="updateEmp" parameterType="EmpVO">

@@ -21,4 +21,5 @@ public interface EmpMapper {
 
   // 사원코드 자동생성
   String selectEmp(@Param("empId") String empId);
+  void insertCompanyIfNotExists(EmpVO empVO);
 }
