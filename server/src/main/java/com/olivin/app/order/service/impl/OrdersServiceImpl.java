@@ -10,6 +10,7 @@ import com.olivin.app.order.mapper.OrdersMapper;
 import com.olivin.app.order.service.OrdersDetailVO;
 import com.olivin.app.order.service.OrdersService;
 import com.olivin.app.order.service.OrdersVO;
+import com.olivin.app.order.service.RejectionVO;
 import com.olivin.app.order.service.SearchOrdersVO;
 import com.olivin.app.order.service.UserCompanyVO;
 import com.olivin.app.standard.service.ProductService;
@@ -26,6 +27,7 @@ import lombok.RequiredArgsConstructor;
  * - 2025.07.28 : 최초 작성<br>
  * - 2025.07.29 : insert할때 기본값 추가<br>
  * - 2025.07.30 : 지점정보 조회 추가<br>
+ * - 2025.08.08 : 발주서 승인, 반려 추가<br>
  * @see OrdersService
  */
 @Service
@@ -78,6 +80,20 @@ public class OrdersServiceImpl implements OrdersService {
     		ordersMapper.insertDetailOne(detailVO);
     	}
     }
+	}
+	
+	@Override
+	public int approvalOrders(String orderId, String empId) {
+		return ordersMapper.ordersApproval(orderId, empId);
+	}
+	
+	@Override
+	@Transactional
+	public int rejectionOrders(RejectionVO rejectionVO) {
+		// 1. 발주반려 테이블 추가
+		ordersMapper.ordersRejectionDetail(rejectionVO);
+		// 2. 발주서 상태를 '반려'로 변경
+		return ordersMapper.ordersRejection(rejectionVO.getOrderId());
 	}
 	
 	@Override

@@ -31,7 +31,7 @@ public class CompanySearchController {
 	
 	// 회사별 검색 조건으로 검색
   @GetMapping("/search/company/{compType}")
-  public List<CompanySearchVO> searchCompanys(@PathVariable String compType, @RequestParam String searchValue) {
+  public List<CompanySearchVO> searchCompanys(@PathVariable String compType, @RequestParam(required = false) String searchValue) {
       return companySerchService.searchCompanys(CompanyType.valueOf(compType), searchValue);
   }
 }

@@ -13,14 +13,15 @@ const header = ref({
   title: '발주서 조회',
   header: {
     orderId: '발주서코드', 
-    orderTitle: '발주명', 
-    reasonName: '발주사유', 
     orderDate: '발주요청일', 
-    creatorName: '등록자', 
-    orderTo: '공급업체명', 
+    orderTypeName: '발주유형',
+    orderTitle: '발주명', 
+    orderFrom: '발주처', 
+    reasonName: '발주사유', 
     totalAmount: '총 금액', 
     dueDate: '납기예정일',
-    orderStatusName: '발주상태'
+    orderStatusName: '발주상태',
+    creatorName: '등록자'
   },
   rightAligned: ['totalAmount']
 });
@@ -54,7 +55,14 @@ filters.value.filters = [
   },
   { type: 'dateRange', label: '납기예정일', value: '2025-07-01', name: 'dueDate',
     fromPlaceholder: '예: 2025-07-01', toPlaceholder: '예: 2025-07-31' },
-  { type: 'text', label: '공급업체명', value: '', placeholder: '공급업체명을 입력하세요.', name: 'orderTo' },
+  { type: 'select', label: '발주유형', value: '', placeholder: '발주유형을 선택하세요.', name: 'orderType',
+    options: [
+      { name: '발주 요청(본사발주)', value: '150001' },
+      { name: '발주 요청(지점발주)', value: '150002' },
+      { name: '제안 발주', value: '150003' },
+    ]
+  },
+  { type: 'text', label: '발주처', value: '', placeholder: '발주처를 입력하세요.', name: 'orderFrom' },
 
 ];
 

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.olivin.app.order.mapper.RejectionMapper">
+    <select id="selectAllList" resultType="RejectionVO">
+        SELECT
+            rejection_id,
+            rejection_reson,
+            rejection_user,
+            rejection_date,
+            order_id
+        FROM
+            rejection_orders
+    </select>
+
+    <select id="selectOneByOrderId" resultType="RejectionVO" parameterType="String">
+        SELECT
+            rejection_id,
+            rejection_reson,
+            rejection_user,
+            rejection_date,
+            order_id
+        FROM
+            rejection_orders
+        WHERE
+            order_id = #{orderId}
+    </select>
+</mapper>

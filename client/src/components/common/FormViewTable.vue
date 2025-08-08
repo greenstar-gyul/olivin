@@ -39,6 +39,7 @@ const redirectToList = () => {
   <Fluid>
     <InputMaster :title="props.title" :formData="props.defaultForm" :formSchema="props.formSchema">
       <template #btn>
+        <slot name="btn" />
         <Button label="목록으로" class="min-w-fit whitespace-nowrap" severity="secondary" @click="redirectToList" outlined />
       </template>
     </InputMaster>

@@ -10,6 +10,7 @@ import java.util.List;
  * 수정이력:<br>
  * - 2025.07.28 : 최초 작성<br>
  * - 2025.07.30 : 지점정보 조회 추가<br>
+ * - 2025.08.08 : 발주서 승인, 반려 추가<br>
  */
 public interface OrdersService {
 	// 회사정보 조회
@@ -22,6 +23,10 @@ public interface OrdersService {
 	List<OrdersDetailVO> getDetailOrders(String orderId);
 	//4. 발주서 등록
 	void createOrders(OrdersVO ordersVO, List<OrdersDetailVO> detailVO);
-	//5. 발주서 삭제
+	//5. 발주서 승인
+	int approvalOrders(String orderId, String empId);
+	//6. 발주서 반려
+	int rejectionOrders(RejectionVO rejectionVO);
+	//7. 발주서 삭제
 	int deleteOrder(String orderId);
 }
