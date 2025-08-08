@@ -24,4 +24,13 @@ public class OutbndServiceImpl implements OutbndService {
     public String getCodeForUpdate() {
         return outbndMapper.selectCodeForUpdate();
     } // end of getCodeForUpdate()
+
+    /**
+     * 본사 출고처리 프로시저 호출
+     * @ param_orderId_발주 ID
+     */
+    @Override
+    public void processHqOutbnd(String orderId) {
+        outbndMapper.callProcHqOutbndProcess(orderId);
+    } // end of processHqOutbnd
 } // end of class
