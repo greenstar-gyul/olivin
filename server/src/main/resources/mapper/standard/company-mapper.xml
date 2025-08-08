@@ -97,6 +97,17 @@
         ORDER BY COMP_ID ASC
     </select>
 
+    <!-- 활성 상태의 회사만 조회 -->
+    <select id="selectActiveCompanies" resultMap="CompanyResultMap">
+        SELECT COMP_ID, COMP_NAME, COMP_TYPE, BIZ_NUMBER, CEO_NAME,
+               SETTLE_CYCLE, SETTLE_MGR, REG_USER, REG_DATE,
+               UPDATE_USER, UPDATE_DATE, ADDRESS, ADDRESS_DETAIL,
+               ZIPCODE, PHONE, NOTE
+        FROM   COMPANYS
+        WHERE  COMP_TYPE != 'FFFFFF'
+        ORDER BY COMP_ID ASC
+    </select>
+
     <!-- 특정 회사 조회 -->
     <select id="selectCompany" parameterType="String" resultMap="CompanyResultMap">
         SELECT COMP_ID, COMP_NAME, COMP_TYPE, BIZ_NUMBER, CEO_NAME,
@@ -153,7 +164,7 @@
         WHERE  COMP_ID = #{compId}
     </select>
 
-    <!-- 회사 유형별 조회 -->
+    <!-- 회사 유형별 조회 (비활성화 제외) -->
     <select id="selectCompaniesByType" parameterType="String" resultMap="CompanyResultMap">
         SELECT COMP_ID, COMP_NAME, COMP_TYPE, BIZ_NUMBER, CEO_NAME,
                SETTLE_CYCLE, SETTLE_MGR, REG_USER, REG_DATE,
@@ -164,7 +175,19 @@
         ORDER BY COMP_ID ASC
     </select>
 
-    <!-- 마지막 회사 ID 조회 (ID 자동생성용) -->
+    <!-- 활성 상태의 회사 유형별 조회 -->
+    <select id="selectActiveCompaniesByType" parameterType="String" resultMap="CompanyResultMap">
+        SELECT COMP_ID, COMP_NAME, COMP_TYPE, BIZ_NUMBER, CEO_NAME,
+               SETTLE_CYCLE, SETTLE_MGR, REG_USER, REG_DATE,
+               UPDATE_USER, UPDATE_DATE, ADDRESS, ADDRESS_DETAIL,
+               ZIPCODE, PHONE, NOTE
+        FROM   COMPANYS
+        WHERE  COMP_TYPE = #{compType}
+        AND    COMP_TYPE != 'FFFFFF'
+        ORDER BY COMP_ID ASC
+    </select>
+
+    <!-- 마지막 회사 ID 조회 (ID 자동생성용) - 비활성화 제외 -->
     <select id="selectLastCompanyIdByType" parameterType="String" resultType="String">
         <![CDATA[
         SELECT COMP_ID
@@ -172,27 +195,30 @@
             SELECT COMP_ID
             FROM   COMPANYS
             WHERE  COMP_TYPE = #{compType}
+            AND    COMP_TYPE != 'FFFFFF'
             ORDER BY COMP_ID DESC
         )
         WHERE ROWNUM = 1
         ]]>
     </select>
 
-    <!-- 사업자번호 중복 확인 -->
+    <!-- 사업자번호 중복 확인 (비활성화된 회사 제외) -->
     <select id="checkBizNumber" resultType="int">
         SELECT COUNT(*)
         FROM   COMPANYS
         WHERE  BIZ_NUMBER = #{bizNumber}
+        AND    COMP_TYPE != 'FFFFFF'
         <if test="excludeCompId != null and excludeCompId != ''">
             AND COMP_ID != #{excludeCompId}
         </if>
     </select>
 
-    <!-- 회사명 중복 확인 -->
+    <!-- 회사명 중복 확인 (비활성화된 회사 제외) -->
     <select id="checkCompanyName" resultType="int">
         SELECT COUNT(*)
         FROM   COMPANYS
         WHERE  COMP_NAME = #{compName}
+        AND    COMP_TYPE != 'FFFFFF'
         <if test="excludeCompId != null and excludeCompId != ''">
             AND COMP_ID != #{excludeCompId}
         </if>
@@ -201,7 +227,9 @@
     <!-- 회사 유형별 통계 -->
     <select id="selectCompanyStatsByType" resultType="map">
         SELECT COMP_TYPE,
-               COUNT(*) as TOTAL_COUNT
+               COUNT(*) as TOTAL_COUNT,
+               SUM(CASE WHEN COMP_TYPE != 'FFFFFF' THEN 1 ELSE 0 END) as ACTIVE_COUNT,
+               SUM(CASE WHEN COMP_TYPE = 'FFFFFF' THEN 1 ELSE 0 END) as INACTIVE_COUNT
         FROM   COMPANYS
         GROUP BY COMP_TYPE
         ORDER BY COMP_TYPE
@@ -218,4 +246,39 @@
         FETCH FIRST #{limit} ROWS ONLY
     </select>
 
+    <!-- 해당 회사에 소속된 직원 수 조회 -->
+    <select id="countEmployeesByCompId" resultType="int">
+        SELECT COUNT(*)
+        FROM EMPLOYEES 
+        WHERE COMP_ID = #{compId}
+    </select>
+
+    <!-- 해당 회사에 등록된 제품 수 조회 -->
+    <select id="countProductsByCompId" resultType="int">
+        SELECT COUNT(*)
+        FROM PRODUCTS 
+        WHERE COMP_ID = #{compId}
+    </select>
+
+    <!-- 해당 회사와 관련된 발주서 수 조회 (발주처 또는 공급처) -->
+    <select id="countPurchaseOrdersByCompId" resultType="int">
+        SELECT COUNT(*)
+        FROM PURCHASE_ORDERS 
+        WHERE ORDER_FROM_ID = #{compId} 
+        OR ORDER_TO_ID = #{compId}
+    </select>
+
+    <!-- 해당 회사와 관련된 판매계획 수 조회 -->
+    <select id="countSalesPlansByCompId" resultType="int">
+        SELECT COUNT(*)
+        FROM SALES_PLAN 
+        WHERE COMP_ID = #{compId}
+    </select>
+
+    <!-- 해당 회사와 관련된 계정원장 수 조회 -->
+    <select id="countAccountLedgersByCompId" resultType="int">
+        SELECT COUNT(*)
+        FROM ACCOUNT_LEDER 
+        WHERE COMP_ID = #{compId}
+    </select>
 </mapper>

@@ -25,4 +25,7 @@ public interface ProductService {
     
     // 제품 ID 자동생성 메서드
     String getNextProductId(String categoryMain);
+    
+    // ✅ 제품 중단 처리 - 상태를 중단(040004)으로 변경
+    int stopProduct(String productId, String updateUser);
 }

@@ -38,6 +38,8 @@ public class RolesController {
         return ResponseEntity.ok(result);
     }
     
+    // ========== 기존 역할 관리 API ==========
+    
     // 모든 권한 목록 조회
     @GetMapping
     public ResponseEntity<Map<String, Object>> getAllRoles(@RequestParam Map<String, Object> params) {
@@ -212,95 +214,6 @@ public class RolesController {
         return ResponseEntity.ok(result);
     }
     
-    // 권한 ID 존재 여부 확인
-    @GetMapping("/check/{roleId}")
-    public ResponseEntity<Map<String, Object>> checkRoleId(@PathVariable Integer roleId) {
-        Map<String, Object> result = new HashMap<>();
-        
-        try {
-            boolean exists = roleService.isRoleIdExists(roleId);
-            
-            result.put("result_code", "SUCCESS");
-            result.put("message", "성공");
-            result.put("data", Map.of(
-                "exists", exists,
-                "message", exists ? "이미 존재하는 권한ID입니다" : "사용 가능한 권한ID입니다"
-            ));
-            
-        } catch (Exception e) {
-            result.put("result_code", "FAIL");
-            result.put("message", "권한 ID 확인 중 오류가 발생했습니다: " + e.getMessage());
-            result.put("data", null);
-        }
-        
-        return ResponseEntity.ok(result);
-    }
-    
-    // 다음 권한 ID 생성
-    @GetMapping("/next-id")
-    public ResponseEntity<Map<String, Object>> getNextRoleId() {
-        Map<String, Object> result = new HashMap<>();
-        
-        try {
-            Integer nextRoleId = roleService.getNextRoleId();
-            
-            result.put("result_code", "SUCCESS");
-            result.put("message", "성공");
-            result.put("data", Map.of("nextRoleId", nextRoleId));
-            
-        } catch (Exception e) {
-            result.put("result_code", "FAIL");
-            result.put("message", "권한 ID 생성 중 오류가 발생했습니다: " + e.getMessage());
-            result.put("data", null);
-        }
-        
-        return ResponseEntity.ok(result);
-    }
-    
-    // 권한별 직원 수 통계
-    @GetMapping("/stats/by-employee")
-    public ResponseEntity<Map<String, Object>> getRoleStatsByEmployee() {
-        Map<String, Object> result = new HashMap<>();
-        
-        try {
-            List<Map<String, Object>> stats = roleService.getRoleStatsByEmployee();
-            
-            result.put("result_code", "SUCCESS");
-            result.put("message", "성공");
-            result.put("data", stats);
-            
-        } catch (Exception e) {
-            result.put("result_code", "FAIL");
-            result.put("message", "통계 조회 중 오류가 발생했습니다: " + e.getMessage());
-            result.put("data", null);
-        }
-        
-        return ResponseEntity.ok(result);
-    }
-    
-    // 최근 등록된 권한 목록
-    @GetMapping("/recent/{limit}")
-    public ResponseEntity<Map<String, Object>> getRecentRoles(@PathVariable int limit) {
-        Map<String, Object> result = new HashMap<>();
-        
-        try {
-            List<RolesVO> roles = roleService.getRecentRoles(limit);
-            
-            result.put("result_code", "SUCCESS");
-            result.put("message", "성공");
-            result.put("data", roles);
-            
-        } catch (Exception e) {
-            result.put("result_code", "FAIL");
-            result.put("message", "최근 권한 목록 조회 중 오류가 발생했습니다: " + e.getMessage());
-            result.put("data", null);
-        }
-        
-        return ResponseEntity.ok(result);
-    }
-    
-    // === 권한-권한 매핑 관련 (간소화) ===
-    
     // 모든 권한 목록 조회
     @GetMapping("/permissions")
     public ResponseEntity<Map<String, Object>> getAllPermissions() {
@@ -369,22 +282,127 @@ public class RolesController {
         
         return ResponseEntity.ok(result);
     }
+}
+
+// ========== 추가: 사원 관련 API (같은 파일에 추가) ==========
+
+@RestController
+@RequestMapping("/api/employees")
+@CrossOrigin(origins = "*")
+@RequiredArgsConstructor
+class EmployeeController {
     
-    // 권한별 권한 수 통계
-    @GetMapping("/stats/permissions-count")
-    public ResponseEntity<Map<String, Object>> getRolePermissionCount() {
+    private final RolesService roleService; // 기존 RolesService 재사용
+    
+    // 권한 관리용 사원 목록 조회 (권한 정보 포함)
+    @GetMapping("/permissions")
+    public ResponseEntity<Map<String, Object>> getEmployeesWithPermissions(@RequestParam Map<String, Object> params) {
         Map<String, Object> result = new HashMap<>();
         
         try {
-            List<Map<String, Object>> stats = roleService.getRolePermissionCount();
+            // 기존 RolesService의 메서드를 활용하되, 사원 조회용으로 사용
+            List<Map<String, Object>> employees = roleService.getEmployeesWithPermissions(params);
             
             result.put("result_code", "SUCCESS");
             result.put("message", "성공");
-            result.put("data", stats);
+            result.put("data", employees);
             
         } catch (Exception e) {
             result.put("result_code", "FAIL");
-            result.put("message", "권한별 권한 수 통계 조회 실패: " + e.getMessage());
+            result.put("message", "사원 목록 조회 실패: " + e.getMessage());
+            result.put("data", null);
+        }
+        
+        return ResponseEntity.ok(result);
+    }
+    
+    // 특정 사원의 권한 ID 목록 조회
+    @GetMapping("/{employeeId}/permissions")
+    public ResponseEntity<Map<String, Object>> getEmployeePermissions(@PathVariable String employeeId) {
+        Map<String, Object> result = new HashMap<>();
+        
+        try {
+            List<Integer> permissionIds = roleService.getEmployeePermissionIds(employeeId);
+            
+            result.put("result_code", "SUCCESS");
+            result.put("message", "성공");
+            result.put("data", permissionIds);
+            
+        } catch (Exception e) {
+            result.put("result_code", "FAIL");
+            result.put("message", "사원 권한 조회 실패: " + e.getMessage());
+            result.put("data", null);
+        }
+        
+        return ResponseEntity.ok(result);
+    }
+    
+    // 사원의 역할 변경
+    @PutMapping("/{employeeId}/role")
+    public ResponseEntity<Map<String, Object>> updateEmployeeRole(
+            @PathVariable String employeeId,
+            @RequestBody Map<String, Object> requestData) {
+        
+        Map<String, Object> result = new HashMap<>();
+        
+        try {
+            Integer roleId = (Integer) requestData.get("roleId");
+            String updateUser = (String) requestData.get("updateUser");
+            
+            if (roleId == null) {
+                result.put("result_code", "FAIL");
+                result.put("message", "역할 ID는 필수입니다");
+                result.put("data", null);
+                return ResponseEntity.badRequest().body(result);
+            }
+            
+            int updateResult = roleService.updateEmployeeRole(employeeId, roleId, updateUser);
+            
+            if (updateResult > 0) {
+                result.put("result_code", "SUCCESS");
+                result.put("message", "사원 역할이 성공적으로 변경되었습니다");
+                result.put("data", null);
+            } else {
+                result.put("result_code", "FAIL");
+                result.put("message", "사원 역할 변경에 실패했습니다");
+                result.put("data", null);
+            }
+            
+        } catch (Exception e) {
+            result.put("result_code", "FAIL");
+            result.put("message", "사원 역할 변경 중 오류가 발생했습니다: " + e.getMessage());
+            result.put("data", null);
+        }
+        
+        return ResponseEntity.ok(result);
+    }
+}
+
+// ========== 추가: 권한 목록 API ==========
+
+@RestController
+@RequestMapping("/api/permissions")
+@CrossOrigin(origins = "*")
+@RequiredArgsConstructor
+class PermissionController {
+    
+    private final RolesService roleService; // 기존 RolesService 재사용
+    
+    // 모든 권한 목록 조회
+    @GetMapping
+    public ResponseEntity<Map<String, Object>> getAllPermissions() {
+        Map<String, Object> result = new HashMap<>();
+        
+        try {
+            List<Map<String, Object>> permissions = roleService.getAllPermissions();
+            
+            result.put("result_code", "SUCCESS");
+            result.put("message", "성공");
+            result.put("data", permissions);
+            
+        } catch (Exception e) {
+            result.put("result_code", "FAIL");
+            result.put("message", "권한 목록 조회 실패: " + e.getMessage());
             result.put("data", null);
         }
         

@@ -38,6 +38,9 @@ public interface ProductMapper {
     int updateProductApprovalStatus(Map<String, Object> params);
     int updateProductSimpleApproval(Map<String, Object> params);
     
+    // ✅ 제품 중단 전용 업데이트 (선택사항 - 기존 updateProductStatus 사용 가능)
+    int updateProductStopStatus(Map<String, Object> params);
+    
     // 단순 조회 메서드들
     String selectProductStatus(String productId);
 }
