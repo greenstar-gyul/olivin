@@ -19,7 +19,7 @@ const router = createRouter({
                     path: '/dashboard/branch',
                     name: 'BranchDashboard',
                     component: () => import('@/views/dashboard/BranchDashboard.vue'),
-                    meta: { roles: ['ROLE_SYSTEM_ADMIN', 'branch_manager', 'sales_manager'] }
+                    // meta: { roles: ['ROLE_SYSTEM_ADMIN', 'ROLE_branch_manager', 'sales_manager'] }
                 },
                 {
                     path: '/',
