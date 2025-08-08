@@ -5,7 +5,6 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 
 import com.olivin.app.example.mapper.EmpMapper;
-import com.olivin.app.example.service.EmpVO;
 import com.olivin.app.example.service.ExampleService;
 import com.olivin.app.example.service.ExampleVO;
 
@@ -29,24 +28,25 @@ public class ExampleServiceImpl implements ExampleService {
     // 모든 목록을 조회합니다.
     @Override
     public List<ExampleVO> getAllExamples() {
-        return empMapper.selectAllList();
+        // return empMapper.selectAllList();
+        return null;
     }
     
-    // 등록
-    @Override
-    public void insertEmp(EmpVO empVO) {
-        return empMapper.insertEmp(empVO);
-    }
+    // // 등록
+    // @Override
+    // public void insertEmp(EmpVO empVO) {
+    //     return empMapper.insertEmp(empVO);
+    // }
 
-    // 수정
-    @Override
-    public int updateEmp(EmpVO empVO) {
-        return empMapper.updateEmp(empVO);
-    }
+    // // 수정
+    // @Override
+    // public int updateEmp(EmpVO empVO) {
+    //     return empMapper.updateEmp(empVO);
+    // }
 
-    // 삭제
-    @Override
-    public int deleteEmp(String employeeId) {
-        return empMapper.deleteEmp(employeeId);
-    }
+    // // 삭제
+    // @Override
+    // public int deleteEmp(String employeeId) {
+    //     return empMapper.deleteEmp(employeeId);
+    // }
 }
