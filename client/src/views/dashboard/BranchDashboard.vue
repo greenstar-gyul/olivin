@@ -287,12 +287,16 @@ const fetchCurrentUser = async () => {
     const response = await axios.get('/api/auth/me')
     currentUser.value = response.data.data.user
     
-    // 본사 권한 체크
+    // 본사 권한 체크 - 실제 로그에서 확인된 형태로 체크
     const userRole = response.data.data.role?.roleName || ''
     const userCompId = currentUser.value.compId || ''
     
-    isHeadquarter.value = userRole.includes('system_admin') || 
-                         userRole.includes('general_manager') || 
+    console.log('사용자 역할:', userRole) // 디버깅용
+    console.log('사용자 compId:', userCompId) // 디버깅용
+    
+    // 실제 권한 체크 - 대소문자 구분 없이, 포함 여부로 체크
+    isHeadquarter.value = userRole.toUpperCase().includes('SYSTEM_ADMIN') || 
+                         userRole.toUpperCase().includes('GENERAL_MANAGER') || 
                          userCompId === 'COM10001'
     
     console.log('현재 사용자:', currentUser.value)

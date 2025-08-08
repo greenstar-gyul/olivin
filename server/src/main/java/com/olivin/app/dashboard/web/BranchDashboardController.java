@@ -159,7 +159,7 @@ public class BranchDashboardController {
      * 본사 전용 - 모든 지점 목록 조회
      */
     @GetMapping("/branches")
-    @PreAuthorize("hasRole('system_admin') or hasRole('general_manager')")
+    // @PreAuthorize 제거 - 메서드 내부에서 체크
     public List<Map<String, Object>> getAllBranches(Authentication authentication) {
         UserVO user = getCurrentUser(authentication);
         if (!isHeadquarterUser(user)) {
@@ -172,7 +172,7 @@ public class BranchDashboardController {
      * 본사 전용 - 모든 지점 통합 KPI
      */
     @GetMapping("/all-kpi")
-    @PreAuthorize("hasRole('system_admin') or hasRole('general_manager')")
+    // @PreAuthorize 제거 - 메서드 내부에서 체크
     public Map<String, Object> getAllBranchesKpi(Authentication authentication) {
         UserVO user = getCurrentUser(authentication);
         if (!isHeadquarterUser(user)) {
