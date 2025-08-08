@@ -332,7 +332,7 @@ const loadSalesHistory = async () => {
 };
 
 const resetList = () => {
-  searchSalesHistory({});
+  loadSalesHistory();
 }
 
 onMounted(() => {
