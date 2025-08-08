@@ -12,6 +12,19 @@ const API_BASE_URL = '/api/public/emps';
 const toast = useToast();
 const fileUploadRef = ref();
 
+// departmentId 자동 생성
+const getNextDepartmentId = () => {
+  const ids = items.value
+    .map(item => item.departmentId)
+    .filter(id => id?.startsWith('DEPT'))
+    .map(id => parseInt(id.replace('DEPT', ''), 10))
+    .filter(n => !isNaN(n));
+
+  const max = ids.length > 0 ? Math.max(...ids) : 0;
+  const nextId = (max + 1).toString().padStart(3, '0');
+  return `DEPT${nextId}`;
+};
+
 // windos.location.origin을 computed로 처리
 const baseUrl = computed(() => {
   return typeof window !== 'undefined' ? window.location.origin : '';
@@ -102,6 +115,18 @@ const header = ref({
 const selectedImageFile = ref(null);
 const selectedImageFiles = ref([]);
 const uploadedImageUrl = ref('');
+
+// 입력값 초기화 + 자동 departmentId 생성
+const initializeInput = () => {
+  inputs.value.inputs.forEach(input => {
+    input.value = '';
+  });
+
+  const deptIdInput = inputs.value.inputs.find(input => input.name === 'departmentId');
+  if (deptIdInput) {
+    deptIdInput.value = getNextDepartmentId();
+  }
+};
 
 const searchData = async (searchOptions) => {
   try {

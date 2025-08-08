@@ -46,8 +46,15 @@ const initializeInputDatas = () => {
   inputDatas.value = options;
 };
 
+// 초기화
+initializeInputDatas();
+
+const resetInputDatas = () => {
+  initializeInputDatas();
+};
+
 const onSave = (mode) => {
-  emit('saveData', inputData.value, mode);  // mode 전달
+  emit('saveData', inputDatas.value, mode);  // mode 전달
 };
 
 function openSearchModal(inputName) {
@@ -68,6 +75,7 @@ defineExpose({
           <div class="font-semibold text-2xl">{{ inputs.title }}</div>
         </div>
         <div class="flex items-center gap-2 flex-nowrap">
+          <Button label="초기화" severity="secondary" @click="resetInputDatas" outlined />
           <Button label="수정" severity="secondary" @click="onSave('update')" outlined />
           <Button label="등록" @click="onSave('insert')" outlined />
           <!-- <Button label="엑셀 다운로드" severity="success" class="min-w-fit whitespace-nowrap" outlined /> -->

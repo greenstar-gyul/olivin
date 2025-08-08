@@ -61,8 +61,8 @@ export default {
       emit('searchData', searchOptions);
     };
 
-    const saveData = (inputData, mode) => {
-      emit('saveData', inputData, mode);
+    const saveData = (inputDatas, mode) => {
+      emit('saveData', inputDatas.value, mode);
     };
 
     const onSaveData = (data, mode) => {
