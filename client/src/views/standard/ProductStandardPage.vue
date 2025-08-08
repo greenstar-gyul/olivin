@@ -22,6 +22,40 @@ const baseUrl = computed(() => {
   return typeof window !== 'undefined' ? window.location.origin : '';
 });
 
+// ✅ 날짜 포맷 함수 (Oracle 호환)
+const formatDateForOracle = (dateInput) => {
+  if (!dateInput) return null;
+  
+  try {
+    let date;
+    if (dateInput instanceof Date) {
+      date = dateInput;
+    } else if (typeof dateInput === 'string') {
+      // YYYY-MM-DD 형식이면 그대로 사용
+      if (/^\d{4}-\d{2}-\d{2}$/.test(dateInput.trim())) {
+        return dateInput.trim();
+      }
+      date = new Date(dateInput.trim());
+    } else {
+      date = new Date(dateInput);
+    }
+    
+    if (isNaN(date.getTime())) {
+      throw new Error('유효하지 않은 날짜');
+    }
+    
+    // YYYY-MM-DD 형식으로 변환
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    
+    return `${year}-${month}-${day}`;
+  } catch (error) {
+    console.error('날짜 변환 오류:', error);
+    return null;
+  }
+};
+
 // 사용자 정보 가져오기 함수
 const getCurrentUser = async () => {
   try {
@@ -207,9 +241,8 @@ const selectedProduct = ref(null);
 
 // 테이블 헤더
 const header = ref({
-  title: '제품 기준정보 관리',
+  title: '제품 기준정보 관리 (승인된 제품)',
   header: {
-    productId: '제품ID',
     productName: '제품명', 
     vendorName: '브랜드',
     categoryMain: '카테고리', 
@@ -218,8 +251,6 @@ const header = ref({
     unit: '단위',
     packQty: '입수량',
     safetyStock: '안전재고',
-    purchasePrice: '구매가격',
-    sellPrice: '판매가격',
   },
   rightAligned: ['packQty', 'safetyStock', 'purchasePrice', 'sellPrice']
 });
@@ -271,7 +302,7 @@ const handleCategoryMainChange = (categoryMainValue) => {
   inputs.value = { ...inputs.value };
 };
 
-// 코드 변환 함수들
+// ✅ 코드 변환 함수들 (새로운 상태 추가)
 const getCategoryMainName = (code) => {
   const category = categoryMainOptions.find(opt => opt.value === code);
   return category ? category.name : code;
@@ -290,11 +321,13 @@ const getUnitName = (code) => {
   return unit ? unit.name : code;
 };
 
+// ✅ 상태 변환 함수 (중단 상태 추가)
 const getStatusName = (code) => {
   const statusMap = {
     '040001': '완료',
     '040002': '대기', 
-    '040003': '반려'
+    '040003': '반려',
+    '040004': '중단'  // ✅ 새로 추가된 상태
   };
   return statusMap[code] || code;
 };
@@ -359,30 +392,87 @@ const filterProductData = (product, index = 0) => {
   };
 };
 
-// 제품 목록 로드
+// ✅ 제품 목록 로드 (승인된 제품만)
 const loadProducts = async () => {
   try {
-    const response = await axios.get(`${API_BASE_URL}`);
+    console.log('승인된 제품만 조회 시작...');
+    
+    // ✅ 승인된 제품만 조회하도록 변경
+    const response = await axios.get(`${API_BASE_URL}/approved`);
+    
+    console.log('승인된 제품 API 응답:', response.data);
     
     if (response.data && Array.isArray(response.data)) {
       items.value = response.data.map((product, index) => filterProductData(product, index));
+      console.log(`✅ 승인된 제품 ${items.value.length}개 로드됨`);
+    } else {
+      console.warn('승인된 제품 응답이 배열이 아님:', response.data);
+      items.value = [];
     }
   } catch (error) {
-    console.error('제품 목록 조회 실패:', error);
-    toast.add({ 
-      severity: 'error', 
-      summary: '오류', 
-      detail: '제품 목록을 불러오는데 실패했습니다.', 
-      life: 3000 
-    });
+    console.error('승인된 제품 목록 조회 실패:', error);
+    
+    // ✅ 대체 방법: 전체 조회 후 클라이언트에서 필터링
+    try {
+      console.log('대체 방법으로 전체 제품 조회 후 승인된 것만 필터링...');
+      const fallbackResponse = await axios.get(`${API_BASE_URL}`);
+      
+      if (fallbackResponse.data && Array.isArray(fallbackResponse.data)) {
+        const approvedProducts = fallbackResponse.data.filter(product => 
+          product.status === '040001' || product.statusCode === '040001'
+        );
+        items.value = approvedProducts.map((product, index) => filterProductData(product, index));
+        console.log(`대체 방법으로 승인된 제품 ${items.value.length}개 로드됨`);
+      } else {
+        items.value = [];
+      }
+    } catch (fallbackError) {
+      console.error('대체 방법도 실패:', fallbackError);
+      toast.add({ 
+        severity: 'error', 
+        summary: '오류', 
+        detail: '제품 목록을 불러오는데 실패했습니다.', 
+        life: 3000 
+      });
+      items.value = [];
+    }
   }
 };
 
-// 기존 searchData 함수에서 날짜 처리 부분만 수정하세요
-
+// ✅ 검색 함수 수정 - 검색 조건이 없으면 승인된 제품만 조회
 const searchData = async (searchOptions) => {
   try {
-    // 기존 파라미터 처리 코드는 그대로 두고...
+    // ✅ 검색 조건이 모두 비어있는지 확인
+    const hasSearchCondition = Object.values(searchOptions).some(value => {
+      if (typeof value === 'string') {
+        return value.trim() !== '';
+      }
+      return value !== null && value !== undefined && value !== '';
+    });
+    
+    // ✅ 검색 조건이 없으면 승인된 제품 목록만 로드 + 폼 초기화
+    if (!hasSearchCondition) {
+      console.log('검색 조건이 없어서 승인된 제품 목록만 조회하고 폼을 초기화합니다.');
+      
+      // 1. 승인된 제품 목록 로드
+      await loadProducts();
+      
+      // 2. 선택된 제품 초기화
+      selectedProduct.value = null;
+      
+      // 3. 입력 폼 초기화 및 기본값 설정
+      if (standardInputRef.value?.inputFormRef) {
+        standardInputRef.value.inputFormRef.resetInputDatas();
+        // 등록자, 등록일 다시 설정
+        setTimeout(async () => {
+          await initializeFormData();
+        }, 100);
+      }
+      
+      return;
+    }
+    
+    // ✅ 검색 조건이 있으면 검색 API 호출
     const params = {};
     
     if (searchOptions.productName?.trim()) params.productName = searchOptions.productName.trim();
@@ -393,16 +483,13 @@ const searchData = async (searchOptions) => {
     if (searchOptions.packQty) params.packQty = searchOptions.packQty;
     if (searchOptions.regUser?.trim()) params.regUser = searchOptions.regUser.trim();
     
-    // ✅ 날짜 범위 파라미터 처리만 수정 (Oracle 호환)
+    // ✅ 날짜 범위 파라미터 처리 (Oracle 호환)
     if (searchOptions.regDateRangeFrom && searchOptions.regDateRangeTo) {
       try {
-        // 날짜 객체로 변환하여 검증
         const fromDate = new Date(searchOptions.regDateRangeFrom);
         const toDate = new Date(searchOptions.regDateRangeTo);
         
-        // 유효한 날짜인지 확인
         if (!isNaN(fromDate.getTime()) && !isNaN(toDate.getTime())) {
-          // YYYY-MM-DD 형식으로 변환 (Oracle에서 인식 가능한 형식)
           params.regDateFrom = fromDate.toISOString().split('T')[0];
           params.regDateTo = toDate.toISOString().split('T')[0];
           
@@ -418,18 +505,11 @@ const searchData = async (searchOptions) => {
         }
       } catch (dateError) {
         console.error('날짜 변환 오류:', dateError);
-        // 에러가 발생해도 검색은 계속 진행 (날짜 조건 제외)
       }
     }
     
-    // 승인 페이지인 경우 상태 제한
-    if (typeof window !== 'undefined' && window.location.pathname.includes('approval')) {
-      params.status = '040002'; // 승인 대기
-    }
+    console.log('검색 파라미터:', params);
     
-    console.log('최종 검색 파라미터:', params);
-    
-    // 기존 API 호출 코드는 그대로...
     const response = await axios.get(`${API_BASE_URL}/search`, { params });
     
     if (response.data && Array.isArray(response.data)) {
@@ -443,7 +523,6 @@ const searchData = async (searchOptions) => {
   } catch (error) {
     console.error('검색 실패:', error);
     
-    // 에러 메시지 개선
     let errorMessage = '검색 중 오류가 발생했습니다.';
     if (error.response?.status === 500) {
       errorMessage = '서버 내부 오류가 발생했습니다. 검색 조건을 확인해주세요.';
@@ -451,17 +530,12 @@ const searchData = async (searchOptions) => {
       errorMessage = '검색 조건이 올바르지 않습니다.';
     }
     
-    // Toast 또는 alert 사용
-    if (typeof toast !== 'undefined' && toast.add) {
-      toast.add({ 
-        severity: 'error', 
-        summary: '검색 실패', 
-        detail: errorMessage, 
-        life: 3000 
-      });
-    } else {
-      alert(errorMessage);
-    }
+    toast.add({ 
+      severity: 'error', 
+      summary: '검색 실패', 
+      detail: errorMessage, 
+      life: 3000 
+    });
     
     items.value = [];
   }
@@ -577,7 +651,7 @@ const uploadProductImage = async (file) => {
   }
 };
 
-// 저장 처리
+// ✅ 저장 처리 (날짜 형식 수정)
 const saveData = async (inputData) => {
   try {
     // 필수 필드 검증
@@ -613,7 +687,6 @@ const saveData = async (inputData) => {
         imageUrl = null;
       }
     } else if (inputData.productImage_preview) {
-      // 기존 이미지가 있는 경우
       imageUrl = selectedProduct.value?.productImage || null;
     }
     
@@ -623,13 +696,11 @@ const saveData = async (inputData) => {
     let response;
     
     if (isUpdateMode) {
-      // 수정 모드
+      // ✅ 수정 모드 - 날짜 형식 수정
       let regDate = null;
       if (inputData.regDate?.trim()) {
-        try {
-          regDate = new Date(inputData.regDate.trim() + 'T00:00:00');
-          if (isNaN(regDate.getTime())) throw new Error('유효하지 않은 날짜');
-        } catch (error) {
+        regDate = formatDateForOracle(inputData.regDate);
+        if (!regDate) {
           toast.add({ 
             severity: 'error', 
             summary: '검증 오류', 
@@ -644,7 +715,7 @@ const saveData = async (inputData) => {
         ...inputData,
         productId: selectedProduct.value.productId,
         updateUser: currentUserData.employeeId,
-        updateDate: new Date(),
+        updateDate: formatDateForOracle(new Date()),
         regDate: regDate,
         productImage: imageUrl,
         regUser: selectedProduct.value.regUserCode || inputData.regUser
@@ -652,10 +723,20 @@ const saveData = async (inputData) => {
       
       response = await axios.put(`${API_BASE_URL}/${selectedProduct.value.productId}`, updateData);
     } else {
-      // 신규 등록 모드
+      // ✅ 신규 등록 모드 - 날짜 형식 수정
       let regDate = inputData.regDate?.trim() ? 
-        new Date(inputData.regDate.trim() + 'T00:00:00') : 
-        new Date();
+        formatDateForOracle(inputData.regDate) : 
+        formatDateForOracle(new Date());
+      
+      if (!regDate) {
+        toast.add({ 
+          severity: 'error', 
+          summary: '검증 오류', 
+          detail: '등록일 형식이 올바르지 않습니다. (예: 2024-01-01)', 
+          life: 3000 
+        });
+        return;
+      }
       
       const newProductData = {
         compId: inputData.compId,
@@ -697,6 +778,7 @@ const saveData = async (inputData) => {
       }
       selectedProduct.value = null;
       
+      // ✅ 제품 등록 후 승인된 제품 목록 다시 로드
       await loadProducts();
     } else {
       toast.add({ 
@@ -726,32 +808,39 @@ const saveData = async (inputData) => {
   }
 };
 
-// 삭제 처리
+// ✅ 삭제 처리 (중단 상태로 변경)
 const deleteData = async () => {
   if (!selectedProduct.value?.productId) {
     toast.add({ 
       severity: 'warn', 
       summary: '선택 필요', 
-      detail: '삭제할 제품을 선택해주세요.', 
+      detail: '중단할 제품을 선택해주세요.', 
       life: 3000 
     });
     return;
   }
 
-  const confirmDelete = confirm(
-    `제품 "${selectedProduct.value.productName}"을(를) 정말 삭제하시겠습니까?\n\n이 작업은 되돌릴 수 없습니다.`
+  const confirmStop = confirm(
+    `제품 "${selectedProduct.value.productName}"을(를) 중단 상태로 변경하시겠습니까?\n\n중단된 제품은 더 이상 판매되지 않습니다.`
   );
   
-  if (!confirmDelete) return;
+  if (!confirmStop) return;
 
   try {
-    const response = await axios.delete(`${API_BASE_URL}/${selectedProduct.value.productId}`);
+    const currentUserData = await getCurrentUser();
+    
+    // ✅ 상태를 중단(040004)으로 변경
+    const response = await axios.put(`${API_BASE_URL}/${selectedProduct.value.productId}/stop`, {
+      updateUser: currentUserData.employeeId,
+      updateDate: formatDateForOracle(new Date()),
+      status: '040004' // 중단 상태
+    });
     
     if (response.data.success) {
       toast.add({ 
         severity: 'success', 
-        summary: '삭제 완료', 
-        detail: `제품 "${selectedProduct.value.productName}"이(가) 성공적으로 삭제되었습니다.`, 
+        summary: '중단 완료', 
+        detail: `제품 "${selectedProduct.value.productName}"이(가) 중단 상태로 변경되었습니다. (처리자: ${currentUserData.empName})`, 
         life: 3000 
       });
       
@@ -764,19 +853,61 @@ const deleteData = async () => {
     } else {
       toast.add({ 
         severity: 'error', 
-        summary: '삭제 실패', 
-        detail: response.data.message || '삭제 중 오류가 발생했습니다.', 
+        summary: '중단 실패', 
+        detail: response.data.message || '제품 중단 처리 중 오류가 발생했습니다.', 
         life: 5000 
       });
     }
   } catch (error) {
-    console.error('제품 삭제 실패:', error);
-    toast.add({ 
-      severity: 'error', 
-      summary: '삭제 실패', 
-      detail: '삭제 중 오류가 발생했습니다.', 
-      life: 5000 
-    });
+    console.error('제품 중단 실패:', error);
+    
+    // ✅ 백엔드에 중단 API가 없는 경우 일반 수정 API 사용
+    if (error.response?.status === 404) {
+      try {
+        console.log('중단 전용 API가 없어서 일반 수정 API 사용');
+        
+        const updateData = {
+          ...selectedProduct.value,
+          status: '040004', // 중단 상태
+          updateUser: currentUserData.employeeId,
+          updateDate: formatDateForOracle(new Date())
+        };
+        
+        const fallbackResponse = await axios.put(`${API_BASE_URL}/${selectedProduct.value.productId}`, updateData);
+        
+        if (fallbackResponse.data.success) {
+          toast.add({ 
+            severity: 'success', 
+            summary: '중단 완료', 
+            detail: `제품 "${selectedProduct.value.productName}"이(가) 중단 상태로 변경되었습니다.`, 
+            life: 3000 
+          });
+          
+          if (standardInputRef.value?.inputFormRef) {
+            standardInputRef.value.inputFormRef.resetInputDatas();
+          }
+          selectedProduct.value = null;
+          
+          await loadProducts();
+        } else {
+          throw new Error(fallbackResponse.data.message || '제품 중단에 실패했습니다.');
+        }
+      } catch (fallbackError) {
+        toast.add({ 
+          severity: 'error', 
+          summary: '중단 실패', 
+          detail: '제품 중단 처리 중 오류가 발생했습니다.', 
+          life: 5000 
+        });
+      }
+    } else {
+      toast.add({ 
+        severity: 'error', 
+        summary: '중단 실패', 
+        detail: '제품 중단 처리 중 오류가 발생했습니다.', 
+        life: 5000 
+      });
+    }
   }
 };
 
@@ -991,7 +1122,7 @@ onMounted(async () => {
       @fileUploaded="handleFileUploaded"
       @fileRemoved="handleFileRemoved"
     >
-      <!-- 삭제 버튼 -->
+      <!-- ✅ 중단 버튼 (삭제 대신) -->
       <template #btn>
         <Button 
           label="삭제" 

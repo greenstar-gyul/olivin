@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.olivin.app.standard.service.CompanyService;
 import com.olivin.app.standard.service.CompanyVO;
+import com.olivin.app.standard.service.impl.CompanyServiceImpl;
 
 import lombok.RequiredArgsConstructor;
 
@@ -28,6 +29,7 @@ import lombok.RequiredArgsConstructor;
 public class CompanyController {
     
     private final CompanyService companyService;
+    private final CompanyServiceImpl companyServiceImpl; // 비활성화 메서드 사용을 위해 추가
 
     @GetMapping("/ping")
     public ResponseEntity<Map<String, Object>> ping() {
@@ -66,6 +68,27 @@ public class CompanyController {
         return ResponseEntity.ok(result);
     }
     
+    // 활성 상태의 모든 회사 조회
+    @GetMapping("/active")
+    public ResponseEntity<Map<String, Object>> getActiveCompanies() {
+        Map<String, Object> result = new HashMap<>();
+        
+        try {
+            List<CompanyVO> companies = companyServiceImpl.getActiveCompanies();
+            
+            result.put("result_code", "SUCCESS");
+            result.put("message", "성공");
+            result.put("data", companies);
+            
+        } catch (Exception e) {
+            result.put("result_code", "FAIL");
+            result.put("message", "활성 회사 목록 조회 실패: " + e.getMessage());
+            result.put("data", null);
+        }
+        
+        return ResponseEntity.ok(result);
+    }
+    
     // 회사 유형별 조회
     @GetMapping("/type/{compType}")
     public ResponseEntity<Map<String, Object>> getCompaniesByType(@PathVariable String compType) {
@@ -81,6 +104,27 @@ public class CompanyController {
         } catch (Exception e) {
             result.put("result_code", "FAIL");
             result.put("message", "회사 목록 조회 실패: " + e.getMessage());
+            result.put("data", null);
+        }
+        
+        return ResponseEntity.ok(result);
+    }
+    
+    // 활성 상태의 회사 유형별 조회
+    @GetMapping("/active/type/{compType}")
+    public ResponseEntity<Map<String, Object>> getActiveCompaniesByType(@PathVariable String compType) {
+        Map<String, Object> result = new HashMap<>();
+        
+        try {
+            List<CompanyVO> companies = companyServiceImpl.getActiveCompaniesByType(compType);
+            
+            result.put("result_code", "SUCCESS");
+            result.put("message", "성공");
+            result.put("data", companies);
+            
+        } catch (Exception e) {
+            result.put("result_code", "FAIL");
+            result.put("message", "활성 회사 목록 조회 실패: " + e.getMessage());
             result.put("data", null);
         }
         
@@ -131,6 +175,14 @@ public class CompanyController {
             if (companyVO.getCompType() == null || companyVO.getCompType().trim().isEmpty()) {
                 result.put("result_code", "FAIL");
                 result.put("message", "회사 유형은 필수입니다");
+                result.put("data", null);
+                return ResponseEntity.badRequest().body(result);
+            }
+            
+            // 비활성화 타입으로 등록 시도 방지
+            if ("FFFFFF".equals(companyVO.getCompType())) {
+                result.put("result_code", "FAIL");
+                result.put("message", "비활성화 상태로는 신규 회사를 등록할 수 없습니다");
                 result.put("data", null);
                 return ResponseEntity.badRequest().body(result);
             }
@@ -249,7 +301,108 @@ public class CompanyController {
             
         } catch (Exception e) {
             result.put("result_code", "FAIL");
-            result.put("message", "회사 삭제 중 오류가 발생했습니다: " + e.getMessage());
+            result.put("message", e.getMessage());
+            result.put("data", null);
+        }
+        
+        return ResponseEntity.ok(result);
+    }
+    
+    // 회사 비활성화 (새로 추가)
+    @PutMapping("/{compId}/deactivate")
+    public ResponseEntity<Map<String, Object>> deactivateCompany(@PathVariable String compId) {
+        Map<String, Object> result = new HashMap<>();
+        
+        try {
+            int deactivateResult = companyServiceImpl.deactivateCompany(compId);
+            
+            if (deactivateResult > 0) {
+                result.put("result_code", "SUCCESS");
+                result.put("message", "회사가 성공적으로 비활성화되었습니다");
+                result.put("data", null);
+            } else {
+                result.put("result_code", "FAIL");
+                result.put("message", "회사 비활성화에 실패했습니다");
+                result.put("data", null);
+            }
+            
+        } catch (Exception e) {
+            result.put("result_code", "FAIL");
+            result.put("message", e.getMessage());
+            result.put("data", null);
+        }
+        
+        return ResponseEntity.ok(result);
+    }
+    
+    // 회사 재활성화 (새로 추가)
+    @PutMapping("/{compId}/reactivate/{compType}")
+    public ResponseEntity<Map<String, Object>> reactivateCompany(
+            @PathVariable String compId, 
+            @PathVariable String compType) {
+        Map<String, Object> result = new HashMap<>();
+        
+        try {
+            int reactivateResult = companyServiceImpl.reactivateCompany(compId, compType);
+            
+            if (reactivateResult > 0) {
+                result.put("result_code", "SUCCESS");
+                result.put("message", "회사가 성공적으로 재활성화되었습니다");
+                result.put("data", null);
+            } else {
+                result.put("result_code", "FAIL");
+                result.put("message", "회사 재활성화에 실패했습니다");
+                result.put("data", null);
+            }
+            
+        } catch (Exception e) {
+            result.put("result_code", "FAIL");
+            result.put("message", e.getMessage());
+            result.put("data", null);
+        }
+        
+        return ResponseEntity.ok(result);
+    }
+    
+    // 회사 활성 상태 확인
+    @GetMapping("/{compId}/active")
+    public ResponseEntity<Map<String, Object>> checkCompanyActive(@PathVariable String compId) {
+        Map<String, Object> result = new HashMap<>();
+        
+        try {
+            boolean isActive = companyServiceImpl.isActiveCompany(compId);
+            
+            result.put("result_code", "SUCCESS");
+            result.put("message", "성공");
+            result.put("data", Map.of(
+                "isActive", isActive,
+                "message", isActive ? "활성 상태입니다" : "비활성 상태입니다"
+            ));
+            
+        } catch (Exception e) {
+            result.put("result_code", "FAIL");
+            result.put("message", "회사 상태 확인 중 오류가 발생했습니다: " + e.getMessage());
+            result.put("data", null);
+        }
+        
+        return ResponseEntity.ok(result);
+    }
+    
+    // 회사 사용 여부 확인
+    @GetMapping("/{compId}/usage")
+    public ResponseEntity<Map<String, Object>> checkCompanyUsage(@PathVariable String compId) {
+        Map<String, Object> result = new HashMap<>();
+        
+        try {
+            Map<String, Object> usageInfo = companyServiceImpl.checkCompanyUsage(compId);
+            
+            result.put("result_code", "SUCCESS");
+            result.put("message", "성공");
+            result.put("data", usageInfo);
+            
+        } catch (Exception e) {
+            result.put("result_code", "FAIL");
+            result.put("message", "회사 사용 여부 확인 중 오류가 발생했습니다: " + e.getMessage());
             result.put("data", null);
         }
         

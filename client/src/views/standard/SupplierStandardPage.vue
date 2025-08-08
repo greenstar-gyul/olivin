@@ -12,7 +12,8 @@ const API_BASE_URL = '/api/companies';
 const COMPANY_TYPES = {
   HEADQUARTERS: '100001', // 본사
   BRANCH: '100002',       // 지점  
-  SUPPLIER: '100003'      // 공급업체
+  SUPPLIER: '100003',     // 공급업체
+  INACTIVE: 'FFFFFF'      // 비활성화
 };
 
 // ================================
@@ -51,8 +52,6 @@ const header = ref({
     bizNumber: '사업자번호', 
     ceoName: 'CEO명', 
     phone: '전화번호', 
-    regUser: '등록자',
-    regDate: '등록일'
   },
   rightAligned: []
 });
@@ -117,6 +116,49 @@ const formatDateForInput = (dateString) => {
   }
 };
 
+// ⭐ 핵심 추가: 백엔드로 보낼 날짜 형식 변환 함수
+const formatDateForBackend = (dateValue) => {
+  if (!dateValue) return null;
+  
+  try {
+    let date;
+    
+    if (dateValue instanceof Date) {
+      date = dateValue;
+    } else if (typeof dateValue === 'string') {
+      date = new Date(dateValue);
+    } else {
+      return null;
+    }
+    
+    // 유효한 날짜인지 확인
+    if (isNaN(date.getTime())) {
+      console.error('잘못된 날짜:', dateValue);
+      return null;
+    }
+    
+    // YYYY-MM-DD 형식으로 변환 (로컬 타임존 기준)
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    
+    return `${year}-${month}-${day}`;
+  } catch (error) {
+    console.error('날짜 변환 오류:', error, dateValue);
+    return null;
+  }
+};
+
+const getStatusText = (compType) => {
+  if (compType === COMPANY_TYPES.INACTIVE) return '비활성';
+  return '활성';
+};
+
+const getStatusColor = (compType) => {
+  if (compType === COMPANY_TYPES.INACTIVE) return 'text-red-500';
+  return 'text-green-500';
+};
+
 // ================================
 // 사용자 정보 관리
 // ================================
@@ -179,7 +221,7 @@ const loadSuppliers = async (searchParams = {}) => {
     loading.value = true;
     console.log('공급업체 목록 조회 시작...', searchParams);
     
-    const params = { ...searchParams, compType: COMPANY_TYPES.SUPPLIER };
+    const params = { ...searchParams };
     const response = await axios.get(API_BASE_URL, { params });
     
     console.log('회사 API 원본 응답:', response.data);
@@ -194,14 +236,18 @@ const loadSuppliers = async (searchParams = {}) => {
       companies = [];
     }
     
-    const suppliers = companies.filter(item => item.compType === COMPANY_TYPES.SUPPLIER);
+    // 활성 공급업체만 필터링 (비활성화된 공급업체 제외)
+    const suppliers = companies.filter(item => 
+      item.compType === COMPANY_TYPES.SUPPLIER  // 활성 공급업체만
+    );
     
     items.value = suppliers.map((item, index) => ({
       id: item.compId || `temp_supplier_${Date.now()}_${index}`,
       ...item,
       address: formatAddress(item.address, item.addressDetail),
       regDate: item.regDate ? formatDate(item.regDate) : '',
-      updateDate: item.updateDate ? formatDate(item.updateDate) : null
+      updateDate: item.updateDate ? formatDate(item.updateDate) : null,
+      status: '활성'  // 활성 공급업체만 표시하므로 항상 활성
     }));
     
     console.log('최종 공급업체 목록:', items.value);
@@ -219,90 +265,93 @@ const checkSupplierUsage = async (compId) => {
   try {
     console.log('공급업체 사용 여부 확인:', compId);
     
-    let hasPurchaseOrders = false;
-    let purchaseOrderCount = 0;
-    let hasProducts = false;
-    let productCount = 0;
-    let hasEmployees = false;
-    let employeeCount = 0;
+    // 백엔드 통합 API 사용
+    const response = await axios.get(`${API_BASE_URL}/${compId}/usage`);
     
-    // 1. 발주서에서 사용 여부 확인
-    try {
-      const purchaseOrderResponse = await axios.get('/api/purchase-orders', {
-        params: { vendorId: compId }
-      });
-      
-      if (purchaseOrderResponse.data?.result_code === 'SUCCESS') {
-        purchaseOrderCount = purchaseOrderResponse.data.data?.length || 0;
-        hasPurchaseOrders = purchaseOrderCount > 0;
-      }
-    } catch (error) {
-      console.log('발주서 API 호출 실패 (정상적일 수 있음):', error.message);
+    if (response.data?.result_code === 'SUCCESS') {
+      const usageData = response.data.data;
+      return {
+        isUsed: usageData.isUsed,
+        purchaseOrderCount: usageData.purchaseOrderCount,
+        details: usageData.details
+      };
+    } else {
+      return { isUsed: false, purchaseOrderCount: 0, details: {} };
     }
-    
-    // 2. 제품에서 사용 여부 확인
-    try {
-      const productResponse = await axios.get('/api/products', {
-        params: { compId: compId }
-      });
-      
-      if (productResponse.data?.result_code === 'SUCCESS') {
-        productCount = productResponse.data.data?.length || 0;
-        hasProducts = productCount > 0;
-      }
-    } catch (error) {
-      console.log('제품 API 호출 실패 (정상적일 수 있음):', error.message);
-    }
-    
-    // 3. 직원에서 사용 여부 확인 (중요!)
-    try {
-      const employeeResponse = await axios.get('/api/employees', {
-        params: { compId: compId }
-      });
-      
-      if (employeeResponse.data?.result_code === 'SUCCESS') {
-        employeeCount = employeeResponse.data.data?.length || 0;
-        hasEmployees = employeeCount > 0;
-      }
-    } catch (error) {
-      console.log('직원 API 호출 실패 (정상적일 수 있음):', error.message);
-    }
-    
-    return {
-      isUsed: hasPurchaseOrders || hasProducts || hasEmployees,
-      purchaseOrderCount,
-      productCount,
-      employeeCount,
-      details: { 
-        hasPurchaseOrders, 
-        hasProducts, 
-        hasEmployees 
-      }
-    };
     
   } catch (error) {
-    console.error('공급업체 사용 여부 확인 실패:', error);
-    return { isUsed: true, error: error.message };
+    console.log('사용 여부 확인 실패:', error.message);
+    // API 오류 시 안전하게 사용하지 않는 것으로 처리
+    return { isUsed: false, purchaseOrderCount: 0, details: {} };
   }
 };
 
 // ================================
-// 이벤트 핸들러들
+// 이벤트 핸들러들 - ⭐ 핵심 수정: 날짜 형식 변환 + 폼 리셋 추가
 // ================================
 const searchData = async (searchOptions) => {
   console.log('공급업체 검색 조건:', searchOptions);
   
+  // ✅ 모든 검색 조건이 비어있는지 확인 (초기화 버튼을 눌렀을 때)
+  const hasSearchCondition = Object.values(searchOptions).some(value => {
+    if (typeof value === 'string') {
+      return value.trim() !== '';
+    }
+    return value !== null && value !== undefined && value !== '';
+  });
+  
+  // ✅ 검색 조건이 없으면 입력 폼도 함께 초기화
+  if (!hasSearchCondition) {
+    console.log('검색 조건이 없어서 입력 폼도 초기화합니다.');
+    
+    // 1. 전체 공급업체 목록 로드
+    await loadSuppliers();
+    
+    // 2. 선택된 공급업체 초기화
+    selectedSupplier.value = null;
+    
+    // 3. 입력 폼 초기화 및 기본값 설정
+    if (standardInputRef.value?.inputFormRef) {
+      standardInputRef.value.inputFormRef.resetInputDatas();
+      
+      // 등록자, 등록일 다시 설정
+      setTimeout(async () => {
+        await initializeFormData();
+      }, 100);
+    }
+    
+    return;
+  }
+  
+  // 기존 검색 로직
   const searchParams = {};
   
   if (searchOptions.compName?.trim()) searchParams.compName = searchOptions.compName.trim();
   if (searchOptions.bizNumber?.trim()) searchParams.bizNumber = searchOptions.bizNumber.trim();
   if (searchOptions.ceoName?.trim()) searchParams.ceoName = searchOptions.ceoName.trim();
   if (searchOptions.phone?.trim()) searchParams.phone = searchOptions.phone.trim();
-  if (searchOptions.dateRangeFrom && searchOptions.dateRangeTo) {
-    searchParams.regDateFrom = searchOptions.dateRangeFrom;
-    searchParams.regDateTo = searchOptions.dateRangeTo;
+  
+  // ⭐ 핵심 수정: 날짜를 YYYY-MM-DD 형식으로 변환
+  if (searchOptions.dateRangeFrom || searchOptions.dateRangeTo) {
+    const fromDate = formatDateForBackend(searchOptions.dateRangeFrom);
+    const toDate = formatDateForBackend(searchOptions.dateRangeTo);
+    
+    if (fromDate) searchParams.regDateFrom = fromDate;
+    if (toDate) searchParams.regDateTo = toDate;
+    
+    console.log('날짜 변환 결과:', {
+      원본: { 
+        from: searchOptions.dateRangeFrom, 
+        to: searchOptions.dateRangeTo 
+      },
+      변환후: { 
+        regDateFrom: fromDate, 
+        regDateTo: toDate 
+      }
+    });
   }
   
+  console.log('최종 검색 파라미터:', searchParams);
   await loadSuppliers(searchParams);
 };
 
@@ -388,7 +437,9 @@ const saveData = async (inputData) => {
     
     const supplierData = {
       ...inputData,
-      compType: COMPANY_TYPES.SUPPLIER
+      compType: isUpdateMode && selectedSupplier.value.compType === COMPANY_TYPES.INACTIVE 
+        ? COMPANY_TYPES.INACTIVE  // 이미 비활성화된 경우 유지
+        : COMPANY_TYPES.SUPPLIER  // 신규 등록이거나 활성 상태인 경우
     };
     
     let response;
@@ -446,7 +497,13 @@ const deleteData = async () => {
   try {
     console.log('공급업체 삭제 시작:', selectedSupplier.value.compId);
     
-    // 사용 여부 확인
+    // 이미 비활성화된 회사인지 확인
+    if (selectedSupplier.value.compType.startsWith('FFFF')) {
+      alert('이미 비활성화된 공급업체입니다.');
+      return;
+    }
+    
+    // 발주서에서 사용 여부 확인
     const usageInfo = await checkSupplierUsage(selectedSupplier.value.compId);
     
     if (usageInfo.isUsed) {
@@ -455,19 +512,20 @@ const deleteData = async () => {
       if (usageInfo.details?.hasPurchaseOrders) {
         message += `• 발주서: ${usageInfo.purchaseOrderCount}건\n`;
       }
-      if (usageInfo.details?.hasProducts) {
-        message += `• 등록된 제품: ${usageInfo.productCount}건\n`;
-      }
-      if (usageInfo.details?.hasEmployees) {
-        message += `• 소속 직원: ${usageInfo.employeeCount}명\n`;
+      
+      message += '\n대신 상태를 "비활성"으로 변경하시겠습니까?';
+      
+      const confirmDeactivate = confirm(message);
+      
+      if (confirmDeactivate) {
+        // 비활성화 처리
+        await deactivateSupplier();
       }
       
-      message += '\n해당 데이터들을 먼저 삭제하거나 다른 회사로 변경한 후 삭제해주세요.';
-      alert(message);
       return;
     }
     
-    // 삭제 확인
+    // 실제 삭제 확인
     const confirmDelete = confirm(
       `공급업체 "${selectedSupplier.value.compName}"을(를) 정말 삭제하시겠습니까?\n\n이 작업은 되돌릴 수 없습니다.`
     );
@@ -506,6 +564,63 @@ const deleteData = async () => {
     }
     
     alert('삭제 실패: ' + errorMessage);
+  }
+};
+
+// 비활성화 처리 함수
+const deactivateSupplier = async () => {
+  try {
+    const response = await axios.put(`${API_BASE_URL}/${selectedSupplier.value.compId}/deactivate`);
+    
+    if (response.data.result_code === 'SUCCESS') {
+      alert(`공급업체 "${selectedSupplier.value.compName}"이(가) 비활성화되었습니다.`);
+      
+      if (standardInputRef.value?.inputFormRef) {
+        standardInputRef.value.inputFormRef.resetInputDatas();
+      }
+      selectedSupplier.value = null;
+      
+      await loadSuppliers();
+    } else {
+      alert(`비활성화 실패: ${response.data.message || '비활성화 중 오류가 발생했습니다.'}`);
+    }
+    
+  } catch (error) {
+    console.error('공급업체 비활성화 실패:', error);
+    alert('비활성화 실패: ' + (error.response?.data?.message || error.message));
+  }
+};
+
+// 재활성화 처리 함수
+const reactivateSupplier = async () => {
+  try {
+    const currentUserData = await getCurrentUser();
+    
+    const supplierData = {
+      ...selectedSupplier.value,
+      compType: COMPANY_TYPES.SUPPLIER, // 공급업체로 다시 활성화
+      updateUser: currentUserData.employeeId,
+      updateDate: new Date()
+    };
+    
+    const response = await axios.put(`${API_BASE_URL}/${selectedSupplier.value.compId}`, supplierData);
+    
+    if (response.data.result_code === 'SUCCESS') {
+      alert(`공급업체 "${selectedSupplier.value.compName}"이(가) 다시 활성화되었습니다.`);
+      
+      if (standardInputRef.value?.inputFormRef) {
+        standardInputRef.value.inputFormRef.resetInputDatas();
+      }
+      selectedSupplier.value = null;
+      
+      await loadSuppliers();
+    } else {
+      alert(`활성화 실패: ${response.data.message || '활성화 중 오류가 발생했습니다.'}`);
+    }
+    
+  } catch (error) {
+    console.error('공급업체 활성화 실패:', error);
+    alert('활성화 실패: ' + (error.response?.data?.message || error.message));
   }
 };
 

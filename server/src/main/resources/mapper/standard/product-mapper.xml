@@ -198,7 +198,7 @@
         ORDER BY p.PRODUCT_ID ASC
     </select>
 
-    <!-- 검색 조건별 제품 조회 - 직원 이름 조인 포함 -->
+    <!-- ✅ 검색 조건별 제품 조회 - 날짜 처리 강화 -->
     <select id="selectProductsByCondition" parameterType="map" resultMap="ProductResultMap">
         SELECT 
             p.PRODUCT_ID,
@@ -251,15 +251,15 @@
             <if test="status != null and status != ''">
                 AND p.STATUS = #{status,jdbcType=VARCHAR}
             </if>
-            <!-- 수정후: -->
+            <!-- ✅ 날짜 범위 조건 - Oracle 호환 -->
             <if test="regDateFrom != null">
                 <![CDATA[
-                AND p.REG_DATE >= #{regDateFrom}
+                AND p.REG_DATE >= #{regDateFrom,jdbcType=DATE}
                 ]]>
             </if>
             <if test="regDateTo != null">
                 <![CDATA[
-                AND p.REG_DATE <= #{regDateTo}
+                AND p.REG_DATE <= #{regDateTo,jdbcType=DATE}
                 ]]>
             </if>
         </where>
@@ -351,16 +351,6 @@
         WHERE ROWNUM = 1
     </select>
 
-    <!-- MySQL을 사용하는 경우 위 쿼리를 아래로 교체
-    <select id="selectLastProductIdByCategory" parameterType="String" resultType="String">
-        SELECT PRODUCT_ID 
-        FROM PRODUCTS 
-        WHERE PRODUCT_ID LIKE CONCAT(#{prefix}, '%')
-        ORDER BY PRODUCT_ID DESC 
-        LIMIT 1
-    </select>
-    -->
-
     <!-- 제품 상태 업데이트 - Oracle용 -->
     <update id="updateProductStatus" parameterType="map">
         UPDATE PRODUCTS SET
@@ -388,6 +378,19 @@
             STATUS = #{status,jdbcType=VARCHAR},
             UPDATE_USER = #{updateUser,jdbcType=VARCHAR},
             UPDATE_DATE = SYSDATE
+        WHERE PRODUCT_ID = #{productId}
+    </update>
+
+    <!-- ✅ 제품 중단 상태 업데이트 - Oracle용 (선택사항) -->
+    <update id="updateProductStopStatus" parameterType="map">
+        UPDATE PRODUCTS SET
+            STATUS = '040004',
+            UPDATE_USER = #{updateUser,jdbcType=VARCHAR},
+            UPDATE_DATE = SYSDATE,
+            NOTE = CASE 
+                WHEN NOTE IS NULL OR NOTE = '' THEN '제품 중단 처리됨 - ' || TO_CHAR(SYSDATE, 'YYYY-MM-DD HH24:MI:SS')
+                ELSE NOTE || CHR(10) || '제품 중단 처리됨 - ' || TO_CHAR(SYSDATE, 'YYYY-MM-DD HH24:MI:SS')
+            END
         WHERE PRODUCT_ID = #{productId}
     </update>
 

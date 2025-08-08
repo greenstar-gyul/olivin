@@ -22,10 +22,11 @@ public class ProductServiceImpl implements ProductService {
     
     private final ProductMapper productMapper;
     
-    // 상태 코드 상수 정의 (6자리 코드 - 데이터베이스 기준)
+    // ✅ 상태 코드 상수 정의 (중단 상태 추가)
     private static final String STATUS_APPROVED = "040001";  // 완료 (승인완료)
     private static final String STATUS_PENDING = "040002";   // 대기 (승인대기)
     private static final String STATUS_REJECTED = "040003";  // 반려 (승인반려)
+    private static final String STATUS_STOPPED = "040004";   // 중단 (제품중단) ✅ 새로 추가
 
     /**
      * 모든 제품 조회 - 직원 이름 조인 포함
@@ -68,12 +69,32 @@ public class ProductServiceImpl implements ProductService {
     }
     
     /**
-     * 제품 저장 (신규 등록) - 등록 시점에 제품 ID 자동 생성 (강화된 디버깅 버전)
+     * ✅ 제품 저장 (신규 등록) - 날짜 처리 개선
      */
     @Override
     public int saveProduct(ProductVO productVO) {
         System.out.println("=== saveProduct 시작 ===");
         System.out.println("입력된 ProductVO: " + productVO.toString());
+        
+        // ✅ 날짜 데이터 처리 개선
+        if (productVO.getRegDate() != null) {
+            System.out.println("원본 등록일: " + productVO.getRegDate() + " (타입: " + productVO.getRegDate().getClass().getSimpleName() + ")");
+            
+            // Date 객체가 올바른지 확인
+            try {
+                long timestamp = productVO.getRegDate().getTime();
+                System.out.println("등록일 타임스탬프: " + timestamp);
+                
+                // 유효하지 않은 날짜인지 확인 (예: 1970년 이전이나 너무 미래)
+                if (timestamp < 0 || timestamp > System.currentTimeMillis() + (365L * 24 * 60 * 60 * 1000)) {
+                    System.err.println("⚠️ 의심스러운 등록일, 현재 시간으로 대체");
+                    productVO.setRegDate(new Date());
+                }
+            } catch (Exception e) {
+                System.err.println("❌ 등록일 검증 실패, 현재 시간으로 대체: " + e.getMessage());
+                productVO.setRegDate(new Date());
+            }
+        }
         
         // 제품 ID 자동 생성 (카테고리 기반)
         if (productVO.getCategoryMain() != null && !productVO.getCategoryMain().isEmpty()) {
@@ -82,8 +103,6 @@ public class ProductServiceImpl implements ProductService {
             
             if (newProductId != null && !newProductId.isEmpty()) {
                 productVO.setProductId(newProductId);
-                
-                // 생성된 ID 로깅
                 System.out.println("✅ 생성된 제품 ID: " + newProductId);
                 
                 // 중복 확인
@@ -130,6 +149,7 @@ public class ProductServiceImpl implements ProductService {
         System.out.println("제품명: " + productVO.getProductName());
         System.out.println("카테고리: " + productVO.getCategoryMain());
         System.out.println("등록자: " + productVO.getRegUser());
+        System.out.println("등록일: " + productVO.getRegDate());
         System.out.println("상태: " + productVO.getStatus());
         
         try {
@@ -138,8 +158,10 @@ public class ProductServiceImpl implements ProductService {
             return result;
         } catch (Exception e) {
             System.err.println("❌ 데이터베이스 저장 실패:");
+            System.err.println("SQL 상태: " + (e instanceof java.sql.SQLException ? ((java.sql.SQLException) e).getSQLState() : "N/A"));
+            System.err.println("오류 코드: " + (e instanceof java.sql.SQLException ? ((java.sql.SQLException) e).getErrorCode() : "N/A"));
             e.printStackTrace();
-            throw e;
+            throw new RuntimeException("제품 저장 중 데이터베이스 오류가 발생했습니다: " + e.getMessage(), e);
         }
     }
     
@@ -480,6 +502,67 @@ public class ProductServiceImpl implements ProductService {
             
         } catch (Exception e) {
             throw e;
+        }
+    }
+    
+    /**
+     * ✅ 제품 중단 처리 - 상태를 중단(040004)으로 변경
+     */
+    @Override
+    public int stopProduct(String productId, String updateUser) {
+        try {
+            // 기존 제품 정보 조회
+            ProductVO existingProduct = productMapper.selectProduct(productId);
+            if (existingProduct == null) {
+                throw new RuntimeException("존재하지 않는 제품입니다: " + productId);
+            }
+            
+            System.out.println("=== 제품 중단 처리 시작 ===");
+            System.out.println("제품ID: " + productId);
+            System.out.println("현재상태: " + existingProduct.getStatus());
+            System.out.println("처리자: " + updateUser);
+            
+            int result = 0;
+            
+            try {
+                // 1차 시도: 상태 전용 업데이트
+                result = productMapper.updateProductStatus(productId, STATUS_STOPPED, updateUser);
+                System.out.println("상태 전용 업데이트 결과: " + result);
+                
+            } catch (Exception e) {
+                System.err.println("상태 전용 업데이트 실패, 전체 업데이트 시도: " + e.getMessage());
+                
+                // 2차 시도: 기존 데이터를 보존하면서 상태만 변경
+                existingProduct.setStatus(STATUS_STOPPED);  // 중단 상태 "040004"
+                existingProduct.setUpdateUser(updateUser);
+                existingProduct.setUpdateDate(new Date());
+                
+                // 중단 사유를 비고에 추가
+                String existingNote = existingProduct.getNote();
+                String stopNote = "제품 중단 처리됨 - " + new Date();
+                if (existingNote != null && !existingNote.trim().isEmpty()) {
+                    existingProduct.setNote(existingNote + "\n" + stopNote);
+                } else {
+                    existingProduct.setNote(stopNote);
+                }
+                
+                result = productMapper.updateProduct(existingProduct);
+                System.out.println("전체 업데이트 결과: " + result);
+            }
+            
+            if (result > 0) {
+                System.out.println("✅ 제품 중단 처리 성공");
+            } else {
+                System.err.println("❌ 제품 중단 처리 실패");
+            }
+            
+            return result;
+            
+        } catch (Exception e) {
+            System.err.println("=== 제품 중단 처리 중 오류 ===");
+            System.err.println("오류 메시지: " + e.getMessage());
+            e.printStackTrace();
+            throw new RuntimeException("제품 중단 처리 중 오류가 발생했습니다: " + e.getMessage(), e);
         }
     }
 }

@@ -10,7 +10,8 @@ const API_BASE_URL = '/api/companies';
 const COMPANY_TYPES = {
   HEADQUARTERS: '100001', // 본사
   BRANCH: '100002',       // 지점  
-  SUPPLIER: '100003'      // 공급업체
+  SUPPLIER: '100003',     // 공급업체
+  INACTIVE: 'FFFFFF'      // 비활성화
 };
 
 // 현재 로그인한 사용자 정보
@@ -20,7 +21,41 @@ const currentUser = ref({
   empName: ''
 });
 
-// 수정된 getCurrentUser 함수 - employeeId 기반
+// ✅ 날짜 포맷 함수 (Oracle 호환)
+const formatDateForOracle = (dateInput) => {
+  if (!dateInput) return null;
+  
+  try {
+    let date;
+    if (dateInput instanceof Date) {
+      date = dateInput;
+    } else if (typeof dateInput === 'string') {
+      // YYYY-MM-DD 형식이면 그대로 사용
+      if (/^\d{4}-\d{2}-\d{2}$/.test(dateInput.trim())) {
+        return dateInput.trim();
+      }
+      date = new Date(dateInput.trim());
+    } else {
+      date = new Date(dateInput);
+    }
+    
+    if (isNaN(date.getTime())) {
+      throw new Error('유효하지 않은 날짜');
+    }
+    
+    // YYYY-MM-DD 형식으로 변환
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    
+    return `${year}-${month}-${day}`;
+  } catch (error) {
+    console.error('날짜 변환 오류:', error);
+    return null;
+  }
+};
+
+// getCurrentUser 함수
 const getCurrentUser = async () => {
   try {
     const response = await axios.get('/api/auth/me');
@@ -28,91 +63,46 @@ const getCurrentUser = async () => {
     
     if (response.data.success && response.data.data) {
       const userData = response.data.data;
-      console.log('userData 구조:', JSON.stringify(userData, null, 2));
       
       let employeeId = 'admin';
       let empName = '관리자';
       
-      // 다양한 경우에 대한 더 포괄적인 처리
       const possibleUserSources = [
-        userData.user,           // user 객체
-        userData,               // userData 직접
-        userData.employee,      // employee 객체
-        userData.userInfo,      // userInfo 객체
-        userData.loginUser      // loginUser 객체
+        userData.user, userData, userData.employee, userData.userInfo, userData.loginUser
       ];
       
       for (const userSource of possibleUserSources) {
-        if (userSource) {
-          console.log('처리 중인 userSource:', typeof userSource, userSource);
+        if (userSource && typeof userSource === 'object') {
+          const possibleEmployeeIds = [
+            userSource.employeeId, userSource.employee_id, userSource.EMPLOYEE_ID
+          ];
+          const possibleEmpNames = [
+            userSource.empName, userSource.emp_name, userSource.EMP_NAME
+          ];
           
-          if (typeof userSource === 'object' && userSource !== null) {
-            // 객체인 경우 - employeeId 우선 검색
-            const possibleEmployeeIds = [
-              userSource.employeeId,        // employeeId 우선
-              userSource.employee_id,       // employee_id
-              userSource.EMPLOYEE_ID,       // EMPLOYEE_ID (DB 컬럼명)
-            ];
-            
-            const possibleEmpNames = [
-              userSource.empName,
-              userSource.emp_name,
-              userSource.EMP_NAME,
-            ];
-            
-            // 첫 번째로 유효한 값 찾기
-            const foundEmployeeId = possibleEmployeeIds.find(id => id && id !== 'admin' && String(id).trim() !== '');
-            const foundEmpName = possibleEmpNames.find(name => name && name !== '관리자' && String(name).trim() !== '');
-            
-            if (foundEmployeeId) {
-              employeeId = String(foundEmployeeId).trim();
-            }
-            if (foundEmpName) {
-              empName = String(foundEmpName).trim();
-            }
-            
-            // 유효한 사용자 정보를 찾았으면 중단
-            if (foundEmployeeId && foundEmpName) {
-              break;
-            }
-          } else if (typeof userSource === 'string' && userSource.trim() !== '') {
-            // 문자열인 경우
-            empName = userSource.trim();
-            employeeId = userSource.trim();
-            break;
-          }
+          const foundEmployeeId = possibleEmployeeIds.find(id => id && id !== 'admin' && String(id).trim() !== '');
+          const foundEmpName = possibleEmpNames.find(name => name && name !== '관리자' && String(name).trim() !== '');
+          
+          if (foundEmployeeId) employeeId = String(foundEmployeeId).trim();
+          if (foundEmpName) empName = String(foundEmpName).trim();
+          
+          if (foundEmployeeId && foundEmpName) break;
         }
       }
       
       currentUser.value = {
-        empId: employeeId,          // 호환성을 위해 empId로도 저장
-        employeeId: employeeId,     // employeeId 추가
+        empId: employeeId,
+        employeeId: employeeId,
         empName: empName
       };
       
-      console.log('최종 설정된 사용자 정보:', currentUser.value);
-      
-      // 사용자 정보가 기본값이면 경고 로그
-      if (employeeId === 'admin' && empName === '관리자') {
-        console.warn('사용자 정보를 찾지 못해 기본값을 사용합니다. API 응답 구조를 확인해주세요.');
-      }
-      
       return currentUser.value;
     } else {
-      console.warn('API 응답에 사용자 데이터가 없음:', response.data);
       throw new Error('API 응답에 사용자 데이터가 없습니다');
     }
   } catch (error) {
     console.error('사용자 정보 가져오기 실패:', error);
-    
-    // API 실패 시 기본값 사용
-    currentUser.value = {
-      empId: 'admin',
-      employeeId: 'admin',
-      empName: '관리자'
-    };
-    
-    console.warn('사용자 정보 API 실패로 기본값 사용:', currentUser.value);
+    currentUser.value = { empId: 'admin', employeeId: 'admin', empName: '관리자' };
     return currentUser.value;
   }
 };
@@ -122,7 +112,7 @@ const filters = ref({
   filters: [
     { type: 'text', label: '지점명', value: '', placeholder: '지점명을 입력하세요', name: 'compName' },
     { type: 'text', label: '사업자번호', value: '', placeholder: '000-00-00000', name: 'bizNumber' },
-    { type: 'text', label: 'CEO명', value: '', placeholder: 'CEO명을 입력하세요', name: 'ceoName' },
+    { type: 'text', label: '지점장명', value: '', placeholder: '지점장명을 입력하세요', name: 'ceoName' },
     { type: 'text', label: '전화번호', value: '', placeholder: '02-0000-0000', name: 'phone' },
     { type: 'dateRange', label: '등록일', value: '', fromPlaceholder: '시작일', toPlaceholder: '종료일', name: 'dateRange' }
   ]
@@ -137,10 +127,8 @@ const header = ref({
     compId: '지점ID', 
     compName: '지점명', 
     bizNumber: '사업자번호', 
-    ceoName: 'CEO명', 
-    phone: '전화번호', 
-    regUser: '등록자',
-    regDate: '등록일'
+    ceoName: '지점장명', 
+    phone: '전화번호',
   },
   rightAligned: []
 });
@@ -174,13 +162,12 @@ const standardInputRef = ref(null);
 // 선택된 지점 정보
 const selectedBranch = ref(null);
 
-// 주소 포맷 함수
+// 유틸리티 함수들
 const formatAddress = (address, addressDetail) => {
   if (!address) return '';
   return addressDetail ? `${address} ${addressDetail}` : address;
 };
 
-// 날짜 포맷 함수들
 const formatDate = (dateString) => {
   if (!dateString) return '';
   try {
@@ -195,18 +182,40 @@ const formatDate = (dateString) => {
   }
 };
 
-// 지점 목록 조회 (고유키 추가)
+const formatDateForInput = (dateString) => {
+  if (!dateString) return '';
+  try {
+    let dateOnly = dateString;
+    if (dateString.includes('T')) {
+      dateOnly = dateString.split('T')[0];
+    }
+    return dateOnly;
+  } catch (error) {
+    console.error('날짜 포맷 오류:', error);
+    return dateString;
+  }
+};
+
+const getStatusText = (compType) => {
+  if (compType === COMPANY_TYPES.INACTIVE) return '비활성';
+  return '활성';
+};
+
+const getStatusColor = (compType) => {
+  if (compType === COMPANY_TYPES.INACTIVE) return 'text-red-500';
+  return 'text-green-500';
+};
+
+// 지점 목록 조회 (비활성화된 지점 제외)
 const loadBranches = async (searchParams = {}) => {
   try {
     loading.value = true;
     console.log('지점 목록 조회 시작...');
     
-    // 모든 회사 조회 후 지점만 필터링
     const response = await axios.get(API_BASE_URL, { params: searchParams });
     
     console.log('회사 API 원본 응답:', response.data);
     
-    // API 응답 구조 처리
     let companies = [];
     if (response.data.result_code === 'SUCCESS' && response.data.data) {
       companies = response.data.data;
@@ -217,28 +226,24 @@ const loadBranches = async (searchParams = {}) => {
       companies = [];
     }
     
-    console.log('전체 회사 데이터:', companies);
-    console.log('COMP_TYPE 값들:', companies.map(c => ({ id: c.compId, type: c.compType, name: c.compName })));
+    // 활성 지점만 필터링 (비활성화된 지점 제외)
+    const branches = companies.filter(item => 
+      item.compType === COMPANY_TYPES.BRANCH  // 활성 지점만
+    );
     
-    // 지점만 필터링 (compType이 '100002'인 것)
-    const branches = companies.filter(item => item.compType === COMPANY_TYPES.BRANCH);
-    
-    console.log('필터링된 지점:', branches);
-    
-    // 데이터 가공 (고유 ID 추가)
     items.value = branches.map((item, index) => ({
-      id: item.compId || `temp_branch_${Date.now()}_${index}`, // 고유 ID 추가
+      id: item.compId || `temp_branch_${Date.now()}_${index}`,
       ...item,
       address: formatAddress(item.address, item.addressDetail),
       regDate: item.regDate ? formatDate(item.regDate) : '',
-      updateDate: item.updateDate ? formatDate(item.updateDate) : null
+      updateDate: item.updateDate ? formatDate(item.updateDate) : null,
+      status: getStatusText(item.compType)
     }));
     
     console.log('최종 지점 목록:', items.value);
     
   } catch (error) {
     console.error('지점 목록 조회 실패:', error);
-    console.error('에러 응답:', error.response);
     alert('데이터 조회에 실패했습니다.');
     items.value = [];
   } finally {
@@ -246,30 +251,101 @@ const loadBranches = async (searchParams = {}) => {
   }
 };
 
-// 검색 실행
+// 지점 사용 여부 확인 함수
+const checkBranchUsage = async (compId) => {
+  try {
+    console.log('지점 사용 여부 확인:', compId);
+    
+    // 백엔드 통합 API 사용
+    const response = await axios.get(`${API_BASE_URL}/${compId}/usage`);
+    
+    if (response.data?.result_code === 'SUCCESS') {
+      const usageData = response.data.data;
+      return {
+        isUsed: usageData.isUsed,
+        purchaseOrderCount: usageData.purchaseOrderCount,
+        details: usageData.details
+      };
+    } else {
+      return { isUsed: false, purchaseOrderCount: 0, details: {} };
+    }
+    
+  } catch (error) {
+    console.log('사용 여부 확인 실패:', error.message);
+    // API 오류 시 안전하게 사용하지 않는 것으로 처리
+    return { isUsed: false, purchaseOrderCount: 0, details: {} };
+  }
+};
+
+// ✅ 검색 함수 수정 (초기화 시 폼 리셋 추가)
 const searchData = async (searchOptions) => {
   console.log('지점 검색 조건:', searchOptions);
   
+  // ✅ 모든 검색 조건이 비어있는지 확인 (초기화 버튼을 눌렀을 때)
+  const hasSearchCondition = Object.values(searchOptions).some(value => {
+    if (typeof value === 'string') {
+      return value.trim() !== '';
+    }
+    return value !== null && value !== undefined && value !== '';
+  });
+  
+  // ✅ 검색 조건이 없으면 입력 폼도 함께 초기화
+  if (!hasSearchCondition) {
+    console.log('검색 조건이 없어서 입력 폼도 초기화합니다.');
+    
+    // 1. 전체 지점 목록 로드
+    await loadBranches();
+    
+    // 2. 선택된 지점 초기화
+    selectedBranch.value = null;
+    
+    // 3. 입력 폼 초기화 및 기본값 설정
+    if (standardInputRef.value?.inputFormRef) {
+      standardInputRef.value.inputFormRef.resetInputDatas();
+      
+      // 등록자, 등록일 다시 설정
+      setTimeout(async () => {
+        await initializeFormData();
+      }, 100);
+    }
+    
+    return;
+  }
+  
+  // 기존 검색 로직
   const searchParams = {};
   
-  // 검색 조건 매핑
-  if (searchOptions.compName && searchOptions.compName.trim() !== '') {
-    searchParams.compName = searchOptions.compName.trim();
-  }
-  if (searchOptions.bizNumber && searchOptions.bizNumber.trim() !== '') {
-    searchParams.bizNumber = searchOptions.bizNumber.trim();
-  }
-  if (searchOptions.ceoName && searchOptions.ceoName.trim() !== '') {
-    searchParams.ceoName = searchOptions.ceoName.trim();
-  }
-  if (searchOptions.phone && searchOptions.phone.trim() !== '') {
-    searchParams.phone = searchOptions.phone.trim();
-  }
+  if (searchOptions.compName?.trim()) searchParams.compName = searchOptions.compName.trim();
+  if (searchOptions.bizNumber?.trim()) searchParams.bizNumber = searchOptions.bizNumber.trim();
+  if (searchOptions.ceoName?.trim()) searchParams.ceoName = searchOptions.ceoName.trim();
+  if (searchOptions.phone?.trim()) searchParams.phone = searchOptions.phone.trim();
+  
+  // ✅ 날짜 범위 파라미터 처리 (Oracle 호환)
   if (searchOptions.dateRangeFrom && searchOptions.dateRangeTo) {
-    searchParams.regDateFrom = searchOptions.dateRangeFrom;
-    searchParams.regDateTo = searchOptions.dateRangeTo;
+    try {
+      const fromDate = new Date(searchOptions.dateRangeFrom);
+      const toDate = new Date(searchOptions.dateRangeTo);
+      
+      if (!isNaN(fromDate.getTime()) && !isNaN(toDate.getTime())) {
+        searchParams.regDateFrom = fromDate.toISOString().split('T')[0];
+        searchParams.regDateTo = toDate.toISOString().split('T')[0];
+        
+        console.log('날짜 범위 설정:', {
+          original: { from: searchOptions.dateRangeFrom, to: searchOptions.dateRangeTo },
+          converted: { from: searchParams.regDateFrom, to: searchParams.regDateTo }
+        });
+      } else {
+        console.warn('유효하지 않은 날짜:', {
+          from: searchOptions.dateRangeFrom,
+          to: searchOptions.dateRangeTo
+        });
+      }
+    } catch (dateError) {
+      console.error('날짜 변환 오류:', dateError);
+    }
   }
   
+  console.log('최종 검색 파라미터:', searchParams);
   await loadBranches(searchParams);
 };
 
@@ -278,34 +354,13 @@ const onRowSelect = (branch) => {
   console.log('선택된 지점:', branch);
   selectedBranch.value = branch;
   
-  // StandardInput의 inputForm에 데이터 설정
-  if (standardInputRef.value && standardInputRef.value.inputFormRef) {
+  if (standardInputRef.value?.inputFormRef) {
     const inputFormRef = standardInputRef.value.inputFormRef;
     
-    // 날짜 포맷 함수
-    const formatDateForInput = (dateString) => {
-      if (!dateString) return '';
-      try {
-        const date = new Date(dateString);
-        if (isNaN(date.getTime())) return dateString;
-        
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        
-        return `${year}-${month}-${day}`;
-      } catch (error) {
-        console.error('날짜 포맷 오류:', error);
-        return dateString;
-      }
-    };
-    
-    // 폼 데이터 업데이트 (id 필드는 제외)
     Object.keys(inputFormRef.inputDatas).forEach(key => {
       if (key !== 'id' && key in branch) {
         let value = branch[key] || '';
         
-        // 날짜 필드를 위한 포맷팅
         if ((key === 'regDate' || key === 'updateDate') && value) {
           value = formatDateForInput(value);
         }
@@ -321,91 +376,70 @@ const onRowUnselect = () => {
   selectedBranch.value = null;
 };
 
-// 저장 처리
+// ✅ 저장 처리 (날짜 형식 수정)
 const saveData = async (inputData) => {
   try {
     console.log('저장할 지점 데이터:', inputData);
     
-    // 필수 필드 검증
     const requiredFields = [
       { field: 'compName', label: '지점명' },
       { field: 'bizNumber', label: '사업자번호' },
-      { field: 'ceoName', label: 'CEO명' }
+      { field: 'ceoName', label: '지점장명' }
     ];
     
     for (const req of requiredFields) {
-      if (!inputData[req.field] || inputData[req.field].trim() === '') {
+      if (!inputData[req.field]?.trim()) {
         alert(`${req.label}은(는) 필수입력 항목입니다.`);
         return;
       }
     }
     
-    // 등록일 처리
-    let regDate = null;
-    if (inputData.regDate && inputData.regDate.trim() !== '') {
-      try {
-        const dateStr = inputData.regDate.trim();
-        regDate = new Date(dateStr + 'T00:00:00');
-        
-        if (isNaN(regDate.getTime())) {
-          throw new Error('유효하지 않은 날짜 형식');
-        }
-      } catch (error) {
-        alert('등록일 형식이 올바르지 않습니다. (예: 2024-01-01)');
-        return;
-      }
-    }
-    
-    // 현재 사용자 정보를 저장 전에 다시 확인
     const currentUserData = await getCurrentUser();
-    console.log('저장 시점의 현재 사용자 정보:', currentUserData);
+    const isUpdateMode = selectedBranch.value?.compId;
     
-    // 선택된 지점이 있으면 수정 모드, 없으면 신규 등록
-    const isUpdateMode = selectedBranch.value && selectedBranch.value.compId;
-    
-    // 기본 지점 데이터 구성
     const branchData = {
       ...inputData,
-      compType: COMPANY_TYPES.BRANCH // 지점 유형 고정
+      compType: isUpdateMode && selectedBranch.value.compType === COMPANY_TYPES.INACTIVE 
+        ? COMPANY_TYPES.INACTIVE  // 이미 비활성화된 경우 유지
+        : COMPANY_TYPES.BRANCH    // 신규 등록이거나 활성 상태인 경우
     };
     
     let response;
     
     if (isUpdateMode) {
-      // 수정 모드 - 수정자 정보 명확히 설정
-      const now = new Date();
+      // ✅ 수정 모드 - 날짜 형식 수정
+      let regDate = null;
+      if (inputData.regDate?.trim()) {
+        regDate = formatDateForOracle(inputData.regDate);
+        if (!regDate) {
+          alert('등록일 형식이 올바르지 않습니다. (예: 2024-01-01)');
+          return;
+        }
+      }
       
       branchData.compId = selectedBranch.value.compId;
-      branchData.updateUser = currentUserData.employeeId; // employeeId 사용
-      branchData.updateDate = now; // 수정일시
-      branchData.regDate = regDate; // 등록일은 기존 값 유지 또는 입력된 값
-      
-      console.log('수정 모드 - 전송할 데이터:', {
-        compId: branchData.compId,
-        updateUser: branchData.updateUser,
-        updateDate: branchData.updateDate,
-        regUser: branchData.regUser,
-        regDate: branchData.regDate
-      });
+      branchData.updateUser = currentUserData.employeeId;
+      branchData.updateDate = formatDateForOracle(new Date());
+      branchData.regDate = regDate;
       
       response = await axios.put(`${API_BASE_URL}/${selectedBranch.value.compId}`, branchData);
     } else {
-      // 신규 등록 모드
-      branchData.regUser = currentUserData.employeeId; // employeeId 사용
-      branchData.regDate = regDate; // 등록일
-      delete branchData.compId; // 백엔드에서 자동 생성
+      // ✅ 신규 등록 모드 - 날짜 형식 수정
+      let regDate = inputData.regDate?.trim() ? 
+        formatDateForOracle(inputData.regDate) : 
+        formatDateForOracle(new Date());
       
-      console.log('등록 모드 - 전송할 데이터:', {
-        regUser: branchData.regUser,
-        regDate: branchData.regDate,
-        compType: branchData.compType
-      });
+      if (!regDate) {
+        alert('등록일 형식이 올바르지 않습니다. (예: 2024-01-01)');
+        return;
+      }
+      
+      branchData.regUser = currentUserData.employeeId;
+      branchData.regDate = regDate;
+      delete branchData.compId;
       
       response = await axios.post(API_BASE_URL, branchData);
     }
-    
-    // 응답 처리
-    console.log('서버 응답:', response.data);
     
     if (response.data.result_code === 'SUCCESS') {
       alert(isUpdateMode ? 
@@ -413,8 +447,7 @@ const saveData = async (inputData) => {
         `지점이 성공적으로 등록되었습니다. (등록자: ${currentUserData.empName})`
       );
       
-      // 폼 초기화
-      if (standardInputRef.value && standardInputRef.value.inputFormRef) {
+      if (standardInputRef.value?.inputFormRef) {
         standardInputRef.value.inputFormRef.resetInputDatas();
       }
       selectedBranch.value = null;
@@ -426,12 +459,6 @@ const saveData = async (inputData) => {
     
   } catch (error) {
     console.error('지점 저장 실패:', error);
-    console.error('에러 상세:', {
-      code: error.code,
-      status: error.response?.status,
-      statusText: error.response?.statusText,
-      data: error.response?.data
-    });
     
     if (error.code === 'ERR_NETWORK') {
       alert('네트워크 오류: 백엔드 서버가 실행되고 있는지 확인해주세요.');
@@ -441,74 +468,87 @@ const saveData = async (inputData) => {
   }
 };
 
-// 삭제 처리
+// ✅ 삭제 처리 → 비활성화 처리로 변경
 const deleteData = async () => {
-  if (!selectedBranch.value || !selectedBranch.value.compId) {
-    alert('삭제할 지점을 선택해주세요.');
+  if (!selectedBranch.value?.compId) {
+    alert('비활성화할 지점을 선택해주세요.');
     return;
   }
 
-  // 삭제 확인
-  const confirmDelete = confirm(
-    `지점 "${selectedBranch.value.compName}"을(를) 정말 삭제하시겠습니까?\n\n이 작업은 되돌릴 수 없습니다.`
+  // ✅ 비활성화 확인 메시지
+  const confirmDeactivate = confirm(
+    `지점 "${selectedBranch.value.compName}"을(를) 비활성화하시겠습니까?\n\n비활성화된 지점은 더 이상 사용할 수 없습니다.`
   );
   
-  if (!confirmDelete) {
-    return;
-  }
+  if (!confirmDeactivate) return;
 
   try {
-    console.log('지점 삭제 시작:', selectedBranch.value.compId);
+    console.log('지점 비활성화 시작:', selectedBranch.value.compId);
     
-    const response = await axios.delete(`${API_BASE_URL}/${selectedBranch.value.compId}`);
+    const currentUserData = await getCurrentUser();
     
-    console.log('삭제 응답:', response.data);
+    // ✅ 비활성화 API 호출 또는 상태 업데이트
+    const response = await axios.put(`${API_BASE_URL}/${selectedBranch.value.compId}/deactivate`, {
+      updateUser: currentUserData.employeeId,
+      updateDate: formatDateForOracle(new Date())
+    });
     
     if (response.data.result_code === 'SUCCESS') {
-      alert(`지점 "${selectedBranch.value.compName}"이(가) 성공적으로 삭제되었습니다.`);
+      alert(`지점 "${selectedBranch.value.compName}"이(가) 비활성화되었습니다. (처리자: ${currentUserData.empName})`);
       
-      // 폼 초기화
-      if (standardInputRef.value && standardInputRef.value.inputFormRef) {
+      if (standardInputRef.value?.inputFormRef) {
         standardInputRef.value.inputFormRef.resetInputDatas();
       }
       selectedBranch.value = null;
       
       await loadBranches();
     } else {
-      alert(`삭제 실패: ${response.data.message || '삭제 중 오류가 발생했습니다.'}`);
+      alert(`비활성화 실패: ${response.data.message || '비활성화 중 오류가 발생했습니다.'}`);
     }
     
   } catch (error) {
-    console.error('지점 삭제 실패:', error);
-    console.error('에러 상세:', {
-      code: error.code,
-      status: error.response?.status,
-      statusText: error.response?.statusText,
-      data: error.response?.data
-    });
+    console.error('지점 비활성화 실패:', error);
     
-    let errorMessage = '삭제 중 오류가 발생했습니다.';
-    
-    if (error.code === 'ERR_NETWORK') {
-      errorMessage = '네트워크 오류: 백엔드 서버가 실행되고 있는지 확인해주세요.';
-    } else if (error.response?.status === 404) {
-      errorMessage = '삭제할 지점을 찾을 수 없습니다.';
-    } else if (error.response?.status === 409) {
-      errorMessage = '다른 데이터에서 참조 중인 지점은 삭제할 수 없습니다.';
-    } else if (error.response?.data?.message) {
-      errorMessage = error.response.data.message;
-    } else if (error.message) {
-      errorMessage = error.message;
+    // ✅ 백엔드에 비활성화 API가 없는 경우 일반 수정 API 사용
+    if (error.response?.status === 404) {
+      try {
+        console.log('비활성화 전용 API가 없어서 일반 수정 API 사용');
+        
+        const currentUserData = await getCurrentUser();
+        
+        const updateData = {
+          ...selectedBranch.value,
+          compType: COMPANY_TYPES.INACTIVE, // 비활성화 상태
+          updateUser: currentUserData.employeeId,
+          updateDate: formatDateForOracle(new Date())
+        };
+        
+        const fallbackResponse = await axios.put(`${API_BASE_URL}/${selectedBranch.value.compId}`, updateData);
+        
+        if (fallbackResponse.data.result_code === 'SUCCESS') {
+          alert(`지점 "${selectedBranch.value.compName}"이(가) 비활성화되었습니다.`);
+          
+          if (standardInputRef.value?.inputFormRef) {
+            standardInputRef.value.inputFormRef.resetInputDatas();
+          }
+          selectedBranch.value = null;
+          
+          await loadBranches();
+        } else {
+          throw new Error(fallbackResponse.data.message || '지점 비활성화에 실패했습니다.');
+        }
+      } catch (fallbackError) {
+        alert('비활성화 실패: ' + (fallbackError.response?.data?.message || fallbackError.message));
+      }
+    } else {
+      alert('비활성화 실패: ' + (error.response?.data?.message || error.message));
     }
-    
-    alert('삭제 실패: ' + errorMessage);
   }
 };
 
 // 모달 처리 함수
 const openSearchModal = (inputName) => {
   console.log('모달 열기:', inputName);
-  // 필요한 경우 모달 로직 구현
 };
 
 // 초기화 함수
@@ -516,10 +556,9 @@ const initializeFormData = async () => {
   const user = await getCurrentUser();
   console.log('폼 초기화 시 사용자 정보:', user);
   
-  // StandardInput의 inputForm에 초기값 설정
-  if (standardInputRef.value && standardInputRef.value.inputFormRef) {
+  if (standardInputRef.value?.inputFormRef) {
     const inputFormRef = standardInputRef.value.inputFormRef;
-    inputFormRef.inputDatas.regUser = user.employeeId; // employeeId 사용
+    inputFormRef.inputDatas.regUser = user.employeeId;
     
     const now = new Date();
     const year = now.getFullYear();
@@ -531,23 +570,8 @@ const initializeFormData = async () => {
 
 // 컴포넌트 마운트 시 데이터 로드
 onMounted(async () => {
-  // 사용자 정보 디버깅
-  try {
-    const response = await axios.get('/api/auth/me');
-    console.log('=== 사용자 API 디버깅 ===');
-    console.log('전체 응답:', JSON.stringify(response.data, null, 2));
-    console.log('response.data.data:', JSON.stringify(response.data.data, null, 2));
-    if (response.data.data?.user) {
-      console.log('user 객체:', JSON.stringify(response.data.data.user, null, 2));
-    }
-    console.log('========================');
-  } catch (error) {
-    console.error('디버깅 중 오류:', error);
-  }
-  
   await loadBranches();
   
-  // 약간의 지연 후 초기화 (StandardInput이 완전히 마운트된 후)
   setTimeout(async () => {
     await initializeFormData();
   }, 100);
@@ -567,7 +591,7 @@ onMounted(async () => {
     @rowSelect="onRowSelect"
     @rowUnselect="onRowUnselect"
   >
-    <!-- 삭제 버튼 추가 -->
+    <!-- ✅ 비활성화 버튼 (삭제 대신) -->
     <template #btn>
       <Button 
         label="삭제" 

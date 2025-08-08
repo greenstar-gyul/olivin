@@ -3,8 +3,9 @@ package com.olivin.app.standard.web;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Date;  // 추가된 import
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -111,44 +112,58 @@ public class ProductController {
     }
     
     /**
-     * 제품 검색 (GET 방식, 파라미터 기반) - 기존 코드에 파라미터 검증만 추가
+     * ✅ 제품 검색 (GET 방식, 파라미터 기반) - 날짜 처리 강화
      */
-    // ProductController.java의 searchProducts 메서드에서 날짜 처리 부분만 수정
-
     @GetMapping("/search")
     public ResponseEntity<List<ProductVO>> searchProducts(@RequestParam Map<String, Object> params) {
         try {
-            System.out.println("검색 파라미터: " + params);
+            System.out.println("=== 검색 파라미터 처리 시작 ===");
+            System.out.println("원본 파라미터: " + params);
             
-            // 날짜 파라미터 처리 (Oracle 호환)
             Map<String, Object> processedParams = new HashMap<>(params);
             
-            // regDateFrom 처리
-            if (params.containsKey("regDateFrom") && params.get("regDateFrom") != null) {
-                String dateFrom = params.get("regDateFrom").toString().trim();
-                if (!dateFrom.isEmpty()) {
-                    try {
-                        // YYYY-MM-DD 형식을 Oracle DATE로 변환
-                        java.sql.Date sqlDateFrom = java.sql.Date.valueOf(dateFrom);
-                        processedParams.put("regDateFrom", sqlDateFrom);
-                    } catch (IllegalArgumentException e) {
-                        System.err.println("잘못된 시작일 형식: " + dateFrom);
-                        processedParams.remove("regDateFrom");
-                    }
-                }
-            }
+            // ✅ 날짜 파라미터 처리 강화 (다양한 형식 지원)
+            String[] dateParams = {"regDateFrom", "regDateTo"};
             
-            // regDateTo 처리
-            if (params.containsKey("regDateTo") && params.get("regDateTo") != null) {
-                String dateTo = params.get("regDateTo").toString().trim();
-                if (!dateTo.isEmpty()) {
-                    try {
-                        // YYYY-MM-DD 형식을 Oracle DATE로 변환
-                        java.sql.Date sqlDateTo = java.sql.Date.valueOf(dateTo);
-                        processedParams.put("regDateTo", sqlDateTo);
-                    } catch (IllegalArgumentException e) {
-                        System.err.println("잘못된 종료일 형식: " + dateTo);
-                        processedParams.remove("regDateTo");
+            for (String dateParamName : dateParams) {
+                if (params.containsKey(dateParamName) && params.get(dateParamName) != null) {
+                    String dateValue = params.get(dateParamName).toString().trim();
+                    
+                    if (!dateValue.isEmpty()) {
+                        try {
+                            // 다양한 날짜 형식 처리
+                            java.sql.Date sqlDate = null;
+                            
+                            // 1. YYYY-MM-DD 형식 (가장 일반적)
+                            if (dateValue.matches("\\d{4}-\\d{2}-\\d{2}")) {
+                                sqlDate = java.sql.Date.valueOf(dateValue);
+                                
+                            // 2. ISO 8601 형식 (2024-01-01T00:00:00.000Z)
+                            } else if (dateValue.contains("T")) {
+                                Instant instant = Instant.parse(dateValue);
+                                sqlDate = new java.sql.Date(instant.toEpochMilli());
+                                
+                            // 3. 타임스탬프 (밀리초)
+                            } else if (dateValue.matches("\\d{13}")) {
+                                long timestamp = Long.parseLong(dateValue);
+                                sqlDate = new java.sql.Date(timestamp);
+                                
+                            // 4. 기타 형식은 Date 파싱 시도
+                            } else {
+                                Date parsedDate = new Date(dateValue);
+                                sqlDate = new java.sql.Date(parsedDate.getTime());
+                            }
+                            
+                            if (sqlDate != null) {
+                                processedParams.put(dateParamName, sqlDate);
+                                System.out.println("✅ " + dateParamName + " 변환 성공: " + dateValue + " -> " + sqlDate);
+                            }
+                            
+                        } catch (Exception e) {
+                            System.err.println("❌ " + dateParamName + " 변환 실패: " + dateValue + ", 오류: " + e.getMessage());
+                            // 변환 실패 시 해당 파라미터 제거
+                            processedParams.remove(dateParamName);
+                        }
                     }
                 }
             }
@@ -156,14 +171,18 @@ public class ProductController {
             System.out.println("처리된 파라미터: " + processedParams);
             
             List<ProductVO> products = productService.searchProducts(processedParams);
+            
+            System.out.println("✅ 검색 완료: " + products.size() + "개 결과");
             return ResponseEntity.ok(products);
             
         } catch (Exception e) {
-            System.err.println("검색 처리 중 오류: " + e.getMessage());
+            System.err.println("=== 검색 처리 중 오류 ===");
+            System.err.println("오류 메시지: " + e.getMessage());
             e.printStackTrace();
             return ResponseEntity.status(500).body(new ArrayList<>());
         }
     }
+    
     /**
      * 특정 제품 조회 - 직원 이름 조인 포함
      */
@@ -491,7 +510,67 @@ public class ProductController {
     }
     
     /**
-     * 제품 삭제
+     * ✅ 제품 중단 API - 상태를 중단(040004)으로 변경
+     */
+    @PutMapping("/{productId}/stop")
+    public ResponseEntity<Map<String, Object>> stopProduct(
+            @PathVariable String productId,
+            @RequestBody Map<String, Object> requestData) {
+        
+        Map<String, Object> result = new HashMap<>();
+        
+        try {
+            // 제품 존재 여부 확인
+            ProductVO existingProduct = productService.getProduct(productId);
+            if (existingProduct == null) {
+                result.put("success", false);
+                result.put("message", "존재하지 않는 제품입니다: " + productId);
+                return ResponseEntity.notFound().build();
+            }
+            
+            String updateUser = (String) requestData.getOrDefault("updateUser", "SYSTEM");
+            
+            // 중단 전 제품 정보 조회 (직원 이름 포함)
+            System.out.println("중단 전 제품 정보:");
+            System.out.println("제품ID: " + productId);
+            System.out.println("현재상태: " + existingProduct.getStatus());
+            System.out.println("등록자ID: " + existingProduct.getRegUser());
+            System.out.println("등록자명: " + existingProduct.getRegUserName());
+            
+            int stopResult = productService.stopProduct(productId, updateUser);
+            
+            if (stopResult > 0) {
+                // 중단 후 제품 정보 조회 (처리자 이름 포함)
+                ProductVO afterProduct = productService.getProduct(productId);
+                
+                result.put("success", true);
+                result.put("message", "제품이 중단 상태로 변경되었습니다.");
+                result.put("stopperName", afterProduct != null ? afterProduct.getUpdateUserName() : null);
+                
+                // 로깅: 중단 처리 결과
+                System.out.println("제품 중단 완료:");
+                System.out.println("제품ID: " + productId);
+                System.out.println("처리자ID: " + updateUser);
+                if (afterProduct != null) {
+                    System.out.println("처리자명: " + afterProduct.getUpdateUserName());
+                    System.out.println("변경후상태: " + afterProduct.getStatus());
+                }
+            } else {
+                result.put("success", false);
+                result.put("message", "제품 중단 처리에 실패했습니다.");
+            }
+        } catch (Exception e) {
+            result.put("success", false);
+            result.put("message", "제품 중단 처리 중 오류가 발생했습니다: " + e.getMessage());
+            System.err.println("제품 중단 처리 오류: " + e.getMessage());
+            e.printStackTrace();
+        }
+        
+        return ResponseEntity.ok(result);
+    }
+    
+    /**
+     * 제품 삭제 (기존 유지 - 실제 삭제용)
      */
     @DeleteMapping("/{productId}")
     public ResponseEntity<Map<String, Object>> deleteProduct(@PathVariable String productId) {

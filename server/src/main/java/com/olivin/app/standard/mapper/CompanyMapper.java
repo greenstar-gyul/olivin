@@ -18,6 +18,9 @@ public interface CompanyMapper {
     // 검색 조건에 따른 회사 목록 조회
     List<CompanyVO> selectCompaniesByCondition(Map<String, Object> searchParams);
     
+    // 활성 상태의 회사만 조회
+    List<CompanyVO> selectActiveCompanies();
+    
     // 특정 회사 조회
     CompanyVO selectCompany(String compId);
     
@@ -36,6 +39,9 @@ public interface CompanyMapper {
     // 회사 유형별 조회
     List<CompanyVO> selectCompaniesByType(String compType);
     
+    // 활성 상태의 회사 유형별 조회
+    List<CompanyVO> selectActiveCompaniesByType(String compType);
+    
     // 마지막 회사 ID 조회 (ID 자동생성용)
     String selectLastCompanyIdByType(String compType);
     
@@ -51,7 +57,7 @@ public interface CompanyMapper {
     // 최근 등록된 회사 조회
     List<CompanyVO> selectRecentCompanies(int limit);
     
-    // ✅ 삭제 전 참조 무결성 확인을 위한 메소드들 추가
+    // ✅ 삭제 전 참조 무결성 확인을 위한 메소드들
     
     // 해당 회사에 소속된 직원 수 조회
     int countEmployeesByCompId(@Param("compId") String compId);

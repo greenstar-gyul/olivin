@@ -12,6 +12,38 @@ const currentUser = ref({
   empName: ''
 });
 
+// ✅ 날짜 포맷 함수 (Oracle 호환)
+const formatDateForOracle = (dateInput) => {
+  if (!dateInput) return null;
+  
+  try {
+    let date;
+    if (dateInput instanceof Date) {
+      date = dateInput;
+    } else if (typeof dateInput === 'string') {
+      if (/^\d{4}-\d{2}-\d{2}$/.test(dateInput.trim())) {
+        return dateInput.trim();
+      }
+      date = new Date(dateInput.trim());
+    } else {
+      date = new Date(dateInput);
+    }
+    
+    if (isNaN(date.getTime())) {
+      throw new Error('유효하지 않은 날짜');
+    }
+    
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    
+    return `${year}-${month}-${day}`;
+  } catch (error) {
+    console.error('날짜 변환 오류:', error);
+    return null;
+  }
+};
+
 // 사용자 정보 가져오기 함수 (ProductStandardPage.vue와 동일)
 const getCurrentUser = async () => {
   try {
@@ -178,17 +210,14 @@ const selectedProduct = ref(null);
 const header = ref({
   title: '제품 승인 요청 목록',
   header: {
-    productId: '제품ID',
     productName: '제품명',
-    compId: '매장코드',
     vendorName: '브랜드',
     categoryMain: '카테고리',
     categorySub: '세부카테고리',
     productSpec: '용량',
     unit: '단위',
     packQty: '입수량',
-    purchasePrice: '구매단가',
-    sellPrice: '판매단가',
+    safetyStock: '안전재고',
   },
   rightAligned: ['packQty', 'sellPrice']
 });
@@ -206,6 +235,7 @@ const inputs = computed(() => ({
     { type: 'text', label: '용량', value: selectedProduct.value?.productSpec || '', name: 'productSpec', readonly: true },
     { type: 'text', label: '단위', value: selectedProduct.value?.unit || '', name: 'unit', readonly: true },
     { type: 'number', label: '입수량', value: selectedProduct.value?.packQty || '', name: 'packQty', readonly: true },
+    { type: 'number', label: '안전재고', value: selectedProduct.value?.safetyStock || '', name: 'safetyStock', readonly: true },
     { type: 'number', label: '구매가격', value: selectedProduct.value?.purchasePrice || '', name: 'purchasePrice', readonly: true },
     { type: 'number', label: '판매가격', value: selectedProduct.value?.sellPrice || '', name: 'sellPrice', readonly: true },
     { type: 'text', label: '등록자', value: selectedProduct.value?.regUserName || '', name: 'regUser', readonly: true },
@@ -272,9 +302,13 @@ const getUnitName = (code) => {
   return unitMap[code] || code;
 };
 
+// ✅ 상태 변환 함수 (중단 상태 추가)
 const getStatusName = (code) => {
   const statusMap = {
-    '040001': '완료', '040002': '대기', '040003': '반려'
+    '040001': '완료', 
+    '040002': '대기', 
+    '040003': '반려',
+    '040004': '중단'  // ✅ 새로 추가된 상태
   };
   return statusMap[code] || code;
 };
@@ -304,6 +338,7 @@ const filterProductData = (product, index = 0) => {
     compId: product.compId,
     productSpec: product.productSpec,
     packQty: product.packQty,
+    safetyStock: product.safetyStock,
     purchasePrice: product.purchasePrice,
     sellPrice: product.sellPrice,
     note: product.note,
@@ -372,12 +407,9 @@ const loadPendingProducts = async () => {
   }
 };
 
-// 기존 searchData 함수에서 날짜 처리 부분만 수정하세요
-// ProductStandardPage.vue와 ProductApprovalPage.vue 모두 동일하게 적용
-
+// ✅ 검색 함수 (날짜 형식 수정)
 const searchData = async (searchOptions) => {
   try {
-    // 기존 파라미터 처리 코드는 그대로 두고...
     const params = {};
     
     if (searchOptions.productName?.trim()) params.productName = searchOptions.productName.trim();
@@ -386,18 +418,16 @@ const searchData = async (searchOptions) => {
     if (searchOptions.categorySub?.trim()) params.categorySub = searchOptions.categorySub.trim();
     if (searchOptions.compId?.trim()) params.compId = searchOptions.compId.trim();
     if (searchOptions.packQty) params.packQty = searchOptions.packQty;
+    if (searchOptions.safetyStock) params.safetyStock = searchOptions.safetyStock;
     if (searchOptions.regUser?.trim()) params.regUser = searchOptions.regUser.trim();
     
-    // ✅ 날짜 범위 파라미터 처리만 수정 (Oracle 호환)
+    // ✅ 날짜 범위 파라미터 처리 (Oracle 호환)
     if (searchOptions.regDateRangeFrom && searchOptions.regDateRangeTo) {
       try {
-        // 날짜 객체로 변환하여 검증
         const fromDate = new Date(searchOptions.regDateRangeFrom);
         const toDate = new Date(searchOptions.regDateRangeTo);
         
-        // 유효한 날짜인지 확인
         if (!isNaN(fromDate.getTime()) && !isNaN(toDate.getTime())) {
-          // YYYY-MM-DD 형식으로 변환 (Oracle에서 인식 가능한 형식)
           params.regDateFrom = fromDate.toISOString().split('T')[0];
           params.regDateTo = toDate.toISOString().split('T')[0];
           
@@ -413,7 +443,6 @@ const searchData = async (searchOptions) => {
         }
       } catch (dateError) {
         console.error('날짜 변환 오류:', dateError);
-        // 에러가 발생해도 검색은 계속 진행 (날짜 조건 제외)
       }
     }
     
@@ -424,7 +453,6 @@ const searchData = async (searchOptions) => {
     
     console.log('최종 검색 파라미터:', params);
     
-    // 기존 API 호출 코드는 그대로...
     const response = await axios.get(`${API_BASE_URL}/search`, { params });
     
     if (response.data && Array.isArray(response.data)) {
@@ -438,7 +466,6 @@ const searchData = async (searchOptions) => {
   } catch (error) {
     console.error('검색 실패:', error);
     
-    // 에러 메시지 개선
     let errorMessage = '검색 중 오류가 발생했습니다.';
     if (error.response?.status === 500) {
       errorMessage = '서버 내부 오류가 발생했습니다. 검색 조건을 확인해주세요.';
@@ -446,7 +473,6 @@ const searchData = async (searchOptions) => {
       errorMessage = '검색 조건이 올바르지 않습니다.';
     }
     
-    // Toast 또는 alert 사용
     if (typeof toast !== 'undefined' && toast.add) {
       toast.add({ 
         severity: 'error', 
@@ -470,7 +496,7 @@ const onRowSelect = (row) => {
   selectedProduct.value = row;
 };
 
-// ✅ 승인 처리
+// ✅ 승인 처리 (날짜 형식 수정)
 const handleApprove = async (approvalData) => {
   const targetProduct = approvalData.selectedItem || selectedProduct.value;
   
@@ -493,7 +519,8 @@ const handleApprove = async (approvalData) => {
       {
         approver: currentUserData.employeeId,
         reason: reason,
-        status: '040001'
+        status: '040001',
+        approveDate: formatDateForOracle(new Date()) // ✅ 날짜 형식 수정
       }
     );
     
@@ -513,7 +540,7 @@ const handleApprove = async (approvalData) => {
   }
 };
 
-// ✅ 반려 처리
+// ✅ 반려 처리 (날짜 형식 수정)
 const handleReject = async (rejectionData) => {
   const targetProduct = rejectionData.selectedItem || selectedProduct.value;
   
@@ -541,7 +568,8 @@ const handleReject = async (rejectionData) => {
       {
         approver: currentUserData.employeeId,
         reason: reason,
-        status: '040003'
+        status: '040003',
+        rejectDate: formatDateForOracle(new Date()) // ✅ 날짜 형식 수정
       }
     );
     
