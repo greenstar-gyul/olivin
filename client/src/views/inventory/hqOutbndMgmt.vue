@@ -50,7 +50,7 @@ const confirmModal = async (selectedItems) => {
   formData.value.outbndFrom = selectedItems.orderTo;
   formData.value.inbndTo = selectedItems.orderFrom;
   formData.value.outbndDate = today;
-  // console.log('테에스으트', formData.value);
+  console.log('테에스으트', formData.value);
   
   /* 제품 상세정보 불러오기 */
   const selOrderId = formData.value.orderId;
@@ -181,9 +181,34 @@ const getOrderData = async () => {
       console.error('출고 데이터 불러오기 실패:', e)
     }
 };
-  
-const exportHandler = () => {
-  console.log('출고 처리');
+
+/**
+ * 제품등록처리 진행 함수 
+ */
+async function callOutbndProcess(orderId) {
+  try {
+    const response = await axios.post("/api/outbnd/hqProcess", null, {
+      params: {
+        orderId: orderId
+      }
+    });
+    alert("출고 처리가 완료되었습니다.");
+  } catch (error) {
+    console.error("출고 처리 중 오류 발생:", error);
+    
+    // 에러 메시지 추출
+    const message = error.response?.data?.message || "출고 처리 중 오류가 발생했습니다.";
+    alert(message);
+  }
+}
+
+// 출고처리 버튼 이벤트 함수
+const outbndHandler = () => {
+  // console.log('함수실행 전');
+  const outbndOrderId = formData.value.orderId
+  console.log('전달값 확인', outbndOrderId);
+  callOutbndProcess(outbndOrderId);
+  // console.log('함수실행 후');
 };
 
   
@@ -209,7 +234,8 @@ onMounted(() => {
       <Button label="발주정보불러오기" class="min-w-fit whitespace-nowrap" severity="info" @click="loadPurchaseOnClick" outlined />
     </template>
     <template #basicBtn>
-      <Button label="출고처리" class="min-w-fit whitespace-nowrap" severity="success" @click="exportHandler" outlined />
+      <Button label="전체출고처리" class="min-w-fit whitespace-nowrap" severity="success" @click="outbndHandler" outlined />
+      <!-- <Button label="개별출고처리" class="min-w-fit whitespace-nowrap" severity="success" @click="" outlined /> -->
     </template>
   </InputMultiTable>
   <DialogModal title="발주내역" :display="orderModalVisible" :headers="modalHeaders" :items="modalItems" :selectionMode="'single'" @close="closeModal" @confirm="confirmModal" @search-modal="searchModal"></DialogModal>
