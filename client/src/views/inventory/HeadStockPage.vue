@@ -12,8 +12,10 @@ const mainHeader = ref({
     productName: '제품명', 
     categoryMain: '대분류', 
     categorySub: '소분류', 
-    stockQuantity: '재고수량(박스)', 
-    safetyStock: '안전 재고(박스)', 
+    productSpec: '규격', 
+    vendorName: '공급사', 
+    stockQuantity: '재고수량(개)', 
+    safetyStock: '안전 재고(개)', 
   },
   rightAligned: ['stockQuantity', 'safetyStock'] // 오른쪽 정렬할 컬럼 리스트
 });
@@ -27,9 +29,7 @@ const lotHeader = ref({
     productId: '제품번호', 
     productName: '제품명', 
     lotNo: 'LOT',
-    productSpec: '규격', 
-    vendorName: '공급사', 
-    stockQuantity: '재고수량(박스)',
+    stockQuantity: '재고수량(개)',
   },
   rightAligned: ['stockQuantity', 'safetyStock'] // 오른쪽 정렬할 컬럼 리스트
 })
@@ -314,6 +314,34 @@ const clearSelection = () => {
   console.log('Selection cleared');
 }
 
+// 재고 수량에 따른 조건부 스타일링을 적용하는 함수
+const getStockTag = (rowData, fieldName) => {
+  if (fieldName === 'stockQuantity') {
+    const stock = rowData.stockQuantity || 0;
+    const safety = rowData.safetyStock || 0;
+
+    if (stock <= 0) {
+      return {
+        value: `${stock}`,
+        severity: 'danger'
+      };
+    } 
+    else if (stock <= safety * 1.2) {
+      return {
+        value: `${stock.toLocaleString()}`,
+        severity: 'warn'
+      };
+    } 
+    else {
+      return {
+        value: `${stock.toLocaleString()}`,
+        severity: 'success'
+      };
+    }
+  }
+  return null; // null을 반환하면 기본 렌더링 사용
+};
+
 onMounted(() => {
   loadStockData();
 });
@@ -323,7 +351,7 @@ onMounted(() => {
   <!-- <SearchTable ref="searchFormRef" :filters="filters" :items="items" :header="header" @searchData="searchData" @open-search-modal="handleOpenModal" @resetSearchOptions="resetList"></SearchTable> -->
 
   <SearchForm ref="searchFormRef" :filters="filters" @searchData="searchData" @openSearchModal="handleOpenModal" @resetSearchOptions="resetList" ></SearchForm>
-  <BasicTable ref="mainTableRef" :data="mainItems" :header="mainHeader" :dataKey="'productId'" :checked="true" :scrollHeight="'150px'" @row-select="onRowSelect"></BasicTable>
+  <BasicTable ref="mainTableRef" :data="mainItems" :header="mainHeader" :dataKey="'productId'" :checked="true" :scrollHeight="'200px'" @row-select="onRowSelect" :tagRenderer="getStockTag"></BasicTable>
   <BasicTable :data="lotItems" :header="lotHeader" :scrollHeight="'150px'"></BasicTable>
 
   <DialogModal v-model:display="productModalVisible" :items="productItems" :headers="productHeaders" title="제품 검색"

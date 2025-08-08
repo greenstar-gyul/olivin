@@ -72,12 +72,12 @@
                get_datacode_name(p.category_main) as category_main,
                get_datacode_name(p.category_sub) as category_sub,
                p.vendor_name,
-               p.product_spec,
+               p.product_spec || get_datacode_name(p.unit) as product_spec,
                NVL(SUM(ls.stock_quantity), 0) AS stock_quantity,
                p.safety_stock
         FROM   products p LEFT JOIN lot_stocks ls ON p.product_id = ls.product_id
         GROUP BY p.product_id, p.product_name, ls.lot_no, p.category_main, p.category_sub, 
-                 p.vendor_name, p.product_spec, p.pack_qty, p.safety_stock
+                 p.vendor_name, p.product_spec, p.pack_qty, p.safety_stock, p.unit
         ORDER BY p.product_id
     </select>
 
@@ -152,6 +152,7 @@
                get_datacode_name(p.category_main) as category_main,
                get_datacode_name(p.category_sub) as category_sub,
                p.vendor_name,
+               p.product_spec || get_datacode_name(p.unit) as product_spec,
                NVL(SUM(ls.stock_quantity), 0) AS stock_quantity,
                p.safety_stock
         FROM   products p LEFT JOIN lot_stocks ls ON p.product_id = ls.product_id
@@ -166,7 +167,7 @@
           AND p.vendor_name LIKE '%' || #{vendorName} || '%'
         </if>
         GROUP BY p.product_id, p.product_name, p.category_main, p.category_sub, 
-                 p.vendor_name, p.pack_qty, p.safety_stock
+                 p.vendor_name, p.pack_qty, p.safety_stock, p.unit, p.product_spec
         ORDER BY p.product_id
     </select>
 
@@ -186,13 +187,13 @@
         SELECT p.product_id,
                p.product_name,
                ls.lot_no,
-               p.vendor_name,
-               p.product_spec,
+               -- p.vendor_name,
+               -- p.product_spec || get_datacode_name(p.unit) as product_spec,
                NVL(SUM(ls.stock_quantity), 0) AS stock_quantity
         FROM   products p LEFT JOIN lot_stocks ls ON p.product_id = ls.product_id
         WHERE  p.product_id = #{productId}
         GROUP BY p.product_id, p.product_name, ls.lot_no, 
-                 p.vendor_name, p.product_spec, p.pack_qty
+                 p.vendor_name, p.product_spec, p.pack_qty, p.unit
         ORDER BY ls.lot_no
     </select>
 </mapper>

@@ -342,6 +342,34 @@ const resetList = () => {
   loadStockData();
 }
 
+// 재고 수량에 따른 조건부 스타일링을 적용하는 함수
+const getStockTag = (rowData, fieldName) => {
+  if (fieldName === 'stockQuantity') {
+    const stock = rowData.stockQuantity || 0;
+    const safety = rowData.safetyStock || 0;
+
+    if (stock <= 0) {
+      return {
+        value: `${stock}`,
+        severity: 'danger'
+      };
+    } 
+    else if (stock <= safety * 1.2) {
+      return {
+        value: `${stock.toLocaleString()}`,
+        severity: 'warn'
+      };
+    } 
+    else {
+      return {
+        value: `${stock.toLocaleString()}`,
+        severity: 'success'
+      };
+    }
+  }
+  return null; // null을 반환하면 기본 렌더링 사용
+};
+
 onMounted(() => {
   // 재고 데이터 로드
   loadStockData();
@@ -350,7 +378,7 @@ onMounted(() => {
 </script>
 <template>
   <SearchForm ref="searchFormRef" :filters="filters" @searchData="searchData" @openSearchModal="handleOpenModal" @resetSearchOptions="resetList" ></SearchForm>
-  <BasicTable :data="mainItems" :header="mainHeader"></BasicTable>
+  <BasicTable :data="mainItems" :header="mainHeader" :tagRenderer="getStockTag"></BasicTable>
   
   <DialogModal v-model:display="productModalVisible" :items="productItems" :headers="productHeaders" title="제품 검색"
     selectionMode="single" @close="closeProductModal" @confirm="confirmProductModal" @search-modal="searchProducts" />
