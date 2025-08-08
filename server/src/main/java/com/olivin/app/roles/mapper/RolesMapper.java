@@ -9,6 +9,8 @@ import com.olivin.app.roles.service.RolesVO;
 @Mapper
 public interface RolesMapper {
     
+    // ========== 기존 권한 관리 메서드 ==========
+    
     // 모든 권한 목록 조회
     List<RolesVO> selectAllRoles();
     
@@ -64,4 +66,32 @@ public interface RolesMapper {
     
     // 권한별 권한 수 조회
     List<Map<String, Object>> selectRolePermissionCount();
+    
+    // ========== 추가: 사원 관련 메서드 ==========
+    
+    // 사원 목록 조회 (권한 정보 포함)
+    List<Map<String, Object>> selectEmployeesWithPermissions(Map<String, Object> searchParams);
+    
+    // 특정 사원의 권한 ID 목록 조회 (역할을 통해)
+    List<Integer> selectEmployeePermissionIds(String employeeId);
+    
+    // 사원의 역할 변경
+    int updateEmployeeRole(Map<String, Object> params);
+    
+    // 사원 존재 여부 확인
+    int checkEmployeeExists(String employeeId);
+    
+    // ========== 추가: 유틸리티 메서드 ==========
+    
+    // 사원의 역할명 조회
+    String selectEmployeeRoleName(String employeeId);
+    
+    // 역할별 사원 수 조회
+    Map<String, Object> selectRoleEmployeeCount(Integer roleId);
+    
+    // 사원의 권한 상세 정보 조회 (권한명 포함)
+    List<Map<String, Object>> selectEmployeePermissionDetails(String employeeId);
+    
+    // 부서별 권한 통계
+    List<Map<String, Object>> selectDepartmentPermissionStats();
 }
