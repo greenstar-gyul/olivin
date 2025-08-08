@@ -218,4 +218,39 @@
         FETCH FIRST #{limit} ROWS ONLY
     </select>
 
+    <!-- 해당 회사에 소속된 직원 수 조회 -->
+    <select id="countEmployeesByCompId" resultType="int">
+        SELECT COUNT(*)
+        FROM EMPLOYEES 
+        WHERE COMP_ID = #{compId}
+    </select>
+
+    <!-- 해당 회사에 등록된 제품 수 조회 -->
+    <select id="countProductsByCompId" resultType="int">
+        SELECT COUNT(*)
+        FROM PRODUCTS 
+        WHERE COMP_ID = #{compId}
+    </select>
+
+    <!-- 해당 회사와 관련된 발주서 수 조회 (발주처 또는 공급처) -->
+    <select id="countPurchaseOrdersByCompId" resultType="int">
+        SELECT COUNT(*)
+        FROM PURCHASE_ORDERS 
+        WHERE ORDER_FROM_ID = #{compId} 
+        OR ORDER_TO_ID = #{compId}
+    </select>
+
+    <!-- 해당 회사와 관련된 판매계획 수 조회 -->
+    <select id="countSalesPlansByCompId" resultType="int">
+        SELECT COUNT(*)
+        FROM SALES_PLAN 
+        WHERE COMP_ID = #{compId}
+    </select>
+
+    <!-- 해당 회사와 관련된 계정원장 수 조회 -->
+    <select id="countAccountLedgersByCompId" resultType="int">
+        SELECT COUNT(*)
+        FROM ACCOUNT_LEDER 
+        WHERE COMP_ID = #{compId}
+    </select>
 </mapper>

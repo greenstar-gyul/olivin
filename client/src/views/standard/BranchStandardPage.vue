@@ -124,7 +124,7 @@ const filters = ref({
     { type: 'text', label: '사업자번호', value: '', placeholder: '000-00-00000', name: 'bizNumber' },
     { type: 'text', label: 'CEO명', value: '', placeholder: 'CEO명을 입력하세요', name: 'ceoName' },
     { type: 'text', label: '전화번호', value: '', placeholder: '02-0000-0000', name: 'phone' },
-    { type: 'dateRange', label: '등록일 범위', value: '', fromPlaceholder: '시작일', toPlaceholder: '종료일', name: 'dateRange' }
+    { type: 'dateRange', label: '등록일', value: '', fromPlaceholder: '시작일', toPlaceholder: '종료일', name: 'dateRange' }
   ]
 });
 

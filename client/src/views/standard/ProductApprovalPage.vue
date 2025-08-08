@@ -184,14 +184,11 @@ const header = ref({
     vendorName: '브랜드',
     categoryMain: '카테고리',
     categorySub: '세부카테고리',
-    productSpec: '용량/규격',
+    productSpec: '용량',
     unit: '단위',
     packQty: '입수량',
     purchasePrice: '구매단가',
     sellPrice: '판매단가',
-    regUserName: '등록자',
-    regDate: '등록일자',
-    status: '상태'
   },
   rightAligned: ['packQty', 'sellPrice']
 });
@@ -206,7 +203,7 @@ const inputs = computed(() => ({
     { type: 'text', label: '브랜드', value: selectedProduct.value?.vendorName || '', name: 'vendorName', readonly: true },
     { type: 'text', label: '카테고리', value: selectedProduct.value?.categoryMain || '', name: 'categoryMain', readonly: true },
     { type: 'text', label: '세부카테고리', value: selectedProduct.value?.categorySub || '', name: 'categorySub', readonly: true },
-    { type: 'text', label: '용량/규격', value: selectedProduct.value?.productSpec || '', name: 'productSpec', readonly: true },
+    { type: 'text', label: '용량', value: selectedProduct.value?.productSpec || '', name: 'productSpec', readonly: true },
     { type: 'text', label: '단위', value: selectedProduct.value?.unit || '', name: 'unit', readonly: true },
     { type: 'number', label: '입수량', value: selectedProduct.value?.packQty || '', name: 'packQty', readonly: true },
     { type: 'number', label: '구매가격', value: selectedProduct.value?.purchasePrice || '', name: 'purchasePrice', readonly: true },

@@ -211,20 +211,15 @@ const header = ref({
   header: {
     productId: '제품ID',
     productName: '제품명', 
-    compId: '회사코드', 
     vendorName: '브랜드',
     categoryMain: '카테고리', 
     categorySub: '세부카테고리',
-    productSpec: '용량/규격',
+    productSpec: '용량',
     unit: '단위',
     packQty: '입수량',
     safetyStock: '안전재고',
     purchasePrice: '구매가격',
     sellPrice: '판매가격',
-    status: '상태',
-    regUserName: '등록자',
-    regDate: '등록일',
-    note: '비고'
   },
   rightAligned: ['packQty', 'safetyStock', 'purchasePrice', 'sellPrice']
 });
@@ -239,7 +234,7 @@ const inputs = ref({
     { type: 'item-search', label: '브랜드', placeholder: '회사 선택시 자동 입력', name: 'vendorName', required: true },
     { type: 'select', label: '카테고리', placeholder: '카테고리를 선택하세요', name: 'categoryMain', required: true, options: categoryMainOptions },
     { type: 'select', label: '세부카테고리', placeholder: '세부카테고리를 선택하세요', name: 'categorySub', options: [] },
-    { type: 'text', label: '용량/규격', placeholder: '50ml, 30포, 7.5g 등', name: 'productSpec' },
+    { type: 'text', label: '용량', placeholder: '50ml, 30포, 7.5g 등', name: 'productSpec' },
     { type: 'select', label: '단위', placeholder: '단위를 선택하세요', name: 'unit', required: true, options: unitOptions },
     { type: 'number', label: '입수량', placeholder: '박스당 개수', name: 'packQty' },
     { type: 'number', label: '안전재고', placeholder: '최소 재고량', name: 'safetyStock' },

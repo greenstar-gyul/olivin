@@ -67,7 +67,21 @@ public class CompanyServiceImpl implements CompanyService {
     
     @Override
     public int removeCompany(String compId) {
-        return companyMapper.deleteCompany(compId);
+        // ✅ 발주서만 확인하고 삭제
+        try {
+            // 발주서 테이블에서 참조하는지 확인 (발주처 또는 공급처)
+            int purchaseOrderCount = companyMapper.countPurchaseOrdersByCompId(compId);
+            if (purchaseOrderCount > 0) {
+                throw new RuntimeException("해당 회사와 관련된 발주서가 " + purchaseOrderCount + "건 있어서 삭제할 수 없습니다. 먼저 발주서들을 처리해주세요.");
+            }
+            
+            // 발주서 확인이 완료되면 삭제 실행
+            return companyMapper.deleteCompany(compId);
+            
+        } catch (Exception e) {
+            // 발주서 관련 오류이거나 기타 DB 오류 전달
+            throw new RuntimeException(e.getMessage());
+        }
     }
     
     @Override

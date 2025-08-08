@@ -50,4 +50,21 @@ public interface CompanyMapper {
     
     // 최근 등록된 회사 조회
     List<CompanyVO> selectRecentCompanies(int limit);
+    
+    // ✅ 삭제 전 참조 무결성 확인을 위한 메소드들 추가
+    
+    // 해당 회사에 소속된 직원 수 조회
+    int countEmployeesByCompId(@Param("compId") String compId);
+    
+    // 해당 회사에 등록된 제품 수 조회  
+    int countProductsByCompId(@Param("compId") String compId);
+    
+    // 해당 회사와 관련된 발주서 수 조회 (발주처 또는 공급처)
+    int countPurchaseOrdersByCompId(@Param("compId") String compId);
+    
+    // 해당 회사와 관련된 판매계획 수 조회
+    int countSalesPlansByCompId(@Param("compId") String compId);
+    
+    // 해당 회사와 관련된 계정원장 수 조회
+    int countAccountLedgersByCompId(@Param("compId") String compId);
 }
