@@ -62,7 +62,7 @@ export default {
     };
 
     const saveData = (inputDatas, mode) => {
-      emit('saveData', inputDatas.value, mode);
+      emit('saveData', inputDatas, mode);
     };
 
     const onSaveData = (data, mode) => {

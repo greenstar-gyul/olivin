@@ -68,6 +68,7 @@ const header = ref({
         { type: 'text', label: '회사코드', value: '', name: 'compId' },
         { type: 'text', label: '회사명', value: '', name: 'compName' },
         { type: 'text', label: '사원번호', value: '', name: 'employeeId' },
+        { type: 'text', label: '사원이름', value: '', name: 'empName' },
         {
           type: 'select',
           label: '고용형태',
