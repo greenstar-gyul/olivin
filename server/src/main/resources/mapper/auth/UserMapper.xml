@@ -35,7 +35,7 @@
             e.ROLE_ID,
             e.STATUS,
             e.DEPARTMENT_ID,
-            r.ROLE_NAME,
+            upper(r.ROLE_NAME) AS ROLE_NAME,
             d.DEPT_NAME
         FROM EMPLOYEES e
         LEFT JOIN ROLES r ON e.ROLE_ID = r.ROLE_ID
@@ -59,7 +59,7 @@
             e.ROLE_ID,
             e.STATUS,
             e.DEPARTMENT_ID,
-            'ROLE_'||upper(r.ROLE_NAME) AS ROLE_NAME,
+            upper(r.ROLE_NAME) AS ROLE_NAME,
             d.DEPT_NAME
         FROM EMPLOYEES e
         LEFT JOIN ROLES r ON e.ROLE_ID = r.ROLE_ID
