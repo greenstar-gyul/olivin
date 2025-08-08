@@ -13,13 +13,13 @@ const router = createRouter({
                     path: '/dashboard/hq',
                     name: 'HqDashboard',
                     component: () => import('@/views/dashboard/HqDashboard.vue'),
-                    meta: { roles: ['system_admin'] }
+                    meta: { roles: ['ROLE_SYSTEM_ADMIN'] }
                 },
                 {
                     path: '/dashboard/branch',
                     name: 'BranchDashboard',
                     component: () => import('@/views/dashboard/BranchDashboard.vue'),
-                    meta: { roles: ['system_admin', 'branch_manager', 'sales_manager'] }
+                    meta: { roles: ['ROLE_SYSTEM_ADMIN', 'branch_manager', 'sales_manager'] }
                 },
                 {
                     path: '/',
@@ -45,97 +45,97 @@ const router = createRouter({
                     path: '/uikit/formlayout',
                     name: 'formlayout',
                     component: () => import('@/views/uikit/FormLayout.vue'),
-                    meta: { permissions: ['system_admin'] }
+                    meta: { permissions: ['ROLE_SYSTEM_ADMIN'] }
                 },
                 {
                     path: '/uikit/input',
                     name: 'input',
                     component: () => import('@/views/uikit/InputDoc.vue'),
-                    meta: { permissions: ['system_admin'] }
+                    meta: { permissions: ['ROLE_SYSTEM_ADMIN'] }
                 },
                 {
                     path: '/uikit/button',
                     name: 'button',
                     component: () => import('@/views/uikit/ButtonDoc.vue'),
-                    meta: { permissions: ['system_admin'] }
+                    meta: { permissions: ['ROLE_SYSTEM_ADMIN'] }
                 },
                 {
                     path: '/uikit/table',
                     name: 'table',
                     component: () => import('@/views/uikit/TableDoc.vue'),
-                    meta: { permissions: ['system_admin'] }
+                    meta: { permissions: ['ROLE_SYSTEM_ADMIN'] }
                 },
                 {
                     path: '/uikit/list',
                     name: 'list',
                     component: () => import('@/views/uikit/ListDoc.vue'),
-                    meta: { permissions: ['system_admin'] }
+                    meta: { permissions: ['ROLE_SYSTEM_ADMIN'] }
                 },
                 {
                     path: '/uikit/tree',
                     name: 'tree',
                     component: () => import('@/views/uikit/TreeDoc.vue'),
-                    meta: { permissions: ['system_admin'] }
+                    meta: { permissions: ['ROLE_SYSTEM_ADMIN'] }
                 },
                 {
                     path: '/uikit/panel',
                     name: 'panel',
                     component: () => import('@/views/uikit/PanelsDoc.vue'),
-                    meta: { permissions: ['system_admin'] }
+                    meta: { permissions: ['ROLE_SYSTEM_ADMIN'] }
                 },
                 {
                     path: '/uikit/overlay',
                     name: 'overlay',
                     component: () => import('@/views/uikit/OverlayDoc.vue'),
-                    meta: { permissions: ['system_admin'] }
+                    meta: { permissions: ['ROLE_SYSTEM_ADMIN'] }
                 },
                 {
                     path: '/uikit/media',
                     name: 'media',
                     component: () => import('@/views/uikit/MediaDoc.vue'),
-                    meta: { permissions: ['system_admin'] }
+                    meta: { permissions: ['ROLE_SYSTEM_ADMIN'] }
                 },
                 {
                     path: '/uikit/message',
                     name: 'message',
                     component: () => import('@/views/uikit/MessagesDoc.vue'),
-                    meta: { permissions: ['system_admin'] }
+                    meta: { permissions: ['ROLE_SYSTEM_ADMIN'] }
                 },
                 {
                     path: '/uikit/file',
                     name: 'file',
                     component: () => import('@/views/uikit/FileDoc.vue'),
-                    meta: { permissions: ['system_admin'] }
+                    meta: { permissions: ['ROLE_SYSTEM_ADMIN'] }
                 },
                 {
                     path: '/uikit/menu',
                     name: 'menu',
                     component: () => import('@/views/uikit/MenuDoc.vue'),
-                    meta: { permissions: ['system_admin'] }
+                    meta: { permissions: ['ROLE_SYSTEM_ADMIN'] }
                 },
                 {
                     path: '/uikit/charts',
                     name: 'charts',
                     component: () => import('@/views/uikit/ChartDoc.vue'),
-                    meta: { permissions: ['system_admin'] }
+                    meta: { permissions: ['ROLE_SYSTEM_ADMIN'] }
                 },
                 {
                     path: '/uikit/misc',
                     name: 'misc',
                     component: () => import('@/views/uikit/MiscDoc.vue'),
-                    meta: { permissions: ['system_admin'] }
+                    meta: { permissions: ['ROLE_SYSTEM_ADMIN'] }
                 },
                 {
                     path: '/uikit/timeline',
                     name: 'timeline',
                     component: () => import('@/views/uikit/TimelineDoc.vue'),
-                    meta: { permissions: ['system_admin'] }
+                    meta: { permissions: ['ROLE_SYSTEM_ADMIN'] }
                 },
                 {
                     path: '/pages/empty',
                     name: 'empty',
                     component: () => import('@/views/pages/Empty.vue'),
-                    meta: { permissions: ['system_admin'] }
+                    meta: { permissions: ['ROLE_SYSTEM_ADMIN'] }
                 },
                 {
                     path: '/pages/crud',
@@ -190,50 +190,50 @@ const router = createRouter({
                     path: '/standard/supplier',
                     name: 'supplier',
                     component: () => import('@/views/standard/SupplierStandardPage.vue'),
-                    meta: { roles: ['system_admin'] }
+                    meta: { roles: ['ROLE_SYSTEM_ADMIN'] }
                 },
                 {
                     path: '/standard/branch',
                     name: 'branch',
                     component: () => import('@/views/standard/BranchStandardPage.vue'),
-                    meta: { roles: ['system_admin'] }
+                    meta: { roles: ['ROLE_SYSTEM_ADMIN'] }
                 },
                 {
                     path: '/standard/product',
                     name: 'product',
                     component: () => import('@/views/standard/ProductStandardPage.vue'),
-                    meta: { roles: ['system_admin'] }
+                    meta: { roles: ['ROLE_SYSTEM_ADMIN'] }
                 },
                 {
                     path: '/standard/productapproval',
                     name: 'productApproval',
                     component: () => import('@/views/standard/ProductApprovalPage.vue'),
-                    meta: { roles: ['system_admin'] }
+                    meta: { roles: ['ROLE_SYSTEM_ADMIN'] }
                 },
                 /* order */
                 {
                     path: '/orders/head',
                     name: 'HeadOrdersManage',
                     component: () => import('@/views/orderMgmt/HeadOrdersManage.vue'),
-                    meta: { roles: ['system_admin'] }
+                    meta: { roles: ['ROLE_SYSTEM_ADMIN'] }
                 },
                 {
                     path: '/orders/head/view',
                     name: 'HeadOrdersView',
                     component: () => import('@/views/orderMgmt/HeadOrdersView.vue'),
-                    meta: { roles: ['ROLE_SUPPLIER', 'system_admin'] }
+                    meta: { roles: ['ROLE_SUPPLIER', 'ROLE_SYSTEM_ADMIN'] }
                 },
                 {
                     path: '/orders/branch',
                     name: 'BranchOrdersManage',
                     component: () => import('@/views/orderMgmt/BranchOrdersManage.vue'),
-                    meta: { roles: ['ROLE_STORE_MANAGER', 'system_admin'] }
+                    meta: { roles: ['ROLE_STORE_MANAGER', 'ROLE_SYSTEM_ADMIN'] }
                 },
                 {
                     path: '/orders/branch/view',
                     name: 'BranchOrdersView',
                     component: () => import('@/views/orderMgmt/BranchOrdersView.vue'),
-                    meta: { roles: ['ROLE_STORE_MANAGER', 'system_admin'] }
+                    meta: { roles: ['ROLE_STORE_MANAGER', 'ROLE_SYSTEM_ADMIN'] }
                 },
                 {
                     path: '/orders/supplier',
@@ -245,7 +245,7 @@ const router = createRouter({
                     path: '/orders/supplier/view',
                     name: 'SupplierOrdersView',
                     component: () => import('@/views/orderMgmt/SupplierOrdersView.vue'),
-                    meta: { roles: ['ROLE_SUPPLIER', 'system_admin'] }
+                    meta: { roles: ['ROLE_SUPPLIER', 'ROLE_SYSTEM_ADMIN'] }
                 },
                 {
                     path: '/orders/view/:orderId',
@@ -290,7 +290,7 @@ const router = createRouter({
                     path: '/roles/manage',
                     name: 'roleManage',
                     component: () => import('@/views/roles/Manage.vue'),
-                    meta: { roles: ['system_admin'] }
+                    meta: { roles: ['ROLE_SYSTEM_ADMIN'] }
                 }
             ]
         },
