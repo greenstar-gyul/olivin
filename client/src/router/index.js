@@ -286,11 +286,6 @@ const router = createRouter({
                     name: 'salesHistory',
                     component: () => import('@/views/sales/SalesHistoryPage.vue'),
                 },
-                {
-                    path: '/sales/closing',
-                    name: 'salesClosing',
-                    component: () => import('@/views/sales/DailyClosingPage.vue'),
-                },
                 /* end of sales */
                 {
                     path: '/roles/manage',
