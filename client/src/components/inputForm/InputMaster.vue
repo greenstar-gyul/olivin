@@ -34,7 +34,7 @@ const searchItem = (item, fieldName) => {
       <div class="grid grid-cols-2 gap-6">
         <div v-for="(element, idx) in formSchema" :key="idx" class="flex flex-col gap-4">
           <div class="grid grid-cols-12 gap-2">
-            <label :for="'form-' + element.id" class="flex items-center justify-center col-span-12 mb-2 sm:col-span-3 sm:mb-0">{{ element.label }}</label>
+            <label :for="'form-' + element.id" class="flex items-center justify-center col-span-12 mb-2 sm:col-span-3 sm:mb-0 text-lg font-medium">{{ element.label }}</label>
             <div class="col-span-12 sm:col-span-9">
               <!-- 입력 : text, combobox, number(float), data, searchInput(공급) -->
               

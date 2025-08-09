@@ -4,6 +4,7 @@ import { onBeforeMount, onMounted, ref, watch } from 'vue';
 import { convertDate } from '@/utils/dateUtils';
 import { useAuth } from '@/composables/useAuth';
 import { useConfirm } from 'primevue';
+import { useToast } from 'primevue';
 import axios from '@/service/axios';
 import DialogModal from '@/components/overray/DialogModal.vue';
 
@@ -11,6 +12,7 @@ import DialogModal from '@/components/overray/DialogModal.vue';
 
 const inputRef = ref(null);
 const confirm = useConfirm(); //confirm
+const toast = useToast(); // toast
 
 // 폼 기본값
 const defaultForm = ref({
@@ -126,25 +128,69 @@ const tableSearch = async (item, fieldName, data) => {
 }
 
 const fetchSalesOrders = async (formData, tableData) => {
-  //총 가격
-  const totalPrice = parseInt(String(formData.totalPrice).replace(/[,원]/g, ''));
-  // 주문서 등록
-  const res = await axios.post('/api/sales/orders', {
-    orders: {
-      ...formData,
-      paymentType: formData.paymentType.value,
-      totalPrice
-    },
-    ordersDetail: tableData.map((item) => {
-      return {
-        productId: item.productId,
-        quantity: item.quantity,
-        price: parseInt(String(item.total).replace(/[,원]/g, '')),
-      };
-    })
-  });
-  console.log(res.data);
+  try {
+    //총 가격
+    const totalPrice = parseInt(String(formData.totalPrice).replace(/[,원]/g, ''));
+    // 주문서 등록
+    const res = await axios.post('/api/sales/orders', {
+      orders: {
+        ...formData,
+        paymentType: formData.paymentType.value,
+        totalPrice
+      },
+      ordersDetail: tableData.map((item) => {
+        return {
+          productId: item.productId,
+          quantity: item.quantity,
+          price: parseInt(String(item.total).replace(/[,원]/g, '')),
+        };
+      })
+    });
+    
+    console.log('주문서 등록 성공:', res.data);
+    
+    // 성공 토스트 메시지
+    toast.add({
+      severity: 'success',
+      summary: '등록 완료',
+      detail: '주문서가 성공적으로 등록되었습니다.',
+      life: 3000
+    });
+    
+    // 폼과 테이블 초기화
+    resetFormAndTable();
+    
+  } catch (error) {
+    console.error('주문서 등록 실패:', error);
+    
+    // 실패 토스트 메시지
+    toast.add({
+      severity: 'error',
+      summary: '등록 실패',
+      detail: '주문서 등록 중 오류가 발생했습니다.',
+      life: 5000
+    });
+  }
 }
+
+// 폼과 테이블 초기화 함수
+const resetFormAndTable = () => {
+  // 폼 데이터 초기화
+  if (inputRef.value) {
+    const formData = inputRef.value.getFormData();
+    formData.value = {
+      ...defaultForm.value,
+      soDate: convertDate(new Date()),
+      totalPrice: '0원',
+    };
+    
+    // 테이블 데이터 초기화
+    const tableDataRef = inputRef.value.getTableData();
+    if (tableDataRef.value) {
+      tableDataRef.value.splice(0);
+    }
+  }
+};
 
 // 폼과 테이블 데이터를 저장하는 핸들러
 const saveFormHandler = async (formData, tableData) => {
@@ -242,6 +288,7 @@ onMounted(() => {
 });
 </script>
 <template>
+  <Toast />
   <ConfirmDialog />
   <InputDataTable ref="inputRef" title="주문정보" tableTitle="상품목록"
     :defaultForm="defaultForm" :formSchema="formSchema"

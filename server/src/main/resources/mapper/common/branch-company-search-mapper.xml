@@ -18,6 +18,7 @@
              , note
         FROM   companys
         WHERE  comp_type = '100002'  -- 지점
+          AND  comp_type != 'FFFFFF'  -- 삭제된 지점 제외
         ORDER BY comp_id
     </select>
 
@@ -29,6 +30,7 @@
              , note
         FROM   companys
         WHERE  comp_type = '100002'  -- 지점
+          AND  comp_type != 'FFFFFF'  -- 삭제된 지점 제외
         <if test="searchValue != null and searchValue != ''">
           AND  comp_name LIKE '%' || #{searchValue} || '%'
         </if>
