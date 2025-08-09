@@ -22,7 +22,7 @@
         SELECT NVL(SUM(so.TOTAL_PRICE), 0) 
         FROM SALES_ORDERS so
         WHERE so.COMP_ID = #{compId}
-        AND TRUNC(SYSDATE) = TRUNC(SYSDATE)
+        AND TRUNC(so.SO_DATE) = TRUNC(SYSDATE)
         AND so.STATUS = '020001'
     </select>
 
@@ -31,7 +31,7 @@
         SELECT NVL(SUM(so.TOTAL_PRICE), 0) 
         FROM SALES_ORDERS so
         WHERE so.COMP_ID = #{compId}
-        AND TRUNC(SYSDATE) - 1 = TRUNC(SYSDATE) - 1
+        AND TRUNC(so.SO_DATE) = TRUNC(SYSDATE) - 1
         AND so.STATUS = '020001'
     </select>
 
@@ -98,7 +98,7 @@
         INNER JOIN PRODUCTS p ON sod.PRODUCT_ID = p.PRODUCT_ID
         WHERE so.COMP_ID = #{compId}
         AND so.STATUS = '020001'
-        AND TO_CHAR(SYSDATE, 'YYYY-MM') = TO_CHAR(SYSDATE, 'YYYY-MM')
+        AND TO_CHAR(so.SO_DATE, 'YYYY-MM') = TO_CHAR(SYSDATE, 'YYYY-MM')
         GROUP BY p.CATEGORY_MAIN
         ORDER BY SALES DESC
     </select>
@@ -264,7 +264,7 @@
         SELECT COUNT(*) as TRANSACTION_COUNT
         FROM SALES_ORDERS so
         WHERE so.COMP_ID = #{compId}
-        AND TRUNC(SYSDATE) = TRUNC(SYSDATE)
+        AND TRUNC(so.SO_DATE) = TRUNC(SYSDATE)
         AND so.STATUS = '020001'
     </select>
 
@@ -273,7 +273,7 @@
         SELECT NVL(AVG(so.TOTAL_PRICE), 0) as AVG_ORDER_VALUE
         FROM SALES_ORDERS so
         WHERE so.COMP_ID = #{compId}
-        AND TRUNC(SYSDATE) = TRUNC(SYSDATE)
+        AND TRUNC(so.SO_DATE) = TRUNC(SYSDATE)
         AND so.STATUS = '020001'
     </select>
 
@@ -343,6 +343,85 @@
                 ELSE 3 
             END,
             CREATED_AT DESC
+    </select>
+
+
+     <!-- 모든 지점 목록 조회 (본사 전용) -->
+    <select id="getAllBranches" resultType="map">
+        SELECT 
+            c.COMP_ID,
+            c.COMP_NAME,
+            c.COMP_TYPE,
+            c.ADDRESS,
+            c.PHONE,
+            dc.CODE_NAME as COMP_TYPE_NAME
+        FROM COMPANYS c
+        LEFT JOIN DATA_CODES dc ON c.COMP_TYPE = dc.CODE_VALUE
+        WHERE c.COMP_TYPE = '100002'
+        ORDER BY c.COMP_NAME
+    </select>
+
+    <!-- 전체 지점 수 조회 -->
+    <select id="getTotalBranchCount" resultType="integer">
+        SELECT COUNT(*) as TOTAL_COUNT
+        FROM COMPANYS c
+        WHERE c.COMP_TYPE = '100002'
+    </select>
+
+    <!-- 모든 지점 총 매출 합계 -->
+    <select id="getAllBranchesTotalSales" resultType="java.math.BigDecimal">
+        SELECT NVL(SUM(so.TOTAL_PRICE), 0) as TOTAL_SALES
+        FROM SALES_ORDERS so
+        INNER JOIN COMPANYS c ON so.COMP_ID = c.COMP_ID
+        WHERE c.COMP_TYPE = '100002'
+        AND so.STATUS = '020001'
+        AND TO_CHAR(so.SO_DATE, 'YYYY-MM') = TO_CHAR(SYSDATE, 'YYYY-MM')
+    </select>
+
+    <!-- 모든 지점 요약 정보 -->
+    <select id="getAllBranchesSummary" resultType="map">
+        SELECT 
+            c.COMP_ID,
+            c.COMP_NAME,
+            NVL(monthly_sales.MONTHLY_SALES, 0) as MONTHLY_SALES,
+            NVL(today_sales.TODAY_SALES, 0) as TODAY_SALES,
+            NVL(inventory.INVENTORY_VALUE, 0) as INVENTORY_VALUE
+        FROM COMPANYS c
+        LEFT JOIN (
+            -- 월간 매출
+            SELECT 
+                so.COMP_ID,
+                SUM(so.TOTAL_PRICE) as MONTHLY_SALES
+            FROM SALES_ORDERS so
+            WHERE so.STATUS = '020001'
+            AND TO_CHAR(so.SO_DATE, 'YYYY-MM') = TO_CHAR(SYSDATE, 'YYYY-MM')
+            GROUP BY so.COMP_ID
+        ) monthly_sales ON c.COMP_ID = monthly_sales.COMP_ID
+        LEFT JOIN (
+            -- 당일 매출
+            SELECT 
+                so.COMP_ID,
+                SUM(so.TOTAL_PRICE) as TODAY_SALES
+            FROM SALES_ORDERS so
+            WHERE so.STATUS = '020001'
+            AND TRUNC(so.SO_DATE) = TRUNC(SYSDATE)
+            GROUP BY so.COMP_ID
+        ) today_sales ON c.COMP_ID = today_sales.COMP_ID
+        LEFT JOIN (
+            -- 재고 가치
+            SELECT 
+                i.INBND_TO as COMP_ID,
+                SUM(ipd.REMAIN_QUANTITY * p.PURCHASE_PRICE) as INVENTORY_VALUE
+            FROM INBND_PRODUCT_D ipd
+            INNER JOIN INBND_PRODUCT ip ON ipd.INBND_PRODUCT_NO = ip.INBND_PRODUCT_NO
+            INNER JOIN INBND i ON ip.INBND_NO = i.INBND_NO
+            INNER JOIN PRODUCTS p ON ip.PRODUCT_ID = p.PRODUCT_ID
+            WHERE ipd.REMAIN_QUANTITY > 0
+            AND ipd.INBND_STATUS = '000001'
+            GROUP BY i.INBND_TO
+        ) inventory ON c.COMP_ID = inventory.COMP_ID
+        WHERE c.COMP_TYPE != '100002'
+        ORDER BY c.COMP_NAME
     </select>
 
 </mapper>
