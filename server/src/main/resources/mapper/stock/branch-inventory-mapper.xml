@@ -86,13 +86,20 @@
                  bs.comp_name,
                  p.safety_stock
         FROM     products p JOIN branch_stocks bs ON p.product_id = bs.product_id
-        WHERE    1=1
+        WHERE    p.status = '040001'
         <if test="productName != null and productName != ''">
                 AND p.product_name LIKE '%' || #{productName} || '%'
         </if>
-        <if test="categorySub != null and categorySub != ''">
-                AND get_datacode_name(p.category_sub) = #{categorySub}
-        </if>
+        <choose>
+                <when test="categorySub == null or categorySub == ''">
+                </when>
+                <when test="categorySub.endsWith('전체')">
+                AND  p.category_sub LIKE SUBSTR(get_datacode_value(#{categorySub}), 1, 3) || '%'
+                </when>
+                <otherwise>
+                 AND  p.category_sub = get_datacode_value(#{categorySub})
+                </otherwise>
+        </choose>
         <if test="vendorName != null and vendorName != ''">
                 AND p.vendor_name LIKE '%' || #{vendorName} || '%'
         </if>
