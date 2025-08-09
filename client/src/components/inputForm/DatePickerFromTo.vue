@@ -13,6 +13,10 @@ const props = defineProps({
   toPlaceholder: {
     type: String,
     default: ''
+  },
+  disabled: {
+    type: Boolean,
+    default: false
   }
 });
 
@@ -34,9 +38,9 @@ watch(() => toValue.value, (newValue) => {
 
 </script>
 <template>
-<DatePicker :showIcon="true" :showButtonBar="true" v-model="fromValue" dateFormat="yy-mm-dd" :placeholder="props.fromPlaceholder" class="flex-1"></DatePicker>
+<DatePicker :showIcon="true" :showButtonBar="true" v-model="fromValue" dateFormat="yy-mm-dd" :placeholder="props.fromPlaceholder" :disabled="props.disabled" class="flex-1"></DatePicker>
 <span> ~ </span>
-<DatePicker :showIcon="true" :showButtonBar="true" v-model="toValue" dateFormat="yy-mm-dd" :placeholder="props.toPlaceholder" class="flex-1"></DatePicker>
+<DatePicker :showIcon="true" :showButtonBar="true" v-model="toValue" dateFormat="yy-mm-dd" :placeholder="props.toPlaceholder" :disabled="props.disabled" class="flex-1"></DatePicker>
 </template>
 <style>
 

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.olivin.app.sales.mapper.SalesHistoryMapper">
+    <!-- 데이터 코드 이름 조회 -->
+    <select id="getCodeName" resultType="String" parameterType="String">
+        SELECT get_datacode_name(#{codeValue})
+        FROM   dual
+    </select>
+    
+    <!-- 데이터 코드 값 조회 -->
+    <select id="getCodeValue" resultType="String" parameterType="String">
+        SELECT get_datacode_value(#{codeName})
+        FROM   dual
+    </select>
+</mapper>
