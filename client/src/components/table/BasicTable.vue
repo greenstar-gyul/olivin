@@ -174,7 +174,7 @@ const header = computed(() => props.header);
       <Column v-if="props.checked" :selectionMode="props.checkType" headerStyle="width: 3rem"></Column>
 
       <!-- 동적 컬럼 생성 -->
-      <Column v-for="item in items" :key="item" :field="item" :header="header.header[item] ?? item">
+      <Column v-for="item in items" :key="item" :field="item" :header="header.header[item] ?? item" :sortable="header.sortable && header.sortable.includes(item) ? true : false">
         <!-- 날짜포맷변경을 위해 추가한 파트 -->
         <template #body="slotProps">
           <!-- Tag 렌더링이 정의된 경우 -->

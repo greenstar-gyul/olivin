@@ -29,4 +29,7 @@ public interface SalesOrdersService {
 	
 	// 일일 정산을 위한 결제방식별 매출 집계 조회
 	public Map<String, Object> getDailySummaryByPaymentType(String compId, String date);
+	
+	// 일일 정산 상태 확인
+	public Map<String, Object> getDailyClosingStatus(String compId, String date);
 }
