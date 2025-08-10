@@ -37,4 +37,7 @@ public interface SalesOrdersMapper {
 	
 	// 일일 정산을 위한 결제방식별 매출 집계 조회
 	public Map<String, Object> selectDailySummaryByPaymentType(@Param("compId") String compId, @Param("date") String date);
+	
+	// 일일 정산 상태 확인
+	public Map<String, Object> selectDailyClosingStatus(@Param("compId") String compId, @Param("date") String date);
 }

@@ -132,6 +132,35 @@ public class SalesOrdersController {
 		return result;
 	}
 
+	// 일일 정산 상태 확인 API
+	@GetMapping("/sales/daily-closing-status")
+	public Map<String, Object> getDailyClosingStatus(
+			@RequestParam(value = "compId", required = false) String compId,
+			@RequestParam(value = "date", required = false) String date) {
+		
+		log.debug("Daily closing status request - compId: {}, date: {}", compId, date);
+		
+		Map<String, Object> result = new HashMap<>();
+		
+		try {
+			// 정산 상태 조회
+			Map<String, Object> statusData = salesOrdersService.getDailyClosingStatus(compId, date);
+			
+			// 데이터 매핑 (Oracle의 컬럼명을 camelCase로 변환)
+			result.put("isClosed", "Y".equals(statusData.get("IS_CLOSED")));
+			result.put("closingCount", statusData.get("CLOSING_COUNT"));
+			result.put("closingAmount", statusData.get("CLOSING_AMOUNT"));
+			
+		} catch (Exception e) {
+			log.error("Error getting daily closing status: ", e);
+			result.put("isClosed", false);
+			result.put("closingCount", 0);
+			result.put("closingAmount", 0);
+		}
+		
+		return result;
+	}
+
 	@PostMapping("/sales/dailyClosing")
 	public Map<String, Object> dailyClosing(@RequestBody SalesDailyClosingVO salesDailyClosingVO) {
 		Map<String, Object> result = new HashMap<>();

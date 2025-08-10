@@ -177,4 +177,19 @@
             </if>
             AND status = '020001'
     </select>
+    
+    <!-- 일일 정산 상태 확인 -->
+    <select id="selectDailyClosingStatus" resultType="java.util.HashMap">
+        SELECT
+            CASE WHEN COUNT(*) > 0 THEN 'Y' ELSE 'N' END AS is_closed,
+            COUNT(*) AS closing_count,
+            MAX(total_price) AS closing_amount
+        FROM
+            branch_closing
+        WHERE
+            TRUNC(closing_date) = TO_DATE(#{date}, 'YYYY-MM-DD')
+            <if test="compId != null and compId != ''">
+                AND comp_id = #{compId}
+            </if>
+    </select>
 </mapper>

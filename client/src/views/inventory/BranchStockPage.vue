@@ -5,6 +5,7 @@ import SearchTable from '../../components/common/SearchTable.vue';
 import axios from '@/service/axios';
 import DialogModal from '@/components/overray/DialogModal.vue';
 import { useAuth } from '@/composables/useAuth';
+import Button from 'primevue/button';
 
 // 사용자 인증 정보 가져오기
 const { user } = useAuth();
@@ -28,6 +29,8 @@ const mainHeader = ref({
 
 // 조회할 데이터
 const mainItems = ref([]);
+const allStockData = ref([]); // 전체 재고 데이터 저장용
+const safetyStockFilterEnabled = ref(false); // 안전재고 필터 활성화 여부
 
 // 검색 조건 필터 설정
 const filters = ref({});
@@ -115,12 +118,36 @@ const loadStockData = async () => {
       }
     });
     
-    mainItems.value = response.data;
-    console.log('Stock data loaded:', mainItems.value);
+    allStockData.value = response.data; // 전체 데이터를 allStockData에 저장
+    applyFilters(); // 필터 적용
+    console.log('Stock data loaded:', allStockData.value);
     
   } catch (error) {
     console.error('Error loading stock data:', error);
   }
+};
+
+// 필터 적용 함수
+const applyFilters = () => {
+  let filteredData = [...allStockData.value];
+  
+  // 안전재고 필터가 활성화된 경우
+  if (safetyStockFilterEnabled.value) {
+    filteredData = filteredData.filter(item => {
+      const stock = item.stockQuantity || 0;
+      const safety = item.safetyStock || 0;
+      return stock <= safety; // 재고가 안전재고 이하인 항목만 필터링
+    });
+  }
+  
+  mainItems.value = filteredData;
+  console.log('Filtered data applied:', mainItems.value.length, 'items');
+};
+
+// 안전재고 필터 토글 함수
+const toggleSafetyStockFilter = () => {
+  safetyStockFilterEnabled.value = !safetyStockFilterEnabled.value;
+  applyFilters();
 };
 
 // 검색 모달이 필요할 때 선언해서 사용.
@@ -331,8 +358,9 @@ const searchStocks = async (searchOptions) => {
     const response = await axios.get('/api/inventory/branchStock/search', {
       params: params
     });
-    mainItems.value = response.data;
-    console.log('Stocks searched:', mainItems.value);
+    allStockData.value = response.data; // 검색 결과를 전체 데이터로 저장
+    applyFilters(); // 필터 적용
+    console.log('Stocks searched:', allStockData.value);
   } catch (error) {
     console.error('Error searching stocks:', error);
   }
@@ -378,7 +406,16 @@ onMounted(() => {
 </script>
 <template>
   <SearchForm ref="searchFormRef" :filters="filters" @searchData="searchData" @openSearchModal="handleOpenModal" @resetSearchOptions="resetList" ></SearchForm>
-  <BasicTable :data="mainItems" :header="mainHeader" :tagRenderer="getStockTag"></BasicTable>
+  <BasicTable :data="mainItems" :header="mainHeader" :tagRenderer="getStockTag">
+    <template #btn>
+      <Button 
+        :label="safetyStockFilterEnabled ? '전체 재고 보기' : '안전재고 이하만 보기'"
+        :icon="safetyStockFilterEnabled ? 'pi pi-eye' : 'pi pi-exclamation-triangle'"
+        :class="safetyStockFilterEnabled ? 'p-button-secondary' : 'p-button-warning'"
+        @click="toggleSafetyStockFilter"
+      />
+    </template>
+  </BasicTable>
   
   <DialogModal v-model:display="productModalVisible" :items="productItems" :headers="productHeaders" title="제품 검색"
     selectionMode="single" @close="closeProductModal" @confirm="confirmProductModal" @search-modal="searchProducts" />

@@ -23,6 +23,8 @@ const todaySalesData = ref({
   cashAmount: 0,         // 현금
   transferAmount: 0,     // 계좌이체
   cardAmount: 0,         // 카드결제
+  isAlreadyClosed: false, // 정산 완료 여부
+  closingAmount: 0       // 정산된 금액
 });
 
 // 마스터 테이블
@@ -360,19 +362,33 @@ const loadDailySalesData = async (selectedDate) => {
                       String(selectedDate.getMonth() + 1).padStart(2, '0') + '-' + 
                       String(selectedDate.getDate()).padStart(2, '0');
     
-    const response = await axios.get('/api/sales/daily-summary', {
+    // 판매 데이터 조회
+    const salesResponse = await axios.get('/api/sales/daily-summary', {
       params: {
         compId: user.value.compId,
         date: dateString
       }
     });
     
-    if (response.data) {
-      todaySalesData.value.totalAmount = response.data.totalAmount || 0;
-      todaySalesData.value.orderCount = response.data.orderCount || 0;
-      todaySalesData.value.cashAmount = response.data.cashAmount || 0;
-      todaySalesData.value.transferAmount = response.data.transferAmount || 0;
-      todaySalesData.value.cardAmount = response.data.cardAmount || 0;
+    // 정산 상태 조회
+    const statusResponse = await axios.get('/api/sales/daily-closing-status', {
+      params: {
+        compId: user.value.compId,
+        date: dateString
+      }
+    });
+    
+    if (salesResponse.data) {
+      todaySalesData.value.totalAmount = salesResponse.data.totalAmount || 0;
+      todaySalesData.value.orderCount = salesResponse.data.orderCount || 0;
+      todaySalesData.value.cashAmount = salesResponse.data.cashAmount || 0;
+      todaySalesData.value.transferAmount = salesResponse.data.transferAmount || 0;
+      todaySalesData.value.cardAmount = salesResponse.data.cardAmount || 0;
+    }
+    
+    if (statusResponse.data) {
+      todaySalesData.value.isAlreadyClosed = statusResponse.data.isClosed || false;
+      todaySalesData.value.closingAmount = statusResponse.data.closingAmount || 0;
     }
   } catch (error) {
     console.error('Error loading daily sales data:', error);
@@ -394,6 +410,17 @@ const onSettlementDateChange = async () => {
 
 const confirmDailySettlement = async () => {
   try {
+    // 이미 정산된 경우 확인
+    if (todaySalesData.value.isAlreadyClosed) {
+      toast.add({
+        severity: 'warn',
+        summary: '정산 불가',
+        detail: '선택한 날짜는 이미 정산이 완료되었습니다.',
+        life: 3000
+      });
+      return;
+    }
+    
     // Date 객체를 문자열로 변환
     const dateString = todaySalesData.value.settlementDate.getFullYear() + '-' + 
                       String(todaySalesData.value.settlementDate.getMonth() + 1).padStart(2, '0') + '-' + 
@@ -413,6 +440,10 @@ const confirmDailySettlement = async () => {
       detail: '일일 정산이 완료되었습니다.',
       life: 3000
     });
+    
+    // 정산 완료 후 상태 업데이트
+    todaySalesData.value.isAlreadyClosed = true;
+    todaySalesData.value.closingAmount = todaySalesData.value.totalAmount;
     
     dailySettlementVisible.value = false;
   } catch (error) {
@@ -484,16 +515,27 @@ onMounted(async () => {
   />
   
   <!-- 지점 직원용 일일 정산 버튼 -->
-  <div v-if="user?.compId !== 'COM10001'" class="mb-3">
+  <!-- <div v-if="user?.compId !== 'COM10001'" class="mb-3">
     <Button 
       label="일일 정산" 
       icon="pi pi-calculator" 
       class="p-button-info"
       @click="openDailySettlement"
     />
-  </div>
+  </div> -->
   
-  <BasicTable :data="masterItems" :header="masterHeader" :checked="true" :dataKey="'soId'" @rowSelect="onRowSelect" @rowUnselect="onRowUnselect" :scrollHeight="'200px'"></BasicTable>
+  <BasicTable :data="masterItems" :header="masterHeader" :checked="true" :dataKey="'soId'" @rowSelect="onRowSelect" @rowUnselect="onRowUnselect" :scrollHeight="'200px'">
+    <template #btn>
+        <div v-if="user?.compId !== 'COM10001'" class="mb-3">
+          <Button 
+            label="일일 정산" 
+            icon="pi pi-calculator" 
+            class="p-button-info"
+            @click="openDailySettlement"
+          />
+        </div>
+    </template>
+  </BasicTable>
   <BasicTable :data="detailItems" :header="detailHeader" :scrollHeight="'200px'"></BasicTable>
   
   <!-- 주문코드 선택 모달 -->
@@ -532,6 +574,27 @@ onMounted(async () => {
         <h4 class="text-lg font-semibold mb-2">
           {{ todaySalesData.settlementDate.toLocaleDateString('ko-KR') }} 판매 현황
         </h4>
+        
+        <!-- 정산 상태 표시 -->
+        <div v-if="todaySalesData.isAlreadyClosed" class="mb-3 p-3 border rounded-lg bg-red-50 border-red-200">
+          <div class="flex items-center gap-2">
+            <i class="pi pi-check-circle text-red-600"></i>
+            <span class="text-red-800 font-medium">이미 정산 완료</span>
+          </div>
+          <div class="text-sm text-red-600 mt-1">
+            정산 금액: {{ Number(todaySalesData.closingAmount).toLocaleString() }}원
+          </div>
+        </div>
+        
+        <div v-else class="mb-3 p-3 border rounded-lg bg-green-50 border-green-200">
+          <div class="flex items-center gap-2">
+            <i class="pi pi-clock text-green-600"></i>
+            <span class="text-green-800 font-medium">정산 대기</span>
+          </div>
+          <div class="text-sm text-green-600 mt-1">
+            정산을 진행할 수 있습니다.
+          </div>
+        </div>
       </div>
       
       <div class="grid grid-cols-1 gap-4 mb-6" v-if="todaySalesData.settlementDate">
@@ -573,7 +636,8 @@ onMounted(async () => {
       </div>
       
       <div class="text-center" v-if="todaySalesData.settlementDate">
-        <p class="text-gray-600 mb-4">위 금액으로 정산을 진행하시겠습니까?</p>
+        <p v-if="!todaySalesData.isAlreadyClosed" class="text-gray-600 mb-4">위 금액으로 정산을 진행하시겠습니까?</p>
+        <p v-else class="text-red-600 mb-4">이미 정산이 완료된 날짜입니다.</p>
         
         <div class="flex justify-center gap-2">
           <Button 
@@ -583,6 +647,7 @@ onMounted(async () => {
             @click="closeDailySettlement"
           />
           <Button 
+            v-if="!todaySalesData.isAlreadyClosed"
             label="정산하기" 
             icon="pi pi-check" 
             class="p-button-success"
