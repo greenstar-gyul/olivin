@@ -1,151 +1,174 @@
 <template>
-  <div class="hq-dashboard">
+  <div class="surface-ground min-h-screen p-6">
     <!-- 헤더 -->
-    <div class="dashboard-header">
-      <h1 class="dashboard-title">본사 SCM 대시보드</h1>
-      <div class="header-actions">
-        <button @click="refreshData" class="refresh-button" :disabled="isLoading">
-          <span v-if="!isLoading">🔄 새로고침</span>
-          <span v-else>로딩중...</span>
-        </button>
-        <div class="last-updated">
+    <div class="flex justify-between items-center mb-8 pb-6">
+      <h1 class="text-surface-900 dark:text-surface-0 text-4xl font-bold">본사 SCM 대시보드</h1>
+      <div class="flex items-center gap-4">
+        <Button @click="refreshData" :disabled="isLoading" icon="pi pi-refresh" :label="isLoading ? '로딩중...' : '새로고침'" />
+        <div class="text-muted-color text-sm">
           마지막 업데이트: {{ lastUpdated }}
         </div>
       </div>
     </div>
 
     <!-- 에러 메시지 -->
-    <div v-if="errorMessage" class="error-banner">
-      <span>⚠️ {{ errorMessage }}</span>
-      <button @click="errorMessage = ''" class="close-error">✕</button>
-    </div>
+    <Message v-if="errorMessage" severity="error" :closable="true" @close="errorMessage = ''">
+      {{ errorMessage }}
+    </Message>
 
-    <!-- KPI 카드들 - 새로운 지표 -->
-    <div class="kpi-section">
-      <div class="kpi-grid">
-        <!-- 1. 월간 총 매출액 (기존 유지) -->
-        <div class="kpi-card">
-          <div class="kpi-content">
-            <h3>월간 총 매출액</h3>
-            <div class="kpi-value">{{ kpiData.totalSales || '로딩 중...' }}</div>
-            <div :class="['kpi-change', getChangeClass(kpiData.salesGrowth)]">
+    <!-- KPI 카드들 -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <!-- 1. 월간 총 매출액 -->
+      <div class="card">
+        <div class="flex justify-between items-start mb-4">
+          <div>
+            <div class="text-muted-color text-sm font-medium mb-2 uppercase tracking-wide">월간 총 매출액</div>
+            <div class="text-surface-900 dark:text-surface-0 text-2xl font-bold">
+              {{ kpiData.totalSales || '로딩 중...' }}
+            </div>
+            <div :class="['text-sm font-medium mt-1', getChangeClass(kpiData.salesGrowth)]">
               {{ kpiData.salesGrowth || '계산 중...' }}
             </div>
           </div>
+          <div class="flex items-center justify-center bg-green-100 dark:bg-green-400/10 rounded-lg w-12 h-12">
+            <i class="pi pi-dollar text-green-500 text-xl"></i>
+          </div>
         </div>
+      </div>
 
-        <!-- 2. 전월 대비 매출 증감율 -->
-        <div class="kpi-card">
-          <div class="kpi-content">
-            <h3>전월 대비 매출 증감율</h3>
-            <div class="kpi-value">{{ kpiData.revenueGrowthRate || '로딩 중...' }}</div>
-            <div :class="['kpi-change', getChangeClass(kpiData.revenueGrowthChange)]">
+      <!-- 2. 전월 대비 매출 증감율 -->
+      <div class="card">
+        <div class="flex justify-between items-start mb-4">
+          <div>
+            <div class="text-muted-color text-sm font-medium mb-2 uppercase tracking-wide">전월 대비 매출 증감율</div>
+            <div class="text-surface-900 dark:text-surface-0 text-2xl font-bold">
+              {{ kpiData.revenueGrowthRate || '로딩 중...' }}
+            </div>
+            <div :class="['text-sm font-medium mt-1', getChangeClass(kpiData.revenueGrowthChange)]">
               {{ kpiData.revenueGrowthChange || '계산 중...' }}
             </div>
           </div>
+          <div class="flex items-center justify-center bg-blue-100 dark:bg-blue-400/10 rounded-lg w-12 h-12">
+            <i class="pi pi-chart-line text-blue-500 text-xl"></i>
+          </div>
         </div>
+      </div>
 
-        <!-- 3. 출고 대기 건수 -->
-        <div class="kpi-card">
-          <div class="kpi-content">
-            <h3>출고 대기 건수</h3>
-            <div class="kpi-value">{{ kpiData.pendingOutboundCount || '로딩 중...' }}</div>
-            <div :class="['kpi-change', getChangeClass(kpiData.outboundCountChange, true)]">
+      <!-- 3. 출고 대기 건수 -->
+      <div class="card">
+        <div class="flex justify-between items-start mb-4">
+          <div>
+            <div class="text-muted-color text-sm font-medium mb-2 uppercase tracking-wide">출고 대기 건수</div>
+            <div class="text-surface-900 dark:text-surface-0 text-2xl font-bold">
+              {{ kpiData.pendingOutboundCount || '로딩 중...' }}
+            </div>
+            <div :class="['text-sm font-medium mt-1', getChangeClass(kpiData.outboundCountChange, true)]">
               {{ kpiData.outboundCountChange || '계산 중...' }}
             </div>
           </div>
+          <div class="flex items-center justify-center bg-orange-100 dark:bg-orange-400/10 rounded-lg w-12 h-12">
+            <i class="pi pi-box text-orange-500 text-xl"></i>
+          </div>
         </div>
+      </div>
 
-        <!-- 4. 대기중인 발주서 수 -->
-        <div class="kpi-card">
-          <div class="kpi-content">
-            <h3>대기중인 발주서 수</h3>
-            <div class="kpi-value">{{ kpiData.pendingPurchaseOrderCount || '로딩 중...' }}</div>
-            <div :class="['kpi-change', getChangeClass(kpiData.poCountChange, true)]">
+      <!-- 4. 대기중인 발주서 수 -->
+      <div class="card">
+        <div class="flex justify-between items-start mb-4">
+          <div>
+            <div class="text-muted-color text-sm font-medium mb-2 uppercase tracking-wide">대기중인 발주서 수</div>
+            <div class="text-surface-900 dark:text-surface-0 text-2xl font-bold">
+              {{ kpiData.pendingPurchaseOrderCount || '로딩 중...' }}
+            </div>
+            <div :class="['text-sm font-medium mt-1', getChangeClass(kpiData.poCountChange, true)]">
               {{ kpiData.poCountChange || '계산 중...' }}
             </div>
+          </div>
+          <div class="flex items-center justify-center bg-red-100 dark:bg-red-400/10 rounded-lg w-12 h-12">
+            <i class="pi pi-file-edit text-red-500 text-xl"></i>
           </div>
         </div>
       </div>
     </div>
 
     <!-- 차트 섹션 -->
-    <div class="charts-section">
-      <div class="charts-grid">
-        <!-- 매출 트렌드 차트 -->
-        <div class="chart-card">
-          <h3>카테고리별 매출 트렌드</h3>
-          <div class="chart-container">
-            <canvas ref="salesTrendChart"></canvas>
-          </div>
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+      <!-- 매출 트렌드 차트 -->
+      <div class="card">
+        <div class="text-surface-900 dark:text-surface-0 text-xl font-semibold mb-6">카테고리별 매출 트렌드</div>
+        <div class="h-80">
+          <canvas ref="salesTrendChart"></canvas>
         </div>
+      </div>
 
-        <!-- 카테고리별 매출 구성 -->
-        <div class="chart-card">
-          <h3>카테고리별 매출 구성</h3>
-          <div class="chart-container">
-            <canvas ref="categorySalesChart"></canvas>
-          </div>
+      <!-- 카테고리별 매출 구성 -->
+      <div class="card">
+        <div class="text-surface-900 dark:text-surface-0 text-xl font-semibold mb-6">카테고리별 매출 구성</div>
+        <div class="h-80">
+          <canvas ref="categorySalesChart"></canvas>
         </div>
       </div>
     </div>
 
     <!-- 상세 정보 섹션 -->
-    <div class="details-section">
-      <div class="details-grid">
-        <!-- 상위 공급업체 - 발주 건수 기준으로 수정 -->
-        <div class="detail-card">
-          <h3>발주 빈도 높은 공급업체 TOP 5</h3>
-          <div class="suppliers-list">
-            <div v-if="topSuppliers.length === 0" class="no-data-message">
-              공급업체 데이터를 불러오는 중입니다...
-            </div>
-            <div v-for="supplier in topSuppliers" :key="supplier.supplier_name" class="supplier-item">
-              <div class="supplier-info">
-                <div class="supplier-name">{{ supplier.supplier_name }}</div>
-                <div class="supplier-count">{{ supplier.order_count }}건</div>
-              </div>
-            </div>
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <!-- 상위 공급업체 -->
+      <div class="card">
+        <div class="text-surface-900 dark:text-surface-0 text-xl font-semibold mb-6">발주 빈도 높은 공급업체 TOP 5</div>
+        <div v-if="topSuppliers.length === 0" class="text-center text-muted-color p-8 bg-surface-50 dark:bg-surface-800 rounded-lg">
+          공급업체 데이터를 불러오는 중입니다...
+        </div>
+        <div v-else class="space-y-4">
+          <div v-for="supplier in topSuppliers" :key="supplier.supplier_name" 
+               class="flex justify-between items-center p-4 bg-surface-50 dark:bg-surface-800 rounded-lg hover:bg-surface-100 dark:hover:bg-surface-700 transition-colors">
+            <div class="text-surface-900 dark:text-surface-0 font-medium">{{ supplier.supplier_name }}</div>
+            <div class="text-primary font-semibold">{{ supplier.order_count }}건</div>
           </div>
         </div>
+      </div>
 
-        <!-- 재고 현황 -->
-        <div class="detail-card">
-          <h3>재고 현황</h3>
-          <div class="inventory-stats">
-            <div class="stat-item">
-              <span class="stat-label">총 품목 수</span>
-              <span class="stat-value">{{ formatNumber(inventoryData.totalItems) }}개</span>
-            </div>
-            <div class="stat-item">
-              <span class="stat-label">안전재고 미달</span>
-              <span class="stat-value warning">{{ formatNumber(inventoryData.lowStockItems) }}개</span>
-            </div>
-            <div class="stat-item">
-              <span class="stat-label">품절 품목</span>
-              <span class="stat-value danger">{{ formatNumber(inventoryData.stockoutItems) }}개</span>
-            </div>
-            <div class="stat-item">
-              <span class="stat-label">총 재고 가치</span>
-              <span class="stat-value">{{ inventoryData.totalValue || '계산 중...' }}</span>
-            </div>
+      <!-- 재고 현황 -->
+      <div class="card">
+        <div class="text-surface-900 dark:text-surface-0 text-xl font-semibold mb-6">재고 현황</div>
+        <div class="space-y-4">
+          <div class="flex justify-between items-center py-3 border-b border-surface-200 dark:border-surface-700">
+            <span class="text-muted-color">총 품목 수</span>
+            <span class="text-surface-900 dark:text-surface-0 font-semibold">{{ formatNumber(inventoryData.totalItems) }}개</span>
+          </div>
+          <div class="flex justify-between items-center py-3 border-b border-surface-200 dark:border-surface-700">
+            <span class="text-muted-color">안전재고 미달</span>
+            <span class="text-orange-500 font-semibold">{{ formatNumber(inventoryData.lowStockItems) }}개</span>
+          </div>
+          <div class="flex justify-between items-center py-3 border-b border-surface-200 dark:border-surface-700">
+            <span class="text-muted-color">품절 품목</span>
+            <span class="text-red-500 font-semibold">{{ formatNumber(inventoryData.stockoutItems) }}개</span>
+          </div>
+          <div class="flex justify-between items-center py-3">
+            <span class="text-muted-color">총 재고 가치</span>
+            <span class="text-surface-900 dark:text-surface-0 font-semibold">{{ inventoryData.totalValue || '계산 중...' }}</span>
           </div>
         </div>
+      </div>
 
-        <!-- 긴급 알림 -->
-        <div class="detail-card alerts">
-          <h3>긴급 알림</h3>
-          <div class="alerts-list">
-            <div v-if="alerts.length === 0" class="no-data-message">
-              현재 긴급 알림이 없습니다.
-            </div>
-            <div v-for="alert in alerts" :key="alert.id" :class="['alert-item', alert.priority.toLowerCase()]">
-              <div class="alert-icon">{{ getAlertIcon(alert.alert_type) }}</div>
-              <div class="alert-content">
-                <div class="alert-title">{{ alert.title }}</div>
-                <div class="alert-message">{{ alert.message }}</div>
-                <div class="alert-time">{{ formatTime(alert.created_at) }}</div>
-              </div>
+      <!-- 긴급 알림 -->
+      <div class="card">
+        <div class="text-surface-900 dark:text-surface-0 text-xl font-semibold mb-6">긴급 알림</div>
+        <div v-if="alerts.length === 0" class="text-center text-muted-color p-8 bg-surface-50 dark:bg-surface-800 rounded-lg">
+          현재 긴급 알림이 없습니다.
+        </div>
+        <div v-else class="space-y-4">
+          <div v-for="alert in alerts" :key="alert.id" 
+               :class="[
+                 'flex items-start p-4 rounded-lg border-l-4',
+                 alert.priority === 'high' ? 'bg-red-50 dark:bg-red-950/20 border-l-red-500' :
+                 alert.priority === 'medium' ? 'bg-orange-50 dark:bg-orange-950/20 border-l-orange-500' :
+                 'bg-blue-50 dark:bg-blue-950/20 border-l-blue-500'
+               ]">
+            <div class="text-xl mr-3">{{ getAlertIcon(alert.alert_type) }}</div>
+            <div class="flex-1">
+              <div class="text-surface-900 dark:text-surface-0 font-semibold mb-1">{{ alert.title }}</div>
+              <div class="text-muted-color text-sm mb-2">{{ alert.message }}</div>
+              <div class="text-muted-color text-xs">{{ formatTime(alert.created_at) }}</div>
             </div>
           </div>
         </div>
@@ -623,12 +646,12 @@ const formatTime = (date) => {
 }
 
 const getChangeClass = (value, inverse = false) => {
-  if (!value || value === '계산 중...') return ''
+  if (!value || value === '계산 중...') return 'text-muted-color'
   const numValue = parseFloat(value)
   if (inverse) {
-    return numValue <= 0 ? 'positive' : 'negative'
+    return numValue <= 0 ? 'text-green-500' : 'text-red-500'
   }
-  return numValue >= 0 ? 'positive' : 'negative'
+  return numValue >= 0 ? 'text-green-500' : 'text-red-500'
 }
 
 const getAlertIcon = (alertType) => {
@@ -720,530 +743,3 @@ onUnmounted(() => {
 })
 </script>
 
-<style scoped>
-.hq-dashboard {
-  padding: 20px;
-  background: #f5f7fa;
-  min-height: 100vh;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-}
-
-.dashboard-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 30px;
-  padding: 20px 0;
-}
-
-.dashboard-title {
-  font-size: 32px;
-  font-weight: 700;
-  color: #1a202c;
-  margin: 0;
-}
-
-.header-actions {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-}
-
-.refresh-button {
-  padding: 8px 16px;
-  background: #4299e1;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.refresh-button:hover:not(:disabled) {
-  background: #3182ce;
-  transform: translateY(-1px);
-}
-
-.refresh-button:disabled {
-  background: #a0aec0;
-  cursor: not-allowed;
-}
-
-.last-updated {
-  color: #718096;
-  font-size: 14px;
-}
-
-/* 에러 배너 */
-.error-banner {
-  background: #fed7d7;
-  border: 1px solid #fc8181;
-  border-radius: 8px;
-  padding: 12px 20px;
-  margin-bottom: 20px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  color: #c53030;
-}
-
-.close-error {
-  background: none;
-  border: none;
-  color: #c53030;
-  font-size: 18px;
-  cursor: pointer;
-  padding: 0 5px;
-}
-
-/* KPI 카드 스타일 */
-.kpi-section {
-  margin-bottom: 40px;
-}
-
-.kpi-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 20px;
-}
-
-.kpi-card {
-  background: white;
-  border-radius: 12px;
-  padding: 24px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  display: flex;
-  align-items: center;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-  position: relative;
-  overflow: hidden;
-}
-
-.kpi-card::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 4px;
-}
-
-.kpi-card:nth-child(1)::before {
-  background: #48bb78;
-}
-
-.kpi-card:nth-child(2)::before {
-  background: #4299e1;
-}
-
-.kpi-card:nth-child(3)::before {
-  background: #ed8936;
-}
-
-.kpi-card:nth-child(4)::before {
-  background: #f56565;
-}
-
-.kpi-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
-.kpi-content {
-  width: 100%;
-}
-
-.kpi-content h3 {
-  margin: 0 0 8px 0;
-  font-size: 14px;
-  font-weight: 500;
-  color: #718096;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.kpi-value {
-  font-size: 28px;
-  font-weight: 700;
-  color: #1a202c;
-  margin-bottom: 4px;
-}
-
-.kpi-change {
-  font-size: 14px;
-  font-weight: 600;
-}
-
-.kpi-change.positive {
-  color: #48bb78;
-}
-
-.kpi-change.negative {
-  color: #f56565;
-}
-
-/* 차트 섹션 */
-.charts-section {
-  margin-bottom: 40px;
-}
-
-.charts-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
-  gap: 20px;
-}
-
-.chart-card {
-  background: white;
-  border-radius: 12px;
-  padding: 24px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.chart-card h3 {
-  margin: 0 0 20px 0;
-  font-size: 18px;
-  font-weight: 600;
-  color: #1a202c;
-}
-
-.chart-container {
-  height: 300px;
-  position: relative;
-}
-
-/* 상세 정보 섹션 */
-.details-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-  gap: 20px;
-}
-
-.detail-card {
-  background: white;
-  border-radius: 12px;
-  padding: 24px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.detail-card h3 {
-  margin: 0 0 20px 0;
-  font-size: 18px;
-  font-weight: 600;
-  color: #1a202c;
-}
-
-/* 데이터 없음 메시지 */
-.no-data-message {
-  text-align: center;
-  color: #718096;
-  font-style: italic;
-  padding: 20px;
-  background: #f8f9fa;
-  border-radius: 8px;
-}
-
-/* 공급업체 목록 - 발주 건수 기준으로 간단화 */
-.suppliers-list {
-  space-y: 12px;
-}
-
-.supplier-item {
-  padding: 16px;
-  background: #f8f9fa;
-  border-radius: 8px;
-  margin-bottom: 12px;
-  transition: all 0.2s ease;
-}
-
-.supplier-item:hover {
-  background: #e2e8f0;
-  transform: translateX(4px);
-}
-
-.supplier-info {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.supplier-name {
-  font-weight: 600;
-  color: #1a202c;
-}
-
-.supplier-count {
-  font-weight: 600;
-  color: #4299e1;
-  font-size: 16px;
-}
-
-/* 재고 현황 */
-.inventory-stats {
-  space-y: 12px;
-}
-
-.stat-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 0;
-  border-bottom: 1px solid #e2e8f0;
-  transition: all 0.2s ease;
-}
-
-.stat-item:last-child {
-  border-bottom: none;
-}
-
-.stat-item:hover {
-  padding-left: 8px;
-}
-
-.stat-label {
-  font-weight: 500;
-  color: #718096;
-}
-
-.stat-value {
-  font-weight: 600;
-  color: #1a202c;
-}
-
-.stat-value.warning {
-  color: #ed8936;
-}
-
-.stat-value.danger {
-  color: #f56565;
-}
-
-/* 알림 */
-.alerts-list {
-  space-y: 12px;
-}
-
-.alert-item {
-  display: flex;
-  align-items: flex-start;
-  padding: 16px;
-  border-radius: 8px;
-  margin-bottom: 12px;
-  transition: all 0.2s ease;
-}
-
-.alert-item:hover {
-  transform: translateX(4px);
-}
-
-.alert-item.high {
-  background: #fed7d7;
-  border-left: 4px solid #f56565;
-}
-
-.alert-item.medium {
-  background: #feebc8;
-  border-left: 4px solid #ed8936;
-}
-
-.alert-item.low {
-  background: #f0f4f8;
-  border-left: 4px solid #718096;
-}
-
-.alert-icon {
-  margin-right: 12px;
-  font-size: 18px;
-}
-
-.alert-content {
-  flex: 1;
-}
-
-.alert-title {
-  font-weight: 600;
-  color: #1a202c;
-  margin-bottom: 4px;
-}
-
-.alert-message {
-  color: #4a5568;
-  margin-bottom: 4px;
-  font-size: 14px;
-}
-
-.alert-time {
-  font-size: 12px;
-  color: #718096;
-}
-
-/* 로딩 상태 */
-.kpi-value:empty::after,
-.stat-value:empty::after {
-  content: '로딩 중...';
-  color: #a0aec0;
-  font-size: 16px;
-  font-weight: normal;
-}
-
-/* 애니메이션 */
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.kpi-card,
-.chart-card,
-.detail-card {
-  animation: fadeIn 0.5s ease-out;
-}
-
-/* 반응형 디자인 */
-@media (max-width: 1200px) {
-  .charts-grid {
-    grid-template-columns: 1fr;
-  }
-  
-  .details-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 768px) {
-  .hq-dashboard {
-    padding: 15px;
-  }
-  
-  .dashboard-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 15px;
-  }
-  
-  .header-actions {
-    flex-direction: column;
-    align-items: flex-start;
-    width: 100%;
-    gap: 10px;
-  }
-  
-  .refresh-button {
-    width: 100%;
-  }
-  
-  .dashboard-title {
-    font-size: 24px;
-  }
-  
-  .kpi-grid {
-    grid-template-columns: 1fr;
-  }
-  
-  .kpi-card {
-    padding: 20px;
-  }
-  
-  .kpi-value {
-    font-size: 24px;
-  }
-  
-  .charts-grid {
-    grid-template-columns: 1fr;
-  }
-  
-  .chart-container {
-    height: 250px;
-  }
-  
-  .details-grid {
-    grid-template-columns: 1fr;
-  }
-  
-  .error-banner {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 10px;
-  }
-  
-  .close-error {
-    align-self: flex-end;
-  }
-}
-
-/* 인쇄 스타일 */
-@media print {
-  .hq-dashboard {
-    background: white;
-  }
-  
-  .refresh-button,
-  .close-error {
-    display: none;
-  }
-  
-  .kpi-card,
-  .chart-card,
-  .detail-card {
-    box-shadow: none;
-    border: 1px solid #e2e8f0;
-    break-inside: avoid;
-  }
-  
-  .chart-container {
-    height: 200px;
-  }
-}
-
-/* 다크 모드 지원 (선택적) */
-@media (prefers-color-scheme: dark) {
-  .hq-dashboard {
-    background: #1a202c;
-  }
-  
-  .dashboard-title {
-    color: #f7fafc;
-  }
-  
-  .kpi-card,
-  .chart-card,
-  .detail-card {
-    background: #2d3748;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-  }
-  
-  .kpi-value,
-  .stat-value,
-  .supplier-name,
-  .alert-title {
-    color: #f7fafc;
-  }
-  
-  .kpi-content h3,
-  .stat-label,
-  .metric,
-  .alert-message {
-    color: #a0aec0;
-  }
-  
-  .supplier-item,
-  .no-data-message {
-    background: #374151;
-  }
-  
-  .supplier-item:hover {
-    background: #4a5568;
-  }
-  
-  .stat-item {
-    border-bottom-color: #4a5568;
-  }
-}
-</style>

@@ -296,6 +296,11 @@ const router = createRouter({
                     name: 'salesHistory',
                     component: () => import('@/views/sales/SalesHistoryPage.vue'),
                 },
+                {
+                    path: '/sales/performance',
+                    name: 'salesPerformance',
+                    component: () => import('@/views/sales/SalesPerformancePage.vue'),
+                },
                 /* end of sales */
                 {
                     path: '/roles/manage',
@@ -426,6 +431,7 @@ function getDefaultTitle(routeName) {
         'documentation': 'Documentation',
         'test': 'Test Page',
         'test2': 'Input Test Page',
+        'salesPerformance': '매출 실적 조회',
         'landing': '랜딩 페이지',
         'notfound': '페이지를 찾을 수 없음',
         'login': '로그인',
