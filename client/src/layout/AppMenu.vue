@@ -35,6 +35,10 @@ const model = ref([
 
             // made by kms
             { label: '본사출고관리', icon: 'pi pi-fw pi-book', to: '/hqOutbndMgmt' },
+            { label: '지점입고관리', icon: 'pi pi-fw pi-book', to: '/brInbndMgmt' },
+
+            // made by lch
+            { label: '공급업체 출고관리', icon: 'pi pi-fw pi-book', to: '/supOutbndMgmt' },
             { label: '본사입고관리', icon: 'pi pi-fw pi-book', to: '/hqInbndMgmt' },
         ]
     },

@@ -34,7 +34,7 @@ const formSchema = [
   },
   { type: 'data', label: '등록자', id: 'creatorName', data: 'text' },
   { type: 'date', label: '납기예정일', id: 'dueDate', placeholder: '납기예정일을 선택하세요.' },
-  { type: 'data', label: '공급업체명', id: 'orderFrom', data: 'text' },
+  { type: 'data', label: '공급업체명', id: 'orderTo', data: 'text' },
   { type: 'text', label: '비고', id: 'note', placeholder: '비고를 입력하세요.'}, 
   { type: 'data', label: '발주요청일', id: 'orderDate', data: 'date' },
   { type: 'data', label: '총 가격', id: 'totalAmount', data: 'text' }
@@ -89,7 +89,7 @@ const getItemModalItems = async (searchValue) => {
 
   if (req?.data) {
     const filtered = req.data.filter((e) => {
-      return e.vendorName === defaultForm.value.orderFrom;
+      return e.vendorName === defaultForm.value.orderTo;
     });
 
     // 같은 상품명을 기준으로 그룹핑 후 재고수량/안전재고 합산
@@ -174,8 +174,8 @@ const fetchOrders = async (formData, tableData) => {
       orderType: '150003', //발주 제안
       reason: formData.reason.value+"", //발주 사유
       //수주처 정보
-      orderToId: headInfo.compId,
-      orderTo: headInfo.compName,
+      orderFromId: headInfo.compId,
+      orderFrom: headInfo.compName,
       totalAmount //총 가격
     },
     ordersDetail: tableData.map((e) => {
@@ -296,8 +296,8 @@ onBeforeMount(async () => {
   defaultForm.value.creatorName = user.value.empName;
 
   const supplierInfo = await getSupplierInfo(user.value.employeeId);
-  defaultForm.value.orderFrom = supplierInfo.compName;
-  defaultForm.value.orderFromId = supplierInfo.compId;
+  defaultForm.value.orderTo = supplierInfo.compName;
+  defaultForm.value.orderToId = supplierInfo.compId;
 });
 
 onMounted(() => {
