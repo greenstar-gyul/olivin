@@ -269,6 +269,7 @@ public class SalesOrdersController {
 			log.error("지점별 매출 실적 조회 중 오류 발생", e);
 			return new ArrayList<>();
 		}
+	}
 
 	@PostMapping("/sales/dailyClosing")
 	public Map<String, Object> dailyClosing(@RequestBody SalesDailyClosingVO salesDailyClosingVO) {
