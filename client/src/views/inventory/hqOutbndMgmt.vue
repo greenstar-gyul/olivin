@@ -5,6 +5,9 @@ import { convertDate } from '@/utils/dateUtils';
 import axios from '@/service/axios';
 import DialogModal from '@/components/overray/DialogModal.vue';
 import moment from "moment";
+import { useRoute, useRouter } from 'vue-router';
+
+const router = useRouter();
 
 // 테스트 데이터
 const items = ref([]);
@@ -18,7 +21,7 @@ const orderModalVisible = ref(false);
 const modalHeaders = ref([
   { field: 'orderTitle', header: '발주명' },
   { field: 'creatorName', header: '발주신청자' },
-  { field: 'reason', header: '발주사유' },
+  { field: 'reasonName', header: '발주사유' },
   { field: 'orderDate', header: '발주일' },
   { field: 'dueDate', header: '납기예정일' },
   // { field: 'orderType', header: '발주유형' }, // 테스트용
@@ -192,12 +195,13 @@ async function callOutbndProcess(orderId) {
         orderId: orderId
       }
     });
-    alert("출고 처리가 완료되었습니다.");
+    alert('출고 처리가 완료되었습니다.');
+    resetFormHandler();
   } catch (error) {
-    console.error("출고 처리 중 오류 발생:", error);
+    console.error("서버 오류 발생:", error);
     
     // 에러 메시지 추출
-    const message = error.response?.data?.message || "출고 처리 중 오류가 발생했습니다.";
+    const message = error.response?.data?.message || "서버 오류가 발생했습니다.";
     alert(message);
   }
 }
@@ -211,6 +215,14 @@ const outbndHandler = () => {
   // console.log('함수실행 후');
 };
 
+
+// 초기화버튼 이벤트 함수
+const resetFormHandler = () => {
+  formData.value= {};
+  tableData.value=[];
+  modalItems.value=[];
+  getOrderData();
+}
   
 onMounted(() => {  
   getOrderData();
@@ -229,6 +241,7 @@ onMounted(() => {
     
     :detailCRUD="false"
     @onRowSelect="onRowSelect"
+    @resetForm="resetFormHandler"
     >
     <template #btn>
       <Button label="발주정보불러오기" class="min-w-fit whitespace-nowrap" severity="info" @click="loadPurchaseOnClick" outlined />
