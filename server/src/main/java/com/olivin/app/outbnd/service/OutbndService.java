@@ -7,4 +7,5 @@ public interface OutbndService {
     String getCodeForUpdate();     // 출고 등록을 위한 출고번호 생성
 
     void processHqOutbnd(String orderId); // 출고 처리 프로시저 호출용 메서드
+    void processSubOutbnd(String orderId); //공급업체 출고 처리 프로시저
 }

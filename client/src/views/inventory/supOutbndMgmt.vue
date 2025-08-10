@@ -5,9 +5,11 @@ import { convertDate } from '@/utils/dateUtils';
 import axios from '@/service/axios';
 import DialogModal from '@/components/overray/DialogModal.vue';
 import moment from "moment";
+import { useToast } from 'primevue';
 
 // 테스트 데이터
 const items = ref([]);
+const toast = useToast();
 
 /* Modal function */
 
@@ -102,11 +104,6 @@ const formSchema = [
   // },
 ];
 
-const resetFormHandler = () => {
-  formData.value = {};
-  tableData.value = [];
-}
-
 /* 제품목록 시작 */
 const tableData = ref([]);
 
@@ -195,13 +192,24 @@ const getOrderData = async () => {
  * 제품등록처리 진행 함수 
  */
 async function callOutbndProcess(orderId) {
+  if (!orderId) {
+    toast.add({
+      severity: 'error',
+      summary: '오류',
+      detail: '출고할 발주정보를 선택해주세요.',
+      life: 2000
+    })
+    return;
+  }
   try {
-    // const response = await axios.post("/api/outbnd/hqProcess", null, {
-    //   params: {
-    //     orderId: orderId
-    //   }
-    // });
+    const response = await axios.post("/api/outbnd/subProcess", null, {
+      params: {
+        orderId: orderId
+      }
+    });
     alert("출고 처리가 완료되었습니다.");
+    resetFormHandler();
+    getOrderData();
   } catch (error) {
     console.error("출고 처리 중 오류 발생:", error);
     
@@ -220,6 +228,10 @@ const outbndHandler = () => {
   // console.log('함수실행 후');
 };
 
+const resetFormHandler = () => {
+  formData.value = {};
+  tableData.value = [];
+}
   
 onMounted(() => {  
   getOrderData();

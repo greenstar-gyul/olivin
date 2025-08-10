@@ -33,4 +33,13 @@ public class OutbndServiceImpl implements OutbndService {
     public void processHqOutbnd(String orderId) {
         outbndMapper.callProcHqOutbndProcess(orderId);
     } // end of processHqOutbnd
+    
+    /**
+     * 공급업체 출고처리 프로시저 호출
+     * param_orderId_발주 ID
+     */
+    @Override
+    public void processSubOutbnd(String orderId) {
+        outbndMapper.callProcSubOutbndProcess(orderId);
+    } // end of processHqOutbnd
 } // end of class
