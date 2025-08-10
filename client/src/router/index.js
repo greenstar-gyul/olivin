@@ -185,6 +185,16 @@ const router = createRouter({
                     name: 'hqInbndMgmt',
                     component: () => import('@/views/inventory/hqInbndMgmt.vue')
                 },
+                {
+                    path: '/brInbndMgmt',
+                    name: 'brInbndMgmt',
+                    component: () => import('@/views/inventory/brInbndMgmt.vue')
+                },
+                {
+                    path: '/supOutbndMgmt',
+                    name: 'supOutbndMgmt',
+                    component: () => import('@/views/inventory/supOutbndMgmt.vue'),
+                },
                 /* end of inventory */
                 {
                     path: '/standard/supplier',

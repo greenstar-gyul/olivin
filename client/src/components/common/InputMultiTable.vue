@@ -67,9 +67,9 @@ const onRowUnselect = () => {
     </InputMaster>
 
     <!-- middle table -->
+    <!-- :checked="true"
+    :checkType="'multiple'" -->
     <BasicTable 
-      :checked="true"
-      :checkType="'multiple'"
       :data="props.tableData"
       :header="props.tableHeader"
       @rowSelect="onRowSelect"

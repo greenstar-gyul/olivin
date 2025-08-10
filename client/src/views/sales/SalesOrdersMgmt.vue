@@ -97,8 +97,12 @@ const itemConfirmModal = async (selectedItems) => {
   });
 
   if (same.length > 0) {
-    // TODO : 다른 alert() 함수를 사용하면 변경
-    alert("이미 동일한 제품이 있습니다.");
+    toast.add({
+      severity: 'error',
+      summary: '오류',
+      detail: '이미 동일한 제품이 있습니다.',
+      life: 2000
+    });
   } else {
     const product = await axios.get(`/api/products/${selectedItems.productId}`);
 
@@ -199,17 +203,35 @@ const saveFormHandler = async (formData, tableData) => {
 
   for (const form in formData) {
     if (!formData[form]) {
-      // TODO : 다른 alert() 함수를 사용하면 변경
-      alert("폼에 정보에 비어있는 데이터가 있습니다.");
+      toast.add({
+        severity: 'error',
+        summary: '오류',
+        detail: '폼에 정보에 비어있는 데이터가 있습니다.',
+        life: 2000
+      });
       return;
     }
+  }
+
+  if (tableData.length === 0) {
+    toast.add({
+      severity: 'error',
+      summary: '오류',
+      detail: '테이블 데이터가 없습니다.',
+      life: 2000
+    });
+    return;
   }
 
   for (const table of tableData) {
     for (const data in table) {
       if (!table[data]) {
-        // TODO : 다른 alert() 함수를 사용하면 변경
-        alert("테이블에 비어있는 데이터가 있습니다.");
+        toast.add({
+          severity: 'error',
+          summary: '오류',
+          detail: '테이블에 비어있는 데이터가 있습니다.',
+          life: 2000
+        });
         return;
       }
     }
@@ -231,6 +253,12 @@ const saveFormHandler = async (formData, tableData) => {
       fetchSalesOrders(formData, tableData);
     },
     reject: () => {
+      toast.add({
+        severity: 'info',
+        summary: '취소',
+        detail: '주문서 등록이 취소되었습니다.',
+        life: 2000
+      });
       return;
     }
   });
@@ -278,8 +306,12 @@ onBeforeMount(async () => {
     defaultForm.value.compName = branchInfo.compName;
     defaultForm.value.compId = branchInfo.compId;
   } else {
-    // TODO : 다른 alert() 함수를 사용하면 변경
-    alert("지점 정보가 없습니다. 관리자에게 문의하세요.");
+    toast.add({
+      severity: 'error',
+      summary: '오류',
+      detail: '지점 정보가 없습니다. 관리자에게 문의하세요.',
+      life: 2000
+    });
   }
 });
 
