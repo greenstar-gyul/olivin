@@ -43,17 +43,17 @@ const confirmModal = async (selectedItems) => {
   // console.log('확인용:', selectedItems.orderTitle);
 
   /* 입고 기본키 생성 */
-  const outbndCode = await axios.get('/api/inbnd/getCode');
+  const inbndCode = await axios.get('/api/inbnd/getCode');
   /* 입고일 : 오늘 날짜로 설정 */ 
   const today = moment().format("YY/MM/DD");
   
   // 선택한 발주정보를 formData로 전달
   formData.value.orderId = selectedItems.orderId;
-  formData.value.outbndNo = outbndCode.data;
+  formData.value.inbndNo = inbndCode.data;
   formData.value.orderTitle = selectedItems.orderTitle;
   formData.value.outbndFrom = selectedItems.orderTo;
   formData.value.inbndTo = selectedItems.orderFrom;
-  formData.value.outbndDate = today;
+  formData.value.inbndDate = today;
   // console.log('테에스으트', formData.value);
   
   /* 제품 상세정보 불러오기 */
@@ -94,9 +94,9 @@ const formData = ref({});
 const formSchema = [
   { type: 'data', label: '입고번호', id: 'inbndNo' ,data: 'text'},
   { type: 'data', label: '발주명', id: 'orderTitle' ,data: 'text' },
-  { type: 'data', label: '입고지', id: 'inbndFrom' ,data: 'text'},
+  { type: 'data', label: '출고지', id: 'outbndFrom' ,data: 'text'},
   { type: 'data', label: '입고지', id: 'inbndTo' ,data: 'text'},
-  { type: 'data', label: '출고일', id: 'outbndDate', data: 'text'}, 
+  { type: 'data', label: '입고일', id: 'inbndDate', data: 'text'}, 
   
   // { type: 'text', label: '출고상태', id: 'outbndStatus',
   //   // options: [

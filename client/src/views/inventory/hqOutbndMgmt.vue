@@ -195,7 +195,8 @@ async function callOutbndProcess(orderId) {
       }
     });
     alert('출고 처리가 완료되었습니다.');
-    resetFormHandler();
+    resetFormHandler(); // 전체 폼 초기화
+    getOrderData(); // 처리한 발주서 정보 초기화
   } catch (error) {
     console.error("서버 오류 발생:", error);
     
@@ -220,7 +221,6 @@ const resetFormHandler = () => {
   formData.value= {};
   tableData.value=[];
   modalItems.value=[];
-  getOrderData();
 }
   
 onMounted(() => {  
