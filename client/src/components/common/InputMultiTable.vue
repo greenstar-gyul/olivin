@@ -4,7 +4,7 @@ import InputMaster from '@/components/inputForm/InputMaster.vue';
 import InputTable from '@/components/table/InputTable.vue';
 import BasicTable from '../table/BasicTable.vue';
 
-const emit = defineEmits(['onRowSelect']);
+const emit = defineEmits(['onRowSelect', 'resetFrom']);
 
 /*
 props
@@ -44,7 +44,7 @@ const selectRow = ref(null);
 
 //수정요함
 const resetFormHandler = () => {
-  detailTableData.value = [];
+  emit('resetForm');
 };
 
 const onRowSelect = (select) => {
@@ -67,9 +67,9 @@ const onRowUnselect = () => {
     </InputMaster>
 
     <!-- middle table -->
+    <!-- :checked="true"
+    :checkType="'multiple'" -->
     <BasicTable 
-      :checked="true"
-      :checkType="'multiple'"
       :data="props.tableData"
       :header="props.tableHeader"
       @rowSelect="onRowSelect"

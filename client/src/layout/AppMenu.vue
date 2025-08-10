@@ -35,6 +35,10 @@ const model = ref([
 
             // made by kms
             { label: '본사출고관리', icon: 'pi pi-fw pi-book', to: '/hqOutbndMgmt' },
+            { label: '지점입고관리', icon: 'pi pi-fw pi-book', to: '/brInbndMgmt' },
+
+            // made by lch
+            { label: '공급업체 출고관리', icon: 'pi pi-fw pi-book', to: '/supOutbndMgmt' },
             { label: '본사입고관리', icon: 'pi pi-fw pi-book', to: '/hqInbndMgmt' },
         ]
     },
@@ -58,7 +62,7 @@ const model = ref([
         items: [
             { label: '매출 계획 조회', icon: 'pi pi-fw pi-book', to: '/sales/plan' },
             { label: '주문 등록', icon: 'pi pi-fw pi-book', to: '/sales/orders' },
-            { label: '주문 조회', icon: 'pi pi-fw pi-book', to: '/sales/orders/view' },
+            { label: '주문 조회 및 정산', icon: 'pi pi-fw pi-book', to: '/sales/orders/view' },
             { label: '판매 이력 조회', icon: 'pi pi-fw pi-book', to: '/sales/history' },
             { label: '매출 실적 조회', icon: 'pi pi-fw pi-chart-line', to: '/sales/performance' },
         ]

@@ -27,6 +27,7 @@ public class EmpServiceImpl implements EmpService{
   // 등록
   @Override
   public int insertEmp(EmpVO empVO) {
+      empMapper.insertCompanyIfNotExists(empVO);
       return empMapper.insertEmp(empVO);
   }
 
@@ -44,13 +45,7 @@ public class EmpServiceImpl implements EmpService{
 
   @Override
   public List<EmpVO> searchEmps(String searchValue) {
-    // TODO Auto-generated method stub
-    throw new UnsupportedOperationException("Unimplemented method 'searchEmps'");
+    // return empMapper.searchEmps(searchValue);
+    return null;
   }
-
-  // @Override
-  // public List<EmpVO> searchEmps(String searchValue) {
-  //   // TODO Auto-generated method stub
-  //   throw new UnsupportedOperationException("Unimplemented method 'searchEmps'");
-  // }
 }

@@ -2,6 +2,7 @@
 import { ref, watch, computed } from 'vue';
 import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
+import Tag from 'primevue/tag';
 
 const emit = defineEmits(['rowSelect', 'rowUnselect']);
 const props = defineProps({
@@ -32,6 +33,20 @@ const props = defineProps({
   scrollHeight: {
     type: String,
     default: '400px'
+  },
+  // 조건부 스타일링을 위한 새로운 props
+  cellClass: {
+    type: Function,
+    default: null
+  },
+  cellStyle: {
+    type: Function,
+    default: null
+  },
+  // Tag 렌더링을 위한 props
+  tagRenderer: {
+    type: Function,
+    default: null
   }
 });
 
@@ -159,20 +174,33 @@ const header = computed(() => props.header);
       <Column v-if="props.checked" :selectionMode="props.checkType" headerStyle="width: 3rem"></Column>
 
       <!-- 동적 컬럼 생성 -->
-      <Column v-for="item in items" :key="item" :field="item" :header="header.header[item] ?? item">
+      <Column v-for="item in items" :key="item" :field="item" :header="header.header[item] ?? item" :sortable="header.sortable && header.sortable.includes(item) ? true : false">
         <!-- 날짜포맷변경을 위해 추가한 파트 -->
         <template #body="slotProps">
-          <!-- 숫자형 데이터는 오른쪽 정렬하고 3자리 콤마 추가 -->
-          <span v-if="header.rightAligned && header.rightAligned.includes(item)" class="text-right block">
-            {{ slotProps.data[item].toLocaleString() }}
+          <!-- Tag 렌더링이 정의된 경우 -->
+          <div v-if="props.tagRenderer && props.tagRenderer(slotProps.data, item)"
+               :class="header.rightAligned && header.rightAligned.includes(item) ? 'text-right' : ''">
+            <Tag :value="props.tagRenderer(slotProps.data, item).value"
+                 :severity="props.tagRenderer(slotProps.data, item).severity"
+                 :rounded="true" />
+          </div>
+          
+          <!-- 기본 렌더링 -->
+          <span v-else
+            :class="[
+              header.rightAligned && header.rightAligned.includes(item) ? 'text-right block' : '',
+              props.cellClass ? props.cellClass(slotProps.data, item) : ''
+            ]"
+            :style="props.cellStyle ? props.cellStyle(slotProps.data, item) : {}">
+            <!-- 숫자형 데이터는 3자리 콤마 추가 -->
+            <span v-if="header.rightAligned && header.rightAligned.includes(item)">
+              {{ slotProps.data[item].toLocaleString() }}
+            </span>
+            <!-- 일반 텍스트 데이터 -->
+            <span v-else>
+              {{ slotProps.data[item] }}
+            </span>
           </span>
-          <!-- 일반 텍스트 데이터는 기본 정렬 -->
-          <span v-else>
-            {{ slotProps.data[item] }}
-          </span>
-          <!-- <span>
-            {{ slotProps.data[item] }}
-          </span> -->
         </template>
       </Column>
     </DataTable>

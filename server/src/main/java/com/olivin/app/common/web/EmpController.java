@@ -37,19 +37,19 @@ public class EmpController {
     }
 
     // 등록
-    @PostMapping("/emps")
+    @PostMapping("/public/emps")
     public int insertEmp(@RequestBody EmpVO empVO) {
         return empService.insertEmp(empVO);
     }
 
     // 수정
-    @PutMapping("/emps")
+    @PutMapping("/public/emps")
     public int updateEmp(@RequestBody EmpVO empVO) {
         return empService.updateEmp(empVO);
     }
 
     // 삭제
-    @DeleteMapping("/emps")
+    @DeleteMapping("/public/emps")
     public int deleteEmp(@RequestParam String employeeId) {
         return empService.deleteEmp(employeeId);
     }

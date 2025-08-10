@@ -137,7 +137,7 @@ defineExpose({
       <div v-for="(input, index) in inputs.inputs" :key="input.name || index" class="grid grid-cols-12 gap-2"
         :class="(input.type === 'dateRange' || input.type === 'textarea' || input.type === 'file') ? 'col-span-2' : 'col-span-1'">
 
-        <label :for="input.label" class="flex items-center col-span-12 mb-2 md:col-span-3 md:mb-0">{{ input.label
+        <label :for="input.label" class="flex items-center col-span-12 mb-2 md:col-span-3 md:mb-0 text-lg font-medium">{{ input.label
           }}</label>
         <div v-if="input.type !== 'textarea' && input.type !== 'file'" class="col-span-12 md:col-span-9 flex">
 

@@ -7,9 +7,23 @@ import { useAuth } from '@/composables/useAuth';
 
 const { user } = useAuth();
 
+// 최근 일주일 날짜 범위 계산
+const getLastWeekDates = () => {
+  const today = new Date();
+  const lastWeek = new Date();
+  lastWeek.setDate(today.getDate() - 7);
+  
+  return {
+    from: lastWeek.toISOString().split('T')[0], // YYYY-MM-DD 형식
+    to: today.toISOString().split('T')[0]
+  };
+};
+
+const lastWeekDates = getLastWeekDates();
+
 // 조회 폼의 헤더 정보 (조회 테이블 컬럼 이름)
 const header = ref({
-  title: '판매 이력 검색', // 조회 폼 제목
+  title: '판매 이력 조회', // 조회 폼 제목
   header: { // 테이블의 헤더 정보
     productId: '제품번호', 
     productName: '제품명', 
@@ -21,7 +35,8 @@ const header = ref({
     totalPrice: '총 판매금액',
     productSpec: '규격', 
   },
-  rightAligned: ['sellPrice', 'quantity', 'totalPrice'] // 오른쪽 정렬할 컬럼 리스트
+  rightAligned: ['sellPrice', 'quantity', 'totalPrice'], // 오른쪽 정렬할 컬럼 리스트
+  sortable: ['productId', 'productName', 'compName', 'quantity', 'totalPrice'] // 정렬 가능한 컬럼 리스트
 });
 
 // 조회할 데이터
@@ -29,7 +44,7 @@ const items = ref([]);
 
 // 검색 조건 필터 설정
 const filters = ref({});
-filters.value.title = '매출 검색'; // 검색 조건 폼 제목
+filters.value.title = '판매 이력 검색'; // 검색 조건 폼 제목
 
 // 사용자 권한에 따른 지점명 필터 설정
 const isHeadquarters = user.value?.compId === 'COM10001';
@@ -39,11 +54,21 @@ const storeFilter = {
   value: '',
   placeholder: '지점명 검색',
   name: 'store',
-  disabled: !isHeadquarters // 본사가 아니면 비활성화
+  disabled: !isHeadquarters, // 본사가 아니면 비활성화
+  defaultValue: '' // 동적으로 설정될 예정
 };
 
 filters.value.filters = [
-  { type: 'dateRange', label: '매출기간', value: '', fromPlaceholder: '', name: 'salesDates' },
+  { 
+    type: 'dateRange', 
+    label: '매출기간', 
+    value: '', 
+    fromPlaceholder: '시작일', 
+    toPlaceholder: '종료일',
+    name: 'salesDates',
+    defaultFromValue: lastWeekDates.from,
+    defaultToValue: lastWeekDates.to
+  },
   { type: 'item-search', label: '제품명', value: '', placeholder: '제품 검색', name: 'products' },
   { type: 'item-search', label: '제품분류', value: '', placeholder: '제품분류 검색', name: 'productType' },
   storeFilter,
@@ -311,17 +336,31 @@ const loadSalesHistory = async () => {
 
         searchFormRef.value.searchFormRef.searchOptions.store = firstData.compName;
         searchComp = firstData.compName;
+        
+        // 본사 직원의 defaultValue도 설정
+        const storeFilterIndex = filters.value.filters.findIndex(f => f.name === 'store');
+        if (storeFilterIndex !== -1) {
+          filters.value.filters[storeFilterIndex].defaultValue = firstData.compName;
+        }
       }
       // 본사는 지점 필터 활성화
       const storeFilterIndex = filters.value.filters.findIndex(f => f.name === 'store');
       if (storeFilterIndex !== -1) {
         filters.value.filters[storeFilterIndex].disabled = false;
       }
+    } else {
+      // 지점 직원의 defaultValue 설정
+      const storeFilterIndex = filters.value.filters.findIndex(f => f.name === 'store');
+      if (storeFilterIndex !== -1) {
+        filters.value.filters[storeFilterIndex].defaultValue = user.value?.compName || '';
+      }
     }
 
     const response = await axios.get('/api/sales/history/search', {
       params: {
         compName: searchComp,
+        salesDatesFrom: lastWeekDates.from,
+        salesDatesTo: lastWeekDates.to
       }
     });
     items.value = await response.data; // 서버에서 받은 데이터를 items에 저장
@@ -331,9 +370,35 @@ const loadSalesHistory = async () => {
   }
 };
 
-const resetList = () => {
-  searchSalesHistory({});
-}
+const resetList = async () => {
+  // SearchForm의 초기화 기능을 활용 (defaultValue 자동 적용)
+  let defaultStore = '';
+  
+  if (!isHeadquarters) {
+    // 지점 직원: 자신의 지점명
+    defaultStore = user.value?.compName || '';
+  } else {
+    // 본사 직원: 첫 번째 지점명을 가져와서 설정
+    try {
+      const response = await axios.get('/api/search/branches/all');
+      const firstData = await response.data[0];
+      defaultStore = firstData?.compName || '';
+      
+      // 검색 폼의 지점명도 업데이트
+      if (searchFormRef.value?.searchFormRef?.searchOptions) {
+        searchFormRef.value.searchFormRef.searchOptions.store = defaultStore;
+      }
+    } catch (error) {
+      console.error('Error loading branches for reset:', error);
+    }
+  }
+  
+  searchSalesHistory({
+    store: defaultStore,
+    salesDatesFrom: lastWeekDates.from,
+    salesDatesTo: lastWeekDates.to
+  });
+};
 
 onMounted(() => {
   loadSalesHistory();

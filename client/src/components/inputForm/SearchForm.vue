@@ -25,11 +25,11 @@ const initializeSearchOptions = () => {
   const options = {};
   props.filters.filters.forEach(element => {
     if (element.type === 'dateRange') {
-      options[element.name + 'From'] = '';
-      options[element.name + 'To'] = '';
+      options[element.name + 'From'] = element.defaultFromValue || '';
+      options[element.name + 'To'] = element.defaultToValue || '';
       return;
     }
-    options[element.name] = '';
+    options[element.name] = element.defaultValue || '';
   });
   searchOptions.value = options;
 };
@@ -103,7 +103,7 @@ defineExpose({
     <div 
       v-for="(row, rowIndex) in groupedFilters" 
       :key="rowIndex" 
-      class="grid grid-cols-4 gap-4 mb-4"
+      class="grid grid-cols-4 gap-2 mb-2"
     >
       <div 
         v-for="(filter, filterIndex) in row" 
@@ -111,20 +111,22 @@ defineExpose({
         class="flex items-center gap-2"
         :class="(filter.type === 'dateRange' || filter.type === 'textarea') ? 'col-span-2' : 'col-span-1'"
       >
-        <span class="text-lg font-medium text-gray-700 whitespace-nowrap w-28 flex-shrink-0 text-center">{{ filter.label }}</span>
+        <span class="text-lg font-medium whitespace-nowrap w-28 flex-shrink-0 text-center">{{ filter.label }}</span>
 
         <!-- Text Input -->
         <InputText v-if="filter.type === 'text'" :id="'filter-' + rowIndex + '-' + filterIndex" type="text"
-          v-model="searchOptions[filter.name]" :placeholder="filter.placeholder || 'Enter text...'" class="flex-1" />
+          v-model="searchOptions[filter.name]" :placeholder="filter.placeholder || 'Enter text...'" 
+          :disabled="filter.disabled || false" class="flex-1" />
 
         <!-- Textarea Input -->
         <Textarea v-else-if="filter.type === 'textarea'" :id="'filter-' + rowIndex + '-' + filterIndex"
-          v-model="searchOptions[filter.name]" :placeholder="filter.placeholder || 'Enter text...'" class="flex-1" rows="3" />
+          v-model="searchOptions[filter.name]" :placeholder="filter.placeholder || 'Enter text...'" 
+          :disabled="filter.disabled || false" class="flex-1" rows="3" />
         
         <!-- Date Picker -->
         <DatePicker v-else-if="filter.type === 'date'" :id="'filter-' + rowIndex + '-' + filterIndex"
           v-model="searchOptions[filter.name]" :placeholder="filter.placeholder || 'Select date...'"
-          dateFormat="yy-mm-dd" class="flex-1" :show-icon="true" :show-button-bar="true"/>
+          dateFormat="yy-mm-dd" :disabled="filter.disabled || false" class="flex-1" :show-icon="true" :show-button-bar="true"/>
 
         <!-- Date Picker From To -->
         <DatePickerFromTo v-else-if="filter.type === 'dateRange'" 
@@ -132,32 +134,45 @@ defineExpose({
           v-model:toValue="searchOptions[filter.name + 'To']" 
           :fromPlaceholder="filter.fromPlaceholder"
           :toPlaceholder="filter.toPlaceholder" 
+          :disabled="filter.disabled || false"
           class="flex-1" />
 
         <!-- Number Input -->
         <InputNumber v-else-if="filter.type === 'number'" :id="'filter-' + rowIndex + '-' + filterIndex"
-          v-model="searchOptions[filter.name]" :placeholder="filter.placeholder || 'Enter number...'" class="flex-1" />
+          v-model="searchOptions[filter.name]" :placeholder="filter.placeholder || 'Enter number...'" 
+          :disabled="filter.disabled || false" class="flex-1" />
 
         <!-- Select Input -->
         <Select v-else-if="filter.type === 'select'" :id="'filter-' + rowIndex + '-' + filterIndex"
           v-model="searchOptions[filter.name]" :options="filter.options" showClear
-          optionLabel="name" optionValue="value" :placeholder="filter.placeholder || 'Select option...'" class="flex-1" />
+          optionLabel="name" optionValue="value" :placeholder="filter.placeholder || 'Select option...'" 
+          :disabled="filter.disabled || false" class="flex-1" />
 
         <!-- Item Search -->
         <InputGroup v-else-if="filter.type === 'item-search'" class="flex-1">
-          <InputText :id="'filter-' + rowIndex + '-' + filterIndex" v-model="searchOptions[filter.name]" :placeholder="filter.placeholder || 'Enter item name...'" />
-          <Button icon="pi pi-search" class="p-button-outlined" @click="openSearchModal(filter.name)" />
+          <InputText 
+            :id="'filter-' + rowIndex + '-' + filterIndex" 
+            v-model="searchOptions[filter.name]" 
+            :placeholder="filter.placeholder || 'Enter item name...'" 
+            :readonly="filter.disabled || false"
+            :disabled="filter.disabled || false" />
+          <Button 
+            icon="pi pi-search" 
+            class="p-button-outlined" 
+            :disabled="filter.disabled || false"
+            @click="openSearchModal(filter.name)" />
         </InputGroup>
 
         <!-- Default fallback to text input -->
         <InputText v-else :id="'filter-' + rowIndex + '-' + filterIndex" type="text"
-          v-model="searchOptions[filter.name]" :placeholder="filter.placeholder || 'Enter text...'" class="flex-1" />
+          v-model="searchOptions[filter.name]" :placeholder="filter.placeholder || 'Enter text...'" 
+          :disabled="filter.disabled || false" class="flex-1" />
       </div>
 
       <!-- 빈 공간은 Grid에서 자동으로 처리됨 -->
     </div>
 
-    <div class="flex justify-center gap-3 mt-6">
+    <div class="flex justify-center gap-3 mt-0">
       <Button label="초기화" severity="secondary" @click="resetSearchOptions" />
       <Button label="조회" @click="confirm" />
     </div>

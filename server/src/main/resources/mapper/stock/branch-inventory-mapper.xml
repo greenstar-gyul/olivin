@@ -12,15 +12,15 @@
     <select id="selectAllBranchInventory" resultType="BranchInventoryVO">
         WITH branch_stocks AS (
         SELECT   inp.product_id,
-                inp.product_name,
-                NVL(SUM(inp.total_inbnd_quantity) * prd.pack_qty, 0) as total_inbnd_quantity,
-                0 AS total_outbnd_quantity,
-                comp.comp_name
+                 inp.product_name,
+                 NVL(SUM(inp.total_inbnd_quantity) * prd.pack_qty, 0) as total_inbnd_quantity,
+                 0 AS total_outbnd_quantity,
+                 comp.comp_name
         FROM     inbnd_product inp JOIN inbnd inb ON inb.inbnd_no = inp.inbnd_no
                                     JOIN companys comp ON comp.comp_id = inb.inbnd_to
                                     JOIN products prd ON prd.product_id = inp.product_id
         WHERE    inb.outbnd_from = 'COM10001'
-            AND    inp.inbnd_status = '000001'
+          AND    inp.inbnd_status = '000001'
         GROUP BY inp.product_id, inp.product_name, comp.comp_name, prd.pack_qty
 
         UNION ALL
@@ -41,12 +41,12 @@
                  get_datacode_name(p.category_sub) AS category_sub,
                  NVL(SUM(bs.total_inbnd_quantity), 0) - NVL(SUM(bs.total_outbnd_quantity), 0) AS stock_quantity,
                  p.vendor_name,
-                 p.product_spec,
+                 p.product_spec || get_datacode_name(p.unit) AS product_spec,
                  bs.comp_name,
                  p.safety_stock
         FROM     products p JOIN branch_stocks bs ON p.product_id = bs.product_id
         GROUP BY p.product_id, p.product_name, bs.comp_name, 
-                 p.category_main, p.category_sub, p.vendor_name, p.product_spec, p.safety_stock
+                 p.category_main, p.category_sub, p.vendor_name, p.product_spec, p.safety_stock, p.unit
         ORDER BY p.product_id
     </select>
     <!-- 조건에 맞는 지점 재고 조회 -->
@@ -82,17 +82,24 @@
                  get_datacode_name(p.category_sub) AS category_sub,
                  NVL(SUM(bs.total_inbnd_quantity), 0) - NVL(SUM(bs.total_outbnd_quantity), 0) AS stock_quantity,
                  p.vendor_name,
-                 p.product_spec,
+                 p.product_spec || get_datacode_name(p.unit) AS product_spec,
                  bs.comp_name,
                  p.safety_stock
         FROM     products p JOIN branch_stocks bs ON p.product_id = bs.product_id
-        WHERE    1=1
+        WHERE    p.status = '040001'
         <if test="productName != null and productName != ''">
                 AND p.product_name LIKE '%' || #{productName} || '%'
         </if>
-        <if test="categorySub != null and categorySub != ''">
-                AND get_datacode_name(p.category_sub) = #{categorySub}
-        </if>
+        <choose>
+                <when test="categorySub == null or categorySub == ''">
+                </when>
+                <when test="categorySub.endsWith('전체')">
+                AND  p.category_sub LIKE SUBSTR(get_datacode_value(#{categorySub}), 1, 3) || '%'
+                </when>
+                <otherwise>
+                 AND  p.category_sub = get_datacode_value(#{categorySub})
+                </otherwise>
+        </choose>
         <if test="vendorName != null and vendorName != ''">
                 AND p.vendor_name LIKE '%' || #{vendorName} || '%'
         </if>
@@ -100,7 +107,7 @@
                 AND bs.comp_name LIKE '%' || #{compName} || '%'
         </if>
         GROUP BY p.product_id, p.product_name, bs.comp_name, 
-                 p.category_main, p.category_sub, p.vendor_name, p.product_spec, p.safety_stock
+                 p.category_main, p.category_sub, p.vendor_name, p.product_spec, p.safety_stock, p.unit
         ORDER BY p.product_id
     </select>
 </mapper>

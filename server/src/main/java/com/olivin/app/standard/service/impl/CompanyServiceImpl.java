@@ -24,6 +24,7 @@ public class CompanyServiceImpl implements CompanyService {
     private static final String TYPE_HEADQUARTERS = "100001";  // 본사
     private static final String TYPE_BRANCH = "100002";        // 지점
     private static final String TYPE_SUPPLIER = "100003";      // 공급업체
+    private static final String TYPE_INACTIVE = "FFFFFF";      // 비활성화 (모든 유형 공통)
 
     @Override
     public List<CompanyVO> getAllCompanies() {
@@ -42,6 +43,11 @@ public class CompanyServiceImpl implements CompanyService {
     
     @Override
     public int saveCompany(CompanyVO companyVO) {
+        // 비활성화 타입으로 등록 시도 방지
+        if (TYPE_INACTIVE.equals(companyVO.getCompType())) {
+            throw new RuntimeException("비활성화 상태로는 새 회사를 등록할 수 없습니다.");
+        }
+        
         // 회사 ID 자동생성
         if (companyVO.getCompId() == null || companyVO.getCompId().isEmpty()) {
             String newCompId = getNextCompanyId(companyVO.getCompType());
@@ -67,7 +73,126 @@ public class CompanyServiceImpl implements CompanyService {
     
     @Override
     public int removeCompany(String compId) {
-        return companyMapper.deleteCompany(compId);
+        try {
+            // 회사 정보 조회
+            CompanyVO company = companyMapper.selectCompany(compId);
+            if (company == null) {
+                throw new RuntimeException("삭제할 회사를 찾을 수 없습니다.");
+            }
+            
+            // 이미 비활성화된 회사인지 확인
+            if (TYPE_INACTIVE.equals(company.getCompType())) {
+                throw new RuntimeException("이미 비활성화된 회사입니다. 필요시 다시 활성화하거나 완전 삭제를 진행하세요.");
+            }
+            
+            // 발주서에서 사용 중인지 확인
+            int purchaseOrderCount = companyMapper.countPurchaseOrdersByCompId(compId);
+            if (purchaseOrderCount > 0) {
+                // 회사 유형에 따라 메시지 다르게 설정
+                String companyTypeName = company.getCompTypeName();
+                
+                throw new RuntimeException(
+                    String.format("해당 %s는 발주서 %d건에서 사용 중이어서 삭제할 수 없습니다. " +
+                                "상태를 '비활성'으로 변경하거나 발주서를 먼저 처리해주세요.", 
+                                companyTypeName, purchaseOrderCount)
+                );
+            }
+            
+            // 발주서에서 사용하지 않는 경우에만 삭제 실행
+            return companyMapper.deleteCompany(compId);
+            
+        } catch (Exception e) {
+            throw new RuntimeException(e.getMessage());
+        }
+    }
+    
+    /**
+     * 회사를 비활성화 처리 (COMP_TYPE을 FFFFFF로 변경)
+     */
+    public int deactivateCompany(String compId) {
+        try {
+            CompanyVO company = companyMapper.selectCompany(compId);
+            if (company == null) {
+                throw new RuntimeException("비활성화할 회사를 찾을 수 없습니다.");
+            }
+            
+            // 이미 비활성화된 회사인지 확인
+            if (TYPE_INACTIVE.equals(company.getCompType())) {
+                throw new RuntimeException("이미 비활성화된 회사입니다.");
+            }
+            
+            // COMP_TYPE을 FFFFFF로 변경하여 비활성화
+            company.setCompType(TYPE_INACTIVE);
+            company.setUpdateDate(new Date());
+            
+            return companyMapper.updateCompany(company);
+            
+        } catch (Exception e) {
+            throw new RuntimeException(e.getMessage());
+        }
+    }
+    
+    /**
+     * 회사를 다시 활성화 처리 (COMP_TYPE을 원래 유형으로 복원)
+     * 주의: 원래 유형을 알 수 없으므로 매개변수로 받아야 함
+     */
+    public int reactivateCompany(String compId, String originalCompType) {
+        try {
+            CompanyVO company = companyMapper.selectCompany(compId);
+            if (company == null) {
+                throw new RuntimeException("활성화할 회사를 찾을 수 없습니다.");
+            }
+            
+            // 비활성화된 회사인지 확인
+            if (!TYPE_INACTIVE.equals(company.getCompType())) {
+                throw new RuntimeException("이미 활성화된 회사입니다.");
+            }
+            
+            // 유효한 회사 유형인지 확인
+            if (!isValidActiveCompType(originalCompType)) {
+                throw new RuntimeException("유효하지 않은 회사 유형입니다: " + originalCompType);
+            }
+            
+            // COMP_TYPE을 원래 유형으로 복원
+            company.setCompType(originalCompType);
+            company.setUpdateDate(new Date());
+            
+            return companyMapper.updateCompany(company);
+            
+        } catch (Exception e) {
+            throw new RuntimeException(e.getMessage());
+        }
+    }
+    
+    /**
+     * 유효한 활성 회사 유형인지 확인
+     */
+    private boolean isValidActiveCompType(String compType) {
+        return TYPE_HEADQUARTERS.equals(compType) || 
+               TYPE_BRANCH.equals(compType) || 
+               TYPE_SUPPLIER.equals(compType);
+    }
+    
+    /**
+     * 회사가 활성 상태인지 확인
+     */
+    public boolean isActiveCompany(String compId) {
+        CompanyVO company = companyMapper.selectCompany(compId);
+        return company != null && company.isActive();
+    }
+    
+    /**
+     * 활성 상태의 회사 유형별 조회
+     */
+    public List<CompanyVO> getActiveCompaniesByType(String compType) {
+        return companyMapper.selectActiveCompaniesByType(compType);
+    }
+    
+    /**
+     * 활성 상태의 모든 회사 조회
+     */
+    public List<CompanyVO> getActiveCompanies() {
+        return companyMapper.selectActiveCompanies();
     }
     
     @Override
@@ -98,6 +223,11 @@ public class CompanyServiceImpl implements CompanyService {
     @Override
     public String getNextCompanyId(String compType) {
         try {
+            // 비활성화 타입인 경우 ID 생성 불가
+            if (TYPE_INACTIVE.equals(compType)) {
+                throw new IllegalArgumentException("비활성화 타입으로는 새 회사 ID를 생성할 수 없습니다.");
+            }
+            
             switch (compType) {
                 case TYPE_HEADQUARTERS: // 본사
                     return "COM10001";
@@ -158,5 +288,37 @@ public class CompanyServiceImpl implements CompanyService {
     @Override
     public List<CompanyVO> getRecentCompanies(int limit) {
         return companyMapper.selectRecentCompanies(limit);
+    }
+    
+    /**
+     * 회사 사용 여부 종합 확인
+     * @param compId 회사 ID
+     * @return 사용 여부 정보가 담긴 Map
+     */
+    public Map<String, Object> checkCompanyUsage(String compId) {
+        int purchaseOrderCount = companyMapper.countPurchaseOrdersByCompId(compId);
+        int employeeCount = companyMapper.countEmployeesByCompId(compId);
+        int productCount = companyMapper.countProductsByCompId(compId);
+        int salesPlanCount = companyMapper.countSalesPlansByCompId(compId);
+        int accountLedgerCount = companyMapper.countAccountLedgersByCompId(compId);
+        
+        boolean isUsed = purchaseOrderCount > 0 || employeeCount > 0 || 
+                        productCount > 0 || salesPlanCount > 0 || accountLedgerCount > 0;
+        
+        return Map.of(
+            "isUsed", isUsed,
+            "purchaseOrderCount", purchaseOrderCount,
+            "employeeCount", employeeCount,
+            "productCount", productCount,
+            "salesPlanCount", salesPlanCount,
+            "accountLedgerCount", accountLedgerCount,
+            "details", Map.of(
+                "hasPurchaseOrders", purchaseOrderCount > 0,
+                "hasEmployees", employeeCount > 0,
+                "hasProducts", productCount > 0,
+                "hasSalesPlans", salesPlanCount > 0,
+                "hasAccountLedgers", accountLedgerCount > 0
+            )
+        );
     }
 }

@@ -4,7 +4,9 @@ import java.util.List;
 
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.olivin.app.inbnd.service.InbndProdDVO;
@@ -33,4 +35,20 @@ public class InbndController {
     public List<InbndProdDVO> test(@PathVariable("productId") String productId) {
       return inbndService.test(productId);
     } // end of prodListByLot()
+
+    /**
+     * 입고번호 생성
+     */
+    @GetMapping("/inbnd/getCode")
+    public String outbndCode() {
+      return inbndService.getCodeForUpdate();
+    } // emd pf pitbmdCpde()
+
+    /**
+     * 입고 처리 프로시저 호출
+     */
+    @PostMapping("/inbnd/BrProcess")
+    public void processHqOutbnd(@RequestParam String orderId) {
+        inbndService.processBrInbnd(orderId);
+    } // end of processHqOutbnd
 } // end of class

@@ -1,4 +1,6 @@
 <script setup>
+import { convertDate } from '@/utils/dateUtils';
+
 const props = defineProps({
   title: { 
     type: String,
@@ -32,7 +34,7 @@ const searchItem = (item, fieldName) => {
       <div class="grid grid-cols-2 gap-6">
         <div v-for="(element, idx) in formSchema" :key="idx" class="flex flex-col gap-4">
           <div class="grid grid-cols-12 gap-2">
-            <label :for="'form-' + element.id" class="flex items-center justify-center col-span-12 mb-2 sm:col-span-3 sm:mb-0">{{ element.label }}</label>
+            <label :for="'form-' + element.id" class="flex items-center justify-center col-span-12 mb-2 sm:col-span-3 sm:mb-0 text-lg font-medium">{{ element.label }}</label>
             <div class="col-span-12 sm:col-span-9">
               <!-- 입력 : text, combobox, number(float), data, searchInput(공급) -->
               
@@ -73,15 +75,24 @@ const searchItem = (item, fieldName) => {
                 :placeholder="element.placeholder || 'Enter number...'" :fluid="true" />
               
               <template v-else>
-                <span v-if="element.data === 'number'" class="text-right">
-                  {{ Number(formData[element.id]).toLocaleString() }}
-                </span>
-                <span v-else-if="element.data === 'date'" class="text-right">
-                  {{ new Date(formData[element.id]).toLocaleDateString() }}
-                </span>
-                <span v-else class="text-left">
-                  {{ formData[element.id] }}
-                </span>
+                <InputText v-if="element.data === 'number'" 
+                  class="text-left" 
+                  :value="Number(formData[element.id]).toLocaleString()" 
+                  variant="filled"
+                  readonly
+                />
+                <InputText v-else-if="element.data === 'date'"
+                  class="text-left" 
+                  :value="convertDate(formData[element.id])"
+                  variant="filled"
+                  readonly
+                />
+                <InputText v-else
+                  class="text-left" 
+                  :value="formData[element.id]"
+                  variant="filled"
+                  readonly
+                />
               </template>
             </div>
           </div>

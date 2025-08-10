@@ -19,4 +19,7 @@
         FROM outbnd
         WHERE outbnd_no LIKE 'OUT' || TO_CHAR(SYSDATE, 'YYYYMMDD') || '%' 
     </select>
+    <update id="callProcHqOutbndProcess" parameterType="string" statementType="CALLABLE">
+        {CALL proc_hq_outbnd_process(#{orderId, mode=IN, jdbcType=VARCHAR})}
+    </update>
 </mapper>

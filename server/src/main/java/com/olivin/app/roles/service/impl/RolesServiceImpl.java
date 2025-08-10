@@ -1,6 +1,7 @@
 package com.olivin.app.roles.service.impl;
 
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -19,6 +20,8 @@ import lombok.RequiredArgsConstructor;
 public class RolesServiceImpl implements RolesService {
     
     private final RolesMapper roleMapper;
+    
+    // ========== 기존 역할 관리 구현 ==========
     
     @Override
     public List<RolesVO> getAllRoles() {
@@ -51,13 +54,11 @@ public class RolesServiceImpl implements RolesService {
             roleVO.setRoleId(nextRoleId);
         }
         
-        // 등록일 설정
-        roleVO.setRegDate(new Date());
-        
-        // 등록자가 없으면 기본값 설정
-        if (roleVO.getRegUser() == null || roleVO.getRegUser().isEmpty()) {
-            roleVO.setRegUser("SYSTEM");
-        }
+        // REG_DATE, REG_USER 제거 - 테이블에 없으면 주석 처리
+        // roleVO.setRegDate(new Date());
+        // if (roleVO.getRegUser() == null || roleVO.getRegUser().isEmpty()) {
+        //     roleVO.setRegUser("SYSTEM");
+        // }
         
         int result = roleMapper.insertRole(roleVO);
         
@@ -71,7 +72,8 @@ public class RolesServiceImpl implements RolesService {
     
     @Override
     public int modifyRole(RolesVO roleVO) {
-        roleVO.setUpdateDate(new Date());
+        // UPDATE_DATE 설정 제거 - 굳이 필요없음
+        // roleVO.setUpdateDate(new Date());
         
         int result = roleMapper.updateRole(roleVO);
         
@@ -178,5 +180,148 @@ public class RolesServiceImpl implements RolesService {
     @Override
     public List<Map<String, Object>> getRolePermissionCount() {
         return roleMapper.selectRolePermissionCount();
+    }
+    
+    // ========== 추가: 사원 관련 구현 ==========
+    
+    @Override
+    public List<Map<String, Object>> getEmployeesWithPermissions(Map<String, Object> searchParams) {
+        try {
+            List<Map<String, Object>> employees = roleMapper.selectEmployeesWithPermissions(searchParams);
+            
+            // 데이터 후처리 (필요한 경우)
+            for (Map<String, Object> employee : employees) {
+                // permissionCount가 null인 경우 0으로 설정
+                if (employee.get("permissionCount") == null) {
+                    employee.put("permissionCount", 0);
+                }
+                // permissionNames가 null인 경우 빈 문자열로 설정
+                if (employee.get("permissionNames") == null) {
+                    employee.put("permissionNames", "");
+                }
+            }
+            
+            return employees;
+        } catch (Exception e) {
+            System.err.println("사원 목록 조회 중 오류: " + e.getMessage());
+            e.printStackTrace();
+            throw new RuntimeException("사원 목록 조회에 실패했습니다: " + e.getMessage());
+        }
+    }
+    
+    @Override
+    public List<Integer> getEmployeePermissionIds(String employeeId) {
+        try {
+            // 사원 존재 여부 확인
+            if (!isEmployeeExists(employeeId)) {
+                throw new RuntimeException("존재하지 않는 사원입니다: " + employeeId);
+            }
+            
+            return roleMapper.selectEmployeePermissionIds(employeeId);
+        } catch (Exception e) {
+            System.err.println("사원 권한 조회 중 오류: " + e.getMessage());
+            e.printStackTrace();
+            throw new RuntimeException("사원 권한 조회에 실패했습니다: " + e.getMessage());
+        }
+    }
+    
+    @Override
+    @Transactional
+    public int updateEmployeeRole(String employeeId, Integer roleId, String updateUser) {
+        try {
+            // 사원 존재 여부 확인
+            if (!isEmployeeExists(employeeId)) {
+                throw new RuntimeException("존재하지 않는 사원입니다: " + employeeId);
+            }
+            
+            // 역할 존재 여부 확인
+            if (!isRoleIdExists(roleId)) {
+                throw new RuntimeException("존재하지 않는 역할입니다: " + roleId);
+            }
+            
+            Map<String, Object> params = new HashMap<>();
+            params.put("employeeId", employeeId);
+            params.put("roleId", roleId);
+            // updateUser와 updateDate 제거 - 굳이 필요없음
+            
+            int result = roleMapper.updateEmployeeRole(params);
+            
+            if (result <= 0) {
+                throw new RuntimeException("사원 역할 변경에 실패했습니다");
+            }
+            
+            return result;
+        } catch (Exception e) {
+            System.err.println("사원 역할 변경 중 오류: " + e.getMessage());
+            e.printStackTrace();
+            throw new RuntimeException("사원 역할 변경에 실패했습니다: " + e.getMessage());
+        }
+    }
+    
+    @Override
+    public boolean isEmployeeExists(String employeeId) {
+        try {
+            return roleMapper.checkEmployeeExists(employeeId) > 0;
+        } catch (Exception e) {
+            System.err.println("사원 존재 여부 확인 중 오류: " + e.getMessage());
+            e.printStackTrace();
+            return false;
+        }
+    }
+    
+    // ========== 추가: 유틸리티 메서드 ==========
+    
+    /**
+     * 사원의 역할명 조회
+     */
+    public String getEmployeeRoleName(String employeeId) {
+        try {
+            return roleMapper.selectEmployeeRoleName(employeeId);
+        } catch (Exception e) {
+            System.err.println("사원 역할명 조회 중 오류: " + e.getMessage());
+            return null;
+        }
+    }
+    
+    /**
+     * 역할별 사원 수 조회
+     */
+    public Map<String, Object> getRoleEmployeeCount(Integer roleId) {
+        try {
+            return roleMapper.selectRoleEmployeeCount(roleId);
+        } catch (Exception e) {
+            System.err.println("역할별 사원 수 조회 중 오류: " + e.getMessage());
+            return new HashMap<>();
+        }
+    }
+    
+    /**
+     * 사원의 권한 상세 정보 조회 (권한명 포함)
+     */
+    public List<Map<String, Object>> getEmployeePermissionDetails(String employeeId) {
+        try {
+            if (!isEmployeeExists(employeeId)) {
+                throw new RuntimeException("존재하지 않는 사원입니다: " + employeeId);
+            }
+            
+            return roleMapper.selectEmployeePermissionDetails(employeeId);
+        } catch (Exception e) {
+            System.err.println("사원 권한 상세 조회 중 오류: " + e.getMessage());
+            e.printStackTrace();
+            throw new RuntimeException("사원 권한 상세 조회에 실패했습니다: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * 부서별 권한 통계
+     */
+    public List<Map<String, Object>> getDepartmentPermissionStats() {
+        try {
+            return roleMapper.selectDepartmentPermissionStats();
+        } catch (Exception e) {
+            System.err.println("부서별 권한 통계 조회 중 오류: " + e.getMessage());
+            e.printStackTrace();
+            return List.of();
+        }
     }
 }

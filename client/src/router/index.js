@@ -185,6 +185,16 @@ const router = createRouter({
                     name: 'hqInbndMgmt',
                     component: () => import('@/views/inventory/hqInbndMgmt.vue')
                 },
+                {
+                    path: '/brInbndMgmt',
+                    name: 'brInbndMgmt',
+                    component: () => import('@/views/inventory/brInbndMgmt.vue')
+                },
+                {
+                    path: '/supOutbndMgmt',
+                    name: 'supOutbndMgmt',
+                    component: () => import('@/views/inventory/supOutbndMgmt.vue'),
+                },
                 /* end of inventory */
                 {
                     path: '/standard/supplier',
@@ -274,7 +284,7 @@ const router = createRouter({
                     path: '/sales/orders',
                     name: 'salesOrders',
                     component: () => import('@/views/sales/SalesOrdersMgmt.vue'),
-                    meta: { roles: ['ROLE_STORE_MANAGER', 'ROLE_EMPLOYEE'] }
+                    // meta: { roles: ['ROLE_STORE_MANAGER', 'ROLE_EMPLOYEE'] }
                 },
                 {
                     path: '/sales/orders/view',

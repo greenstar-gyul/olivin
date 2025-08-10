@@ -14,10 +14,13 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.olivin.app.order.service.ApprovalOrdersDTO;
 import com.olivin.app.order.service.OrdersDTO;
 import com.olivin.app.order.service.OrdersDetailVO;
 import com.olivin.app.order.service.OrdersService;
 import com.olivin.app.order.service.OrdersVO;
+import com.olivin.app.order.service.RejectionService;
+import com.olivin.app.order.service.RejectionVO;
 import com.olivin.app.order.service.SearchOrdersVO;
 import com.olivin.app.order.service.UserCompanyVO;
 
@@ -40,6 +43,7 @@ import lombok.extern.slf4j.Slf4j;
 @RequestMapping("/api")
 public class OrdersController {
 	private final OrdersService ordersService;
+	private final RejectionService rejectionService;
 	
 	@GetMapping("/orders/user/compInfo")
 	public UserCompanyVO getCompInfo(@RequestParam String empId) {
@@ -67,9 +71,55 @@ public class OrdersController {
 		return result;
 	}
 	
+	@PostMapping("/orders/{orderId}/approval")
+	public Map<String, Object> orderApproval(@PathVariable String orderId, @RequestBody ApprovalOrdersDTO approvalDTO) {
+		Map<String, Object> result = new HashMap<>();
+		int r = ordersService.approvalOrders(orderId, approvalDTO.getEmployeeId());
+		if (r == 1) {
+			OrdersVO orderVO = ordersService.getOneOrders(orderId);
+			result.put("result", "SUCCESS");
+			result.put("message", "성공");
+			result.put("data", orderVO);
+    } else {
+			result.put("result", "FAIL");
+			result.put("message", "실패");
+    }
+  	
+		return result;
+	}
+	
+	@PostMapping("/orders/{orderId}/rejection")
+	public Map<String, Object> orderRejection(@PathVariable String orderId, @RequestBody RejectionVO rejectionVO) {
+		Map<String, Object> result = new HashMap<>();
+		int r = ordersService.rejectionOrders(rejectionVO);
+		if (r == 1) {
+			Map<String, Object> rejectionMap = new HashMap<>();
+			OrdersVO orderVO = ordersService.getOneOrders(orderId);
+			RejectionVO rejectionOrderVO = rejectionService.getRejectionByOrderId(orderId);
+			
+			rejectionMap.put("orders", orderVO);
+			rejectionMap.put("rejection", rejectionOrderVO);
+			
+			result.put("result", "SUCCESS");
+			result.put("message", "성공");
+			result.put("data", rejectionMap);
+    } else {
+			result.put("result", "FAIL");
+			result.put("message", "실패");
+    }
+//		result.put("result", "TEST");
+//		result.put("data", rejectionVO);
+  	
+		return result;
+	}
+	
+	@GetMapping("/orders/{orderId}/rejection")
+	public RejectionVO getOrderRejection(@PathVariable String orderId) {
+		return rejectionService.getRejectionByOrderId(orderId);
+	}
+	
 	@GetMapping("/orders/head")
 	public List<OrdersVO> orderHeadList(@ModelAttribute SearchOrdersVO search) {
-		search.setOrderType("150001");
 		return ordersService.getAllOrders(search);
 	}
 
@@ -92,7 +142,7 @@ public class OrdersController {
 //    List<OrdersDetailVO> detailList = objectMapper.convertValue(orderMap.get("ordersDetail"),
 //            new TypeReference<List<OrdersDetailVO>>() {});
 		Map<String, Object> result = new HashMap<>();
-    
+
     log.debug("ORDER : {}", orderDTO.getOrders());
     log.debug("DETAIL : {}", orderDTO.getOrdersDetail());
     if (orderDTO.getOrders() != null) {

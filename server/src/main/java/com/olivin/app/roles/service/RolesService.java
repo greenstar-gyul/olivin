@@ -5,6 +5,8 @@ import java.util.Map;
 
 public interface RolesService {
     
+    // ========== 기존 역할 관리 메서드 ==========
+    
     // 모든 권한 목록 조회
     List<RolesVO> getAllRoles();
     
@@ -44,8 +46,6 @@ public interface RolesService {
     // 권한 사용 여부 확인 (직원이 사용 중인지)
     boolean isRoleInUse(Integer roleId);
     
-    // === 권한-권한 매핑 관련 (간소화) ===
-    
     // 모든 권한 목록 조회
     List<Map<String, Object>> getAllPermissions();
     
@@ -60,4 +60,18 @@ public interface RolesService {
     
     // 권한별 권한 수 조회
     List<Map<String, Object>> getRolePermissionCount();
+    
+    // ========== 추가: 사원 관련 메서드 ==========
+    
+    // 사원 목록 조회 (권한 정보 포함)
+    List<Map<String, Object>> getEmployeesWithPermissions(Map<String, Object> searchParams);
+    
+    // 특정 사원의 권한 ID 목록 조회 (역할을 통해)
+    List<Integer> getEmployeePermissionIds(String employeeId);
+    
+    // 사원의 역할 변경
+    int updateEmployeeRole(String employeeId, Integer roleId, String updateUser);
+    
+    // 사원 존재 여부 확인
+    boolean isEmployeeExists(String employeeId);
 }
