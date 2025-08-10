@@ -4,7 +4,6 @@ import SearchTable from '../../components/common/SearchTable.vue';
 import axios from '@/service/axios';
 import DialogModal from '@/components/overray/DialogModal.vue';
 import Button from 'primevue/button';
-import { useAuth } from '@/composables/useAuth';
 
 // 조회 폼의 헤더 정보 (조회 테이블 컬럼 이름)
 const mainHeader = ref({
@@ -21,43 +20,6 @@ const mainHeader = ref({
   },
   rightAligned: ['stockQuantity', 'safetyStock'] // 오른쪽 정렬할 컬럼 리스트
 });
-
-// ============================================
-// 🔐 사용자 인증 및 권한 관리
-// ============================================
-const { user, isSupplier } = useAuth();
-
-// 현재 사용자의 공급업체 정보 가져오기
-const getUserCompanyInfo = async () => {
-  try {
-    if (!user.value?.employeeId) {
-      console.warn('사용자 정보가 없습니다.');
-      return null;
-    }
-    
-    const response = await axios.get('/api/orders/user/compInfo', {
-      params: { empId: user.value.employeeId }
-    });
-    
-    // compType이 '100003'이면 공급업체
-    if (response.data?.compType === '100003') {
-      console.log('공급업체 사용자 정보:', response.data);
-      return {
-        compId: response.data.compId,
-        compName: response.data.compName,
-        compType: response.data.compType
-      };
-    }
-    
-    return null;
-  } catch (error) {
-    console.error('사용자 회사 정보 조회 실패:', error);
-    return null;
-  }
-};
-
-// 공급업체 정보 저장
-const userCompanyInfo = ref(null);
 
 // 조회할 데이터
 const mainItems = ref([]);
@@ -79,29 +41,12 @@ const lotItems = ref([]);
 
 // 검색 조건 필터 설정
 const filters = ref({});
-
-// 🔐 검색 필터 초기화 (사용자 권한에 따라)
-const initializeFilters = () => {
-  filters.value.title = '재고 검색'; // 검색 조건 폼 제목
-  filters.value.filters = [ // 검색 조건 필터 목록
-    { type: 'item-search', label: '제품명', value: '', placeholder: '제품번호 / 제품명 검색', name: 'productModal' },
-    { type: 'item-search', label: '제품분류', value: '', placeholder: '제품분류 선택', name: 'productType' },
-    { 
-      type: 'item-search', 
-      label: '공급사', 
-      value: userCompanyInfo.value?.compName || '', 
-      placeholder: userCompanyInfo.value?.compName || '공급사 검색', 
-      name: 'publisher',
-      disabled: !!userCompanyInfo.value?.compName, // 공급업체 사용자인 경우 비활성화
-      readonly: !!userCompanyInfo.value?.compName  // 읽기 전용으로 설정
-    },
-  ];
-  
-  // 🔐 공급업체 사용자인 경우 공급사 필터를 고정값으로 설정
-  if (userCompanyInfo.value?.compName) {
-    console.log('공급업체 사용자 - 공급사 필터 고정:', userCompanyInfo.value.compName);
-  }
-};
+filters.value.title = '재고 검색'; // 검색 조건 폼 제목
+filters.value.filters = [ // 검색 조건 필터 목록
+  { type: 'item-search', label: '제품명', value: '', placeholder: '제품번호 / 제품명 검색', name: 'productModal' },
+  { type: 'item-search', label: '제품분류', value: '', placeholder: '제품분류 선택', name: 'productType' },
+  { type: 'item-search', label: '공급사', value: '', placeholder: '공급사 검색', name: 'publisher' },
+];
 
 // 모달창의 테이블 헤더 정보
 // field: 테이블의 각 컬럼에 해당하는 데이터의 키
@@ -141,15 +86,8 @@ const publisherItems = ref([]);
 
 const loadStockData = async () => {
   try {
-    // 🔐 공급업체 사용자인 경우 자신의 업체 제품만 조회
-    const params = {};
-    if (userCompanyInfo.value?.compName) {
-      params.vendorName = userCompanyInfo.value.compName;
-      console.log('공급업체 사용자 - 필터링된 조회:', userCompanyInfo.value.compName);
-    }
-    
     // 서버에서 재고 데이터를 가져오기
-    const response = await axios.get('/api/inventory/headStock/search', { params });
+    const response = await axios.get('/api/inventory/headStock/search');
     allStockData.value = await response.data; // 전체 데이터를 allStockData에 저장
     applyFilters(); // 필터 적용
 
@@ -192,15 +130,8 @@ const publisherModalVisible = ref(false);
 
 const loadProductItems = async () => {
   try {
-    // 🔐 공급업체 사용자인 경우 자신의 제품만 조회
-    const params = {};
-    if (userCompanyInfo.value?.compName) {
-      params.vendorName = userCompanyInfo.value.compName;
-      console.log('공급업체 사용자 - 제품 목록 필터링:', userCompanyInfo.value.compName);
-    }
-    
     // 제품 목록을 서버에서 가져오기
-    const response = await axios.get('/api/search/products/all', { params });
+    const response = await axios.get('/api/search/products/all');
     productItems.value = await response.data; // 서버에서 받은 데이터를 productItems에 저장
 
     console.log('Product items loaded:', productItems.value);
@@ -247,13 +178,6 @@ const searchData = async (searchOptions) => {
 // case 문을 사용하여 모달 이름(item-search 타입의 name을 따름)에 따라 다른 모달을 열 수 있도록 구현
 const handleOpenModal = (filterName) => {
   console.log('Open modal for filter:', filterName);
-  
-  // 🔐 공급업체 사용자인 경우 공급사 모달 열기 방지
-  if (filterName === 'publisher' && userCompanyInfo.value?.compName) {
-    console.log('공급업체 사용자 - 공급사 모달 접근 차단');
-    return;
-  }
-  
   switch (filterName) {
     case 'productModal':
       loadProductItems();
@@ -324,16 +248,11 @@ const confirmPublisherModal = (selectedItems) => {
 const searchProducts = async (searchValue) => {
   try {
     console.log('Searching products with value:', searchValue);
-    
-    const params = { searchValue: searchValue };
-    
-    // 🔐 공급업체 사용자인 경우 자신의 제품만 검색
-    if (userCompanyInfo.value?.compName) {
-      params.vendorName = userCompanyInfo.value.compName;
-      console.log('공급업체 사용자 - 제품 검색 필터링:', userCompanyInfo.value.compName);
-    }
-    
-    const response = await axios.get('/api/search/products', { params });
+    const response = await axios.get('/api/search/products', {
+      params: {
+        searchValue: searchValue
+      }
+    });
     productItems.value = await response.data; // 서버에서 받은 데이터를 items에 저장
   } catch (error) {
     console.error('Error searching products:', error);
@@ -371,20 +290,13 @@ const searchPublishers = async (searchValue) => {
 const searchStocks = async (searchOptions) => {
   try {
     console.log('Searching stocks with options:', searchOptions);
-    
-    const params = {
-      productName: searchOptions.productModal || '',
-      categorySub: searchOptions.productType || '',
-      vendorName: searchOptions.publisher || '',
-    };
-    
-    // 🔐 공급업체 사용자인 경우 자신의 업체 제품만 검색
-    if (userCompanyInfo.value?.compName) {
-      params.vendorName = userCompanyInfo.value.compName;
-      console.log('공급업체 사용자 - 검색 필터링:', userCompanyInfo.value.compName);
-    }
-    
-    const response = await axios.get('/api/inventory/headStock/search', { params });
+    const response = await axios.get('/api/inventory/headStock/search', {
+      params: {
+        productName: searchOptions.productModal || '',
+        categorySub: searchOptions.productType || '',
+        vendorName: searchOptions.publisher || '',
+      }
+    });
     allStockData.value = await response.data; // 검색 결과를 전체 데이터로 저장
     applyFilters(); // 필터 적용
     console.log('Stocks searched:', allStockData.value);
@@ -459,14 +371,7 @@ const getStockTag = (rowData, fieldName) => {
   return null; // null을 반환하면 기본 렌더링 사용
 };
 
-onMounted(async () => {
-  // 🔐 사용자 회사 정보 확인 (공급업체인지 판단)
-  userCompanyInfo.value = await getUserCompanyInfo();
-  
-  // 🔐 사용자 권한에 따른 필터 초기화
-  initializeFilters();
-  
-  // 재고 데이터 로딩
+onMounted(() => {
   loadStockData();
 });
 
