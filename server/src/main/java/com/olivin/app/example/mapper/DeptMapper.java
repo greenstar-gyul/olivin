@@ -24,6 +24,6 @@ public interface DeptMapper {
 
   // 부서 코드 자동생성
   String selectLastDept(@Param("deptId") String deptId);
-
+  void insertDeptIfNotExists(DeptVO deptVO);
   
 }

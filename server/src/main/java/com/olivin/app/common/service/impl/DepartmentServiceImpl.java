@@ -23,6 +23,25 @@ public class DepartmentServiceImpl implements DeptService{
     return deptMapper.selectAllList();
   }
 
+  // 등록
+  @Override
+  public int insertDept(DeptVO deptVO) {
+      deptMapper.insertDeptIfNotExists(deptVO);
+      return deptMapper.insertDept(deptVO);
+  }
+
+  // 수정
+  @Override
+  public int updateDept(DeptVO deptVO) {
+      return deptMapper.updateDept(deptVO);
+  }
+
+  // 삭제
+  @Override
+  public int deleteDept(String departmentId) {
+      return deptMapper.deleteDept(departmentId);
+  }
+
   @Override
   public List<DeptVO> searchDepts(String searchValue) {
     // TODO Auto-generated method stub

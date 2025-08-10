@@ -208,7 +208,6 @@ const saveData = async (inputData, mode = 'insert') => {
 };
 
 
-
 // ✅ 부서 목록 초기 로딩용 함수
 const loadEmps = async () => {
   await searchData({});
