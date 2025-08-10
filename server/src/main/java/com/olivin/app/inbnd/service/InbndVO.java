@@ -15,6 +15,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class InbndVO {
     private String inbndNo; // 입고번호
+    private String orderId; // 발주ID
     private String outbndNo; // 출고번호
     private String outbndFrom; // 출고지
     private String inbndTo; // 입고지

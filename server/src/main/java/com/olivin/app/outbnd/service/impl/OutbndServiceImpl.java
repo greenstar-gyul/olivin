@@ -27,7 +27,7 @@ public class OutbndServiceImpl implements OutbndService {
 
     /**
      * 본사 출고처리 프로시저 호출
-     * @ param_orderId_발주 ID
+     * param_orderId_발주 ID
      */
     @Override
     public void processHqOutbnd(String orderId) {
