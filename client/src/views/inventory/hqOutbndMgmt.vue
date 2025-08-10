@@ -53,13 +53,13 @@ const confirmModal = async (selectedItems) => {
   formData.value.outbndFrom = selectedItems.orderTo;
   formData.value.inbndTo = selectedItems.orderFrom;
   formData.value.outbndDate = today;
-  console.log('테에스으트', formData.value);
+  // console.log('테에스으트', formData.value);
   
   /* 제품 상세정보 불러오기 */
   const selOrderId = formData.value.orderId;
   // console.log('id값 확인', selOrderId);
   const res = await axios.get(`/api/orders/${selOrderId}`);
-  console.log('상세값확인', res.data.detail);
+  // console.log('상세값확인', res.data.detail);
   const details = res.data.detail;
 
   for (let id = 0; id < details.length; id++) {
@@ -83,7 +83,6 @@ const searchModal = (searchValue) => {
 };
 
 /* end of Modal function */
-
 
 /* Form Data */
 // 폼 기본값
