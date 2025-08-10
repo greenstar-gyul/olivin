@@ -22,4 +22,7 @@
     <update id="callProcHqOutbndProcess" parameterType="string" statementType="CALLABLE">
         {CALL proc_hq_outbnd_process(#{orderId, mode=IN, jdbcType=VARCHAR})}
     </update>
+    <update id="callProcSubOutbndProcess" parameterType="string" statementType="CALLABLE">
+        {CALL proc_vendor_outbnd_process(#{orderId, mode=IN, jdbcType=VARCHAR})}
+    </update>
 </mapper>

@@ -42,4 +42,12 @@ public class OutbndController {
     public void processHqOutbnd(@RequestParam String orderId) {
         outbndService.processHqOutbnd(orderId);
     } // end of processHqOutbnd
+    
+    /**
+     * 공급업체 출고 처리 프로시저 호출
+     */
+    @PostMapping("/outbnd/subProcess")
+    public void processSubOutbnd(@RequestParam String orderId) {
+        outbndService.processSubOutbnd(orderId);
+    } // end of processSubOutbnd
 } // end of class
