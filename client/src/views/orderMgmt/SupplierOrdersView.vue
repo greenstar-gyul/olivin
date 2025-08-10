@@ -18,7 +18,7 @@ const header = ref({
     reasonName: '제안사유', 
     orderDate: '제안요청일', 
     creatorName: '등록자', 
-    orderFrom: '공급업체명', 
+    orderTo: '공급업체명', 
     totalAmount: '총 금액', 
     dueDate: '납기예정일',
     orderStatusName: '제안상태'
@@ -55,7 +55,7 @@ filters.value.filters = [
   },
   { type: 'dateRange', label: '납기예정일', value: '', name: 'dueDate',
     fromPlaceholder: '예: 2025-07-01', toPlaceholder: '예: 2025-07-31' },
-  { type: 'text', label: '공급업체명', value: '', placeholder: '공급업체명을 입력하세요.', name: 'orderFrom' },
+  { type: 'text', label: '공급업체명', value: '', placeholder: '공급업체명을 입력하세요.', name: 'orderTo' },
 
 ];
 
@@ -125,7 +125,7 @@ const defaultFilterOptions = async (userInfo) => {
 
   // 지점 정보 기져오기
   const supplierInfo = await getSupplierInfo(userInfo.employeeId);
-  options.orderFrom = supplierInfo?.compName || '';
+  options.orderTo = supplierInfo?.compName || '';
 
   options.orderStatus = '030002'; // 기본 상태: 승인
 

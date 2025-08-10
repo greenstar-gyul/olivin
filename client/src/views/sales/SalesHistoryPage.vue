@@ -35,7 +35,8 @@ const header = ref({
     totalPrice: '총 판매금액',
     productSpec: '규격', 
   },
-  rightAligned: ['sellPrice', 'quantity', 'totalPrice'] // 오른쪽 정렬할 컬럼 리스트
+  rightAligned: ['sellPrice', 'quantity', 'totalPrice'], // 오른쪽 정렬할 컬럼 리스트
+  sortable: ['productId', 'productName', 'compName', 'quantity', 'totalPrice'] // 정렬 가능한 컬럼 리스트
 });
 
 // 조회할 데이터

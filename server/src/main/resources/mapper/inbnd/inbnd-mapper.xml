@@ -47,4 +47,14 @@
           AND  d.inbnd_status = '000001'  -- 입고상태 '입고완료' 코드값
         ORDER BY d.lot_no ASC   
     </select>
+    <select id="selectCodeForUpdate" resultType="String">
+        SELECT
+            'IN' || TO_CHAR(SYSDATE, 'YYYYMMDD') ||
+            LPAD(NVL(MAX(TO_NUMBER(SUBSTR(inbnd_no, LENGTH('IN' || TO_CHAR(SYSDATE, 'YYYYMMDD')) + 1))), 0) + 1, 3, '0') as "res"
+        FROM inbnd
+        WHERE inbnd_no LIKE 'IN' || TO_CHAR(SYSDATE, 'YYYYMMDD') || '%' 
+    </select>
+    <update id="callProcBrinbndProcess" parameterType="string" statementType="CALLABLE">
+        {CALL proc_hq_inbnd_process(#{orderId, mode=IN, jdbcType=VARCHAR})}
+    </update>
 </mapper>

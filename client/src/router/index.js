@@ -185,6 +185,16 @@ const router = createRouter({
                     name: 'hqInbndMgmt',
                     component: () => import('@/views/inventory/hqInbndMgmt.vue')
                 },
+                {
+                    path: '/brInbndMgmt',
+                    name: 'brInbndMgmt',
+                    component: () => import('@/views/inventory/brInbndMgmt.vue')
+                },
+                {
+                    path: '/supOutbndMgmt',
+                    name: 'supOutbndMgmt',
+                    component: () => import('@/views/inventory/supOutbndMgmt.vue'),
+                },
                 /* end of inventory */
                 {
                     path: '/standard/supplier',
@@ -285,6 +295,11 @@ const router = createRouter({
                     path: '/sales/history',
                     name: 'salesHistory',
                     component: () => import('@/views/sales/SalesHistoryPage.vue'),
+                },
+                {
+                    path: '/sales/performance',
+                    name: 'salesPerformance',
+                    component: () => import('@/views/sales/SalesPerformancePage.vue'),
                 },
                 /* end of sales */
                 {
@@ -416,6 +431,7 @@ function getDefaultTitle(routeName) {
         'documentation': 'Documentation',
         'test': 'Test Page',
         'test2': 'Input Test Page',
+        'salesPerformance': '매출 실적 조회',
         'landing': '랜딩 페이지',
         'notfound': '페이지를 찾을 수 없음',
         'login': '로그인',

@@ -30,4 +30,18 @@ public class InbndServiceImpl implements InbndService{
     public List<InbndProdDVO> test(String productId){
         return inbndMapper.test(productId);
     }
+
+    @Override
+    public String getCodeForUpdate() {
+        return inbndMapper.selectCodeForUpdate();
+    } // end of getCodeForUpdate()
+
+    /**
+     * 본사 입고처리 프로시저 호출
+     * param_orderId_발주 ID
+     */
+    @Override
+    public void processBrInbnd(String orderId) {
+        inbndMapper.callProcBrInbndProcess(orderId);
+    } // end of processHqOutbnd
 } // end of class

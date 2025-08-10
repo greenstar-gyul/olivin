@@ -5,12 +5,11 @@ import { convertDate } from '@/utils/dateUtils';
 import axios from '@/service/axios';
 import DialogModal from '@/components/overray/DialogModal.vue';
 import moment from "moment";
-import { useRoute, useRouter } from 'vue-router';
-
-const router = useRouter();
+import { useToast } from 'primevue';
 
 // 테스트 데이터
 const items = ref([]);
+const toast = useToast();
 
 /* Modal function */
 
@@ -53,13 +52,13 @@ const confirmModal = async (selectedItems) => {
   formData.value.outbndFrom = selectedItems.orderTo;
   formData.value.inbndTo = selectedItems.orderFrom;
   formData.value.outbndDate = today;
-  // console.log('테에스으트', formData.value);
+  console.log('테에스으트', formData.value);
   
   /* 제품 상세정보 불러오기 */
   const selOrderId = formData.value.orderId;
   // console.log('id값 확인', selOrderId);
   const res = await axios.get(`/api/orders/${selOrderId}`);
-  // console.log('상세값확인', res.data.detail);
+  console.log('상세값확인', res.data.detail);
   const details = res.data.detail;
 
   for (let id = 0; id < details.length; id++) {
@@ -83,6 +82,7 @@ const searchModal = (searchValue) => {
 };
 
 /* end of Modal function */
+
 
 /* Form Data */
 // 폼 기본값
@@ -166,8 +166,12 @@ const getOrderData = async () => {
   try {
     const result = await axios.get('/api/orders', {
       params: {
-          orderType : '150002'
-          , orderStatus : '030002'
+          orderStatus : '030002'
+        }
+      });
+      result.data.filter((e) => {
+        if (e.orderStatus === '150003' && e.orderType === '150001') {
+          return e;
         }
       });
       modalItems.value = await result.data.map((item) => {
@@ -188,20 +192,29 @@ const getOrderData = async () => {
  * 제품등록처리 진행 함수 
  */
 async function callOutbndProcess(orderId) {
+  if (!orderId) {
+    toast.add({
+      severity: 'error',
+      summary: '오류',
+      detail: '출고할 발주정보를 선택해주세요.',
+      life: 2000
+    })
+    return;
+  }
   try {
-    const response = await axios.post("/api/outbnd/hqProcess", null, {
+    const response = await axios.post("/api/outbnd/subProcess", null, {
       params: {
         orderId: orderId
       }
     });
-    alert('출고 처리가 완료되었습니다.');
-    resetFormHandler(); // 전체 폼 초기화
-    getOrderData(); // 처리한 발주서 정보 초기화
+    alert("출고 처리가 완료되었습니다.");
+    resetFormHandler();
+    getOrderData();
   } catch (error) {
-    console.error("서버 오류 발생:", error);
+    console.error("출고 처리 중 오류 발생:", error);
     
     // 에러 메시지 추출
-    const message = error.response?.data?.message || "서버 오류가 발생했습니다.";
+    const message = error.response?.data?.message || "출고 처리 중 오류가 발생했습니다.";
     alert(message);
   }
 }
@@ -215,12 +228,9 @@ const outbndHandler = () => {
   // console.log('함수실행 후');
 };
 
-
-// 초기화버튼 이벤트 함수
 const resetFormHandler = () => {
-  formData.value= {};
-  tableData.value=[];
-  modalItems.value=[];
+  formData.value = {};
+  tableData.value = [];
 }
   
 onMounted(() => {  

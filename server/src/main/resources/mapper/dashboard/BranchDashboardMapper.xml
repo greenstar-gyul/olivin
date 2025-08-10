@@ -91,15 +91,16 @@
     <!-- 지점별 카테고리별 매출 구성 -->
     <select id="getCategorySalesDistribution" resultType="map">
         SELECT 
-            p.CATEGORY_MAIN as CATEGORY,
+            COALESCE(dc.CODE_NAME, p.CATEGORY_MAIN, '미분류') as CATEGORY,
             SUM(sod.PRICE * sod.QUANTITY) as SALES
         FROM SALES_ORDERS_DETAIL sod
         INNER JOIN SALES_ORDERS so ON sod.SO_ID = so.SO_ID
         INNER JOIN PRODUCTS p ON sod.PRODUCT_ID = p.PRODUCT_ID
+        LEFT JOIN DATA_CODES dc ON p.CATEGORY_MAIN = dc.CODE_VALUE
         WHERE so.COMP_ID = #{compId}
         AND so.STATUS = '020001'
         AND TO_CHAR(so.SO_DATE, 'YYYY-MM') = TO_CHAR(SYSDATE, 'YYYY-MM')
-        GROUP BY p.CATEGORY_MAIN
+        GROUP BY p.CATEGORY_MAIN, dc.CODE_NAME
         ORDER BY SALES DESC
     </select>
 

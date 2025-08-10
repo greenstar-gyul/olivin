@@ -27,6 +27,7 @@ const modalHeaders = ref([
   // { field: 'orderType', header: '발주유형' }, // 테스트용
 ]);
 
+
 // 모달창의 데이터 아이템
 const modalItems = ref([]);
 
@@ -40,19 +41,19 @@ const closeModal = () => {
 const confirmModal = async (selectedItems) => {
   // console.log('Selected items from modal:', selectedItems);
   // console.log('확인용:', selectedItems.orderTitle);
-  
-  /* 출고 기본키 생성 */
-  const outbndCode = await axios.get('/api/outbnd/getCode');
-  /* 출고일 : 오늘 날짜로 설정 */ 
+
+  /* 입고 기본키 생성 */
+  const inbndCode = await axios.get('/api/inbnd/getCode');
+  /* 입고일 : 오늘 날짜로 설정 */ 
   const today = moment().format("YY/MM/DD");
   
   // 선택한 발주정보를 formData로 전달
   formData.value.orderId = selectedItems.orderId;
-  formData.value.outbndNo = outbndCode.data;
+  formData.value.inbndNo = inbndCode.data;
   formData.value.orderTitle = selectedItems.orderTitle;
   formData.value.outbndFrom = selectedItems.orderTo;
   formData.value.inbndTo = selectedItems.orderFrom;
-  formData.value.outbndDate = today;
+  formData.value.inbndDate = today;
   // console.log('테에스으트', formData.value);
   
   /* 제품 상세정보 불러오기 */
@@ -84,17 +85,18 @@ const searchModal = (searchValue) => {
 
 /* end of Modal function */
 
+
 /* Form Data */
 // 폼 기본값
 const formData = ref({});
 
 // 폼 스키마
 const formSchema = [
-  { type: 'data', label: '출고번호', id: 'outbndNo' ,data: 'text'},
+  { type: 'data', label: '입고번호', id: 'inbndNo' ,data: 'text'},
   { type: 'data', label: '발주명', id: 'orderTitle' ,data: 'text' },
   { type: 'data', label: '출고지', id: 'outbndFrom' ,data: 'text'},
   { type: 'data', label: '입고지', id: 'inbndTo' ,data: 'text'},
-  { type: 'data', label: '출고일', id: 'outbndDate', data: 'text'}, 
+  { type: 'data', label: '입고일', id: 'inbndDate', data: 'text'}, 
   
   // { type: 'text', label: '출고상태', id: 'outbndStatus',
   //   // options: [
@@ -111,55 +113,12 @@ const tableHeader = {
   title: '제품 목록',
   header: {
     productName: '제품명',
-    // totalOutbndQuantity  : '출고수량',
 
     quantity: '발주수량',
     unitName: '단위',
-    // outbndStatus: '출고상태',
   },
   rightAligned: ['price']
 };
-/* 제품목록 끝 */
-
-/* Input Table Detail 
-const detailData = ref([]);
-
-// 테이블 컬럼 정의
-const columns = [
-  { inputType: 'text', header: 'LOT', field: 'lotNo' },
-  { inputType: 'number', header: '출고수량', field: 'outbndQuantity' },
-  { inputType: 'text', header: '단위', field: 'unit' },
-  // { inputType: 'text', header: '출고상태', field: 'outbnStatus' },
-];
-*/
-
-// // 폼과 테이블 데이터를 저장하는 핸들러
-// const onRowSelect = async (select) => {
-//   console.log('Selected Row:', select.productId);
-  
-//   const test = await axios.get(`/api/inbnd/test/${select.productId}`);
-//   console.log(test.data);
-//   // fetch 사용하는 시간때문에 250ms 지연
-//   // 실제로는 서버에서 데이터를 가져오는 로직이 필요합니다.
-//   setTimeout(() => {
-//     // 선택된 행의 데이터를 폼에 채우기
-//     // axios나 fetch를 사용하여 서버에서 데이터를 가져올 수 있습니다.
-//     if (select.id === 0) {
-//       detailData.value = [
-//         { id: 1, lot: 'LOT001', quantity: 10, status: '출고대기' },
-//         { id: 2, lot: 'LOT002', quantity: 20, status: '출고대기' }
-//       ];
-//     } else if (select.id === 2) {
-//       detailData.value = [
-//         { id: 3, lot: 'LOT003', quantity: 30, status: '출고대기' },
-//         { id: 4, lot: 'LOT004', quantity: 40, status: '출고완료' }
-//       ];
-//     } else {
-//       detailData.value = [];
-//     }
-//   }, 250);
-// };
-
 
 // 발주정보 불러오기
 const getOrderData = async () => {
@@ -167,7 +126,7 @@ const getOrderData = async () => {
     const result = await axios.get('/api/orders', {
       params: {
           orderType : '150002'
-          , orderStatus : '030002'
+          , orderStatus : '030003'
         }
       });
       modalItems.value = await result.data.map((item) => {
@@ -187,16 +146,15 @@ const getOrderData = async () => {
 /**
  * 제품등록처리 진행 함수 
  */
-async function callOutbndProcess(orderId) {
+async function callInbndProcess(orderId) {
   try {
-    const response = await axios.post("/api/outbnd/hqProcess", null, {
+    const response = await axios.post("/api/inbnd/brProcess", null, {
       params: {
         orderId: orderId
       }
     });
-    alert('출고 처리가 완료되었습니다.');
-    resetFormHandler(); // 전체 폼 초기화
-    getOrderData(); // 처리한 발주서 정보 초기화
+    alert('입고 처리가 완료되었습니다.');
+    resetFormHandler();
   } catch (error) {
     console.error("서버 오류 발생:", error);
     
@@ -206,31 +164,30 @@ async function callOutbndProcess(orderId) {
   }
 }
 
-// 출고처리 버튼 이벤트 함수
-const outbndHandler = () => {
+// 입고처리 버튼 이벤트 함수
+const inbndHandler = () => {
   // console.log('함수실행 전');
-  const outbndOrderId = formData.value.orderId
-  console.log('전달값 확인', outbndOrderId);
-  callOutbndProcess(outbndOrderId);
+  const inbndOrderId = formData.value.orderId
+  console.log('전달값 확인', inbndOrderId);
+  callInbndProcess(inbndOrderId);
   // console.log('함수실행 후');
 };
-
 
 // 초기화버튼 이벤트 함수
 const resetFormHandler = () => {
   formData.value= {};
   tableData.value=[];
   modalItems.value=[];
+  getOrderData();
 }
   
 onMounted(() => {  
   getOrderData();
 });
 
-
 </script>
 <template>
-  <InputMultiTable title="출고정보"
+  <InputMultiTable title="입고정보"
     :defaultForm="formData"
     
     :formSchema="formSchema"
@@ -246,8 +203,7 @@ onMounted(() => {
       <Button label="발주정보불러오기" class="min-w-fit whitespace-nowrap" severity="info" @click="loadPurchaseOnClick" outlined />
     </template>
     <template #basicBtn>
-      <Button label="전체출고처리" class="min-w-fit whitespace-nowrap" severity="success" @click="outbndHandler" outlined />
-      <!-- <Button label="개별출고처리" class="min-w-fit whitespace-nowrap" severity="success" @click="" outlined /> -->
+      <Button label="전체입고처리" class="min-w-fit whitespace-nowrap" severity="success" @click="inbndHandler" outlined />
     </template>
   </InputMultiTable>
   <DialogModal title="발주내역" :display="orderModalVisible" :headers="modalHeaders" :items="modalItems" :selectionMode="'single'" @close="closeModal" @confirm="confirmModal" @search-modal="searchModal"></DialogModal>

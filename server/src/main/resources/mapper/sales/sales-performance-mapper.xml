@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.olivin.app.sales.mapper.SalesPerformanceMapper">
+
+    <!-- 매출 실적 요약 데이터 조회 -->
+    <select id="selectSalesPerformanceSummary" resultType="SalesPerformanceVO" parameterType="SearchSalesPerformanceVO">
+        SELECT 
+            NVL(SUM(CASE WHEN so.status = '020001' THEN so.total_price ELSE 0 END), 0) AS gross_sales,
+            NVL(SUM(CASE WHEN so.status = '020002' THEN so.total_price ELSE 0 END), 0) AS returns,
+            NVL(SUM(CASE WHEN so.status = '020001' THEN so.total_price ELSE 0 END) - 
+                SUM(CASE WHEN so.status = '020002' THEN so.total_price ELSE 0 END), 0) AS net_sales,
+            NVL(COUNT(CASE WHEN so.status = '020001' THEN 1 END), 0) AS total_orders,
+            NVL(CASE 
+                WHEN COUNT(CASE WHEN so.status = '020001' THEN 1 END) &gt; 0 
+                THEN ROUND(SUM(CASE WHEN so.status = '020001' THEN so.total_price ELSE 0 END) / COUNT(CASE WHEN so.status = '020001' THEN 1 END))
+                ELSE 0 
+            END, 0) AS average_order,
+            NVL(COUNT(DISTINCT CASE WHEN so.status = '020001' THEN so.emp_id END), 0) AS total_customers
+        FROM sales_orders so
+        WHERE so.so_date &gt;= TO_DATE(#{fromDate}, 'YYYY-MM-DD') 
+          AND so.so_date &lt;= TO_DATE(#{toDate}, 'YYYY-MM-DD') + 0.99999
+        <if test="compId != null and compId != ''">
+            AND so.comp_id = #{compId}
+        </if>
+    </select>
+
+    <!-- 이전 기간 매출 실적 조회 (비교용) -->
+    <select id="selectPreviousPeriodSummary" resultType="SalesPerformanceVO" parameterType="SearchSalesPerformanceVO">
+        SELECT 
+            NVL(SUM(CASE WHEN so.status = '020001' THEN so.total_price ELSE 0 END), 0) AS gross_sales,
+            NVL(SUM(CASE WHEN so.status = '020002' THEN so.total_price ELSE 0 END), 0) AS returns,
+            NVL(SUM(CASE WHEN so.status = '020001' THEN so.total_price ELSE 0 END) - 
+                SUM(CASE WHEN so.status = '020002' THEN so.total_price ELSE 0 END), 0) AS net_sales,
+            NVL(COUNT(CASE WHEN so.status = '020001' THEN 1 END), 0) AS total_orders,
+            NVL(CASE 
+                WHEN COUNT(CASE WHEN so.status = '020001' THEN 1 END) &gt; 0 
+                THEN ROUND(SUM(CASE WHEN so.status = '020001' THEN so.total_price ELSE 0 END) / COUNT(CASE WHEN so.status = '020001' THEN 1 END))
+                ELSE 0 
+            END, 0) AS average_order,
+            NVL(COUNT(DISTINCT CASE WHEN so.status = '020001' THEN so.emp_id END), 0) AS total_customers
+        FROM sales_orders so
+        WHERE so.so_date &gt;= (TO_DATE(#{fromDate}, 'YYYY-MM-DD') - (TO_DATE(#{toDate}, 'YYYY-MM-DD') - TO_DATE(#{fromDate}, 'YYYY-MM-DD') + 1))
+          AND so.so_date &lt;= (TO_DATE(#{fromDate}, 'YYYY-MM-DD') - 1 + 0.99999)
+        <if test="compId != null and compId != ''">
+            AND so.comp_id = #{compId}
+        </if>
+    </select>
+
+    <!-- 제품별 매출 실적 조회 -->
+    <select id="selectProductSalesPerformance" resultType="map" parameterType="SearchSalesPerformanceVO">
+        SELECT 
+            p.product_name AS productName,
+            NVL(SUM(sod.price), 0) AS grossSales,
+            0 AS returns,
+            NVL(SUM(sod.price), 0) AS netSales,
+            NVL(SUM(sod.quantity), 0) AS quantity
+        FROM sales_orders so
+        JOIN sales_orders_detail sod ON so.so_id = sod.so_id
+        JOIN products p ON sod.product_id = p.product_id
+        WHERE so.so_date &gt;= TO_DATE(#{fromDate}, 'YYYY-MM-DD') 
+          AND so.so_date &lt;= TO_DATE(#{toDate}, 'YYYY-MM-DD') + 0.99999
+        <if test="compId != null and compId != ''">
+            AND so.comp_id = #{compId}
+        </if>
+        GROUP BY p.product_id, p.product_name
+        ORDER BY netSales DESC
+    </select>
+
+    <!-- 지점별 매출 실적 조회 -->
+    <select id="selectBranchSalesPerformance" resultType="map" parameterType="SearchSalesPerformanceVO">
+        SELECT 
+            c.comp_name AS branchName,
+            NVL(SUM(so.total_price), 0) AS grossSales,
+            0 AS returns,
+            NVL(SUM(so.total_price), 0) AS netSales,
+            NVL(COUNT(so.so_id), 0) AS totalOrders
+        FROM sales_orders so
+        JOIN companys c ON so.comp_id = c.comp_id
+        WHERE so.so_date &gt;= TO_DATE(#{fromDate}, 'YYYY-MM-DD') 
+          AND so.so_date &lt;= TO_DATE(#{toDate}, 'YYYY-MM-DD') + 0.99999
+          AND c.comp_type = '100002'
+        GROUP BY c.comp_id, c.comp_name
+        ORDER BY netSales DESC
+    </select>
+
+</mapper>
