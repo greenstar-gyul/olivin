@@ -4,7 +4,7 @@ import InputMaster from '@/components/inputForm/InputMaster.vue';
 import InputTable from '@/components/table/InputTable.vue';
 import BasicTable from '../table/BasicTable.vue';
 
-const emit = defineEmits(['onRowSelect']);
+const emit = defineEmits(['onRowSelect', 'resetFrom']);
 
 /*
 props
@@ -44,7 +44,7 @@ const selectRow = ref(null);
 
 //수정요함
 const resetFormHandler = () => {
-  detailTableData.value = [];
+  emit('resetForm');
 };
 
 const onRowSelect = (select) => {
