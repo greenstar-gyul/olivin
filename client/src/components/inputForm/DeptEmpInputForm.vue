@@ -14,22 +14,8 @@ const props = defineProps({
 
 const emit = defineEmits(['saveData', 'openSearchModal']);
 
-// 검색 조건을 담을 객체
+// 검색 조건을 담을 객체 // 입력데이터 상태
 const inputDatas = ref({});
-const inputData = ref({});
-
-// Input 데이터를 바인딩.
-watch(
-  () => props.init,
-  (newVal) => {
-    if (newVal) {
-      inputDatas.value = { ...newVal }
-    } else {
-      inputDatas.value = {} // 선택 해제 시 초기화
-    }
-  },
-  { immediate: true }
-)
 
 // inputs 기반으로 기본값 초기화, 각 필터의 name을 키로 사용.
 // 단, dateRange 타입의 필터는 fromValue와 toValue로 분리하여 처리
@@ -46,15 +32,28 @@ const initializeInputDatas = () => {
   inputDatas.value = options;
 };
 
-// 초기화
-initializeInputDatas();
-
 const resetInputDatas = () => {
   initializeInputDatas();
 };
 
-const onSave = (mode) => {
-  emit('saveData', inputDatas.value, mode);  // mode 전달
+// init 값 변경 감지해서 복사
+watch(
+  () => props.init,
+  (newVal) => {
+    if (newVal && newVal.employeeId) {
+      inputDatas.value = { ...newVal };
+    } else {
+      initializeInputDatas();
+    }
+  },
+  { immediate: true }
+);
+
+// 등록 버튼 클릭 시 insert/update 자동 판단
+const onSave = () => {
+  // employeeId가 존재하면 update, 없으면 insert
+  const mode = inputDatas.value.employeeId ? 'update' : 'insert';
+  emit('saveData', inputDatas.value, mode);
 };
 
 function openSearchModal(inputName) {
@@ -76,8 +75,7 @@ defineExpose({
         </div>
         <div class="flex items-center gap-2 flex-nowrap">
           <Button label="초기화" severity="secondary" @click="resetInputDatas" outlined />
-          <Button label="수정" severity="secondary" @click="onSave('update')" outlined />
-          <Button label="등록" @click="onSave('insert')" outlined />
+          <Button label="등록" severity="primary" @click="onSave" outlined />
           <!-- <Button label="엑셀 다운로드" severity="success" class="min-w-fit whitespace-nowrap" outlined /> -->
         </div>
       </div>

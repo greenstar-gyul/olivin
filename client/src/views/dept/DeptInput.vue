@@ -2,7 +2,7 @@
 import { ref } from 'vue';
 import SearchForm from '@/components/inputForm/SearchForm.vue';
 import BasicTable from '@/components/table/BasicTable.vue';
-import InputForm from '@/components/inputForm/InputForm.vue';
+import DeptEmpInputForm from '@/components/inputForm/DeptEmpInputForm.vue';
 import Button from 'primevue/button';
 
 
@@ -12,7 +12,7 @@ export default {
   components: {
     SearchForm,
     BasicTable,
-    InputForm,
+    DeptEmpInputForm,
     Button
   },
 
@@ -66,6 +66,10 @@ export default {
       emit('saveData', inputData);
     };
 
+    const onSaveData = (data, mode) => {
+      emit('saveData', data, mode);  // 그대로 상위로 전달
+    };
+
     const openSearchModal = (inputName) => {
       emit('openSearchModal', inputName);
     };
@@ -89,6 +93,12 @@ export default {
       }
     };
 
+    const deleteSelected = () => {
+      if (selectedItems.value) {
+        emit('saveData', selectedItems.value, 'delete');
+      }
+    };
+
     expose({
       searchFormRef,
       inputFormRef
@@ -100,8 +110,10 @@ export default {
       selectedItems,
       searchFormRef,
       inputFormRef,
+      deleteSelected,
       searchData,
       saveData,
+      onSaveData,
       openSearchModal,
       onRowSelect,
       onRowUnselect,
@@ -134,7 +146,7 @@ export default {
       </template>
     </BasicTable>
 
-    <InputForm
+    <DeptEmpInputForm
       ref="inputFormRef"
       :inputs="inputs"
       :init="selectedItems"

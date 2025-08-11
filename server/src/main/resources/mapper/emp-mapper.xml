@@ -4,53 +4,53 @@
 
   <!-- Interface의 메서드를 통해 실행할 쿼리 정의 -->
    <select id="selectAllList" resultType="EmpVO">
-    SELECT  c.comp_id,
-            c.comp_name,
-            d.department_id,
-            e.employee_id,
-            e.emp_name,
-            e.emp_type,
-            e.email,
-            e.password,
-            e.phone,
-            e.position
-    FROM    employees e
-    JOIN companys c ON e.comp_id = c.comp_id
-    JOIN departments d ON e.department_id = d.department_id
+        SELECT  c.comp_id,
+                c.comp_name,
+                d.department_id,
+                e.employee_id,
+                e.emp_name,
+                e.emp_type,
+                e.email,
+                e.password,
+                e.phone,
+                e.position
+        FROM    employees e
+        JOIN companys c ON e.comp_id = c.comp_id
+        JOIN departments d ON e.department_id = d.department_id
    </select>
    
    <!-- 등록 -->
    <insert id="insertCompanyIfNotExists" parameterType="EmpVO">
-    MERGE INTO companys c
-    USING (SELECT #{compId} AS comp_id, #{compName} AS comp_name FROM dual) input
-    ON (c.comp_id = input.comp_id)
-    WHEN NOT MATCHED THEN
-        INSERT (comp_id, comp_name)
-        VALUES (input.comp_id, input.comp_name)
+        MERGE INTO companys c
+        USING (SELECT #{compId} AS comp_id, #{compName} AS comp_name FROM dual) input
+        ON (c.comp_id = input.comp_id)
+        WHEN NOT MATCHED THEN
+            INSERT (comp_id, comp_name)
+            VALUES (input.comp_id, input.comp_name)
     </insert>
 
     <insert id="insertEmp" parameterType="EmpVO">
-    INSERT INTO employees (
-        employee_id,
-        emp_name,
-        emp_type,
-        email,
-        password,
-        phone,
-        position,
-        comp_id,
-        department_id
-    ) VALUES (
-        #{employeeId},
-        #{empName},
-        #{empType},
-        #{email},
-        #{password},
-        #{phone},
-        #{position},
-        #{compId},
-        #{departmentId}
-    )
+        INSERT INTO employees (
+            employee_id,
+            emp_name,
+            emp_type,
+            email,
+            password,
+            phone,
+            position,
+            comp_id,
+            department_id
+        ) VALUES (
+            #{employeeId},
+            #{empName},
+            #{empType},
+            #{email},
+            #{password},
+            #{phone},
+            #{position},
+            #{compId},
+            #{departmentId}
+        )
     </insert>
 
 
