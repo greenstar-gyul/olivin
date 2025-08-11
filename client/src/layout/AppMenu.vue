@@ -80,7 +80,8 @@ const model = ref([
         label: '권한',
         to: '/roles',
         items: [
-            { label: '권한 관리', icon: 'pi pi-fw pi-users', to: '/roles/manage' },
+            { label: '사원 권한 관리', icon: 'pi pi-fw pi-users', to: '/roles/empmanage' },
+            { label: '역할 권한 관리', icon: 'pi pi-fw pi-users', to: '/roles/rolemanage' },
         ]
     },
     {   
