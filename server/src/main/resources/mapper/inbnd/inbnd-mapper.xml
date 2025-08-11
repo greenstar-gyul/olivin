@@ -54,9 +54,9 @@
         FROM inbnd
         WHERE inbnd_no LIKE 'IN' || TO_CHAR(SYSDATE, 'YYYYMMDD') || '%' 
     </select>
-    <update id="callProcBrinbndProcess" parameterType="string" statementType="CALLABLE">
-        {CALL proc_hq_outbnd_process(#{orderId, mode=IN, jdbcType=VARCHAR})}
-    </update>
+    <update id="callProcBrInbndProcess" parameterType="string" statementType="CALLABLE">
+        {CALL proc_br_inbnd_process(#{orderId, mode=IN, jdbcType=VARCHAR})}
+      
     <update id="callProcHqInbndProcess" parameterType="string" statementType="CALLABLE">
         {CALL proc_hq_inbnd_process(#{orderId, mode=IN, jdbcType=VARCHAR})}
     </update>

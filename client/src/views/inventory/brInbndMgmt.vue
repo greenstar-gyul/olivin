@@ -144,7 +144,7 @@ const getOrderData = async () => {
 };
 
 /**
- * 제품등록처리 진행 함수 
+ * 제품입고처리 진행 함수 
  */
 async function callInbndProcess(orderId) {
   try {

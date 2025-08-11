@@ -45,9 +45,9 @@ public class InbndController {
     } // emd pf pitbmdCpde()
 
     /**
-     * 입고 처리 프로시저 호출
+     * 지점 입고 처리 프로시저 호출
      */
-    @PostMapping("/inbnd/BrProcess")
+    @PostMapping("/inbnd/brProcess")
     public void processHqOutbnd(@RequestParam String orderId) {
         inbndService.processBrInbnd(orderId);
     } // end of processHqOutbnd
