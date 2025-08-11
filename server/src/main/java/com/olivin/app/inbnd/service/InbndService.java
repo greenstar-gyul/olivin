@@ -10,4 +10,5 @@ public interface InbndService {
   List<InbndProdDVO> test(String productId);
 
     void processBrInbnd(String orderId); // 입고 처리 프로시저 호출용 메서드
+    void processHqInbnd(String orderId); // 본사 입고 처리 프로시저 호출용 메서드
 }
