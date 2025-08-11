@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -13,12 +14,14 @@ import com.olivin.app.example.service.EmpVO;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
 @RequestMapping("/api")
 @RestController
+@ResponseBody
 @RequiredArgsConstructor
 public class EmpController {
 
@@ -43,8 +46,8 @@ public class EmpController {
     }
 
     // 수정
-    @PutMapping("/public/emps")
-    public int updateEmp(@RequestBody EmpVO empVO) {
+    @PutMapping("/public/emps/{employeeId}")
+    public int updateEmp(@PathVariable String employeeId, @RequestBody EmpVO empVO) {
         return empService.updateEmp(empVO);
     }
 
