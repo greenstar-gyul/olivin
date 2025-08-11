@@ -145,9 +145,6 @@ const allPermissions = ref([]);
 // 선택된 역할의 권한 목록
 const rolePermissions = ref([]);
 
-// 권한 설정 모달 관련 변수 제거 (우측 폼에 직접 통합)
-// const permissionModalVisible = ref(false);
-
 // 선택된 권한들 (체크박스용)
 const selectedPermissions = ref([]);
 
@@ -269,9 +266,6 @@ const onRowUnselect = (event) => {
   selectedPermissions.value = []; // 권한 체크박스도 초기화
 };
 
-// 권한 설정 모달 함수들 제거 (우측 폼에 직접 통합)
-// const openPermissionModal = () => { ... }
-
 // 권한 설정 저장 (모달 없이 직접 저장)
 const savePermissions = async () => {
   try {
@@ -308,19 +302,29 @@ const savePermissions = async () => {
   }
 };
 
-// 검색 조건 초기화 시 우측 폼도 함께 초기화
-const handleResetSearchOptions = () => {
+// ✅ 수정된 검색 조건 초기화 함수 - 초기화 후 전체 목록 자동 조회
+const handleResetSearchOptions = async () => {
   console.log('검색 조건 초기화');
   
+  // 검색 조건 초기화
+  filters.value.filters.forEach(filter => {
+    filter.value = '';
+  });
+  
+  // 선택된 역할 및 권한 초기화
   selectedRole.value = null;
   rolePermissions.value = [];
-  selectedPermissions.value = []; // 권한 체크박스도 초기화
+  selectedPermissions.value = [];
   
+  // 우측 폼 초기화
   if (standardInputRef.value && standardInputRef.value.inputFormRef) {
     standardInputRef.value.inputFormRef.resetInputDatas();
   }
   
-  console.log('검색 조건 및 입력 폼 초기화 완료');
+  // ✅ 초기화 후 전체 목록 자동 조회
+  await loadRoles(); // 빈 객체 전달로 전체 목록 조회
+  
+  console.log('검색 조건 초기화 및 전체 목록 조회 완료');
 };
 
 // 모달 처리 함수
@@ -379,6 +383,7 @@ onMounted(async () => {
           @click="handleResetSearchOptions"
           severity="secondary"
         />
+        <!-- ✅ 조회 버튼 색상을 다른 페이지와 일치시킴 (severity 제거 또는 primary로 변경) -->
         <Button 
           label="조회" 
           @click="() => {
@@ -388,7 +393,6 @@ onMounted(async () => {
             });
             searchData(searchOptions);
           }"
-          severity="success"
         />
       </div>
     </div>
@@ -516,4 +520,4 @@ onMounted(async () => {
       </div>
     </div>
   </div>
-</template> 
+</template>

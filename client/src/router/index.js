@@ -318,7 +318,7 @@ const router = createRouter({
                 {
                     path: '/roles/rolemanage',
                     name: 'roleManage',
-                    component: () => import('@/views/roles/RollManage.vue'),
+                    component: () => import('@/views/roles/RoleManage.vue'),
                     meta: { roles: ['ROLE_SYSTEM_ADMIN'] }
                 }
             ]
