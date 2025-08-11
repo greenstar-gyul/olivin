@@ -9,9 +9,8 @@ const model = ref([
         to: '/main',
         items: [
             { label: '본사 대시보드', icon: 'pi pi-fw pi-chart-line', to: '/dashboard/hq' },
-            // 나중에 추가할 것들
-            // { label: '지점 대시보드', icon: 'pi pi-fw pi-chart-bar', to: '/dashboard/branch' },
-            // { label: '공급업체 대시보드', icon: 'pi pi-fw pi-chart-pie', to: '/dashboard/supplier' }
+            { label: '지점 대시보드', icon: 'pi pi-fw pi-chart-line', to: '/dashboard/branch' },
+            { label: '공급업체 대시보드', icon: 'pi pi-fw pi-chart-pie', to: '/dashboard/supplier' }
         ]
     },
     {   
