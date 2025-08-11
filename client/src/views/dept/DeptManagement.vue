@@ -12,6 +12,19 @@ const API_BASE_URL = '/api/depts';
 const toast = useToast();
 const fileUploadRef = ref();
 
+// departmentId 자동 생성
+const getNextDepartmentId = () => {
+  const ids = items.value
+    .map(item => item.departmentId)
+    .filter(id => id?.startsWith('DEPT'))
+    .map(id => parseInt(id.replace('DEPT', ''), 10))
+    .filter(n => !isNaN(n));
+
+  const max = ids.length > 0 ? Math.max(...ids) : 0;
+  const nextId = (max + 1).toString().padStart(3, '0');
+  return `DEPT${nextId}`;
+};
+
 // windos.location.origin을 computed로 처리
 const baseUrl = computed(() => {
   return typeof window !== 'undefined' ? window.location.origin : '';
@@ -83,6 +96,17 @@ const selectedImageFile = ref(null);
 const selectedImageFiles = ref([]);
 const uploadedImageUrl = ref('');
 
+// 입력값 초기화 + 자동 departmentId 생성
+const initializeInput = () => {
+  inputs.value.inputs.forEach(input => {
+    input.value = '';
+  });
+  const deptIdInput = inputs.value.inputs.find(input => input.name === 'departmentId');
+  if (deptIdInput) {
+    deptIdInput.value = getNextDepartmentId();
+  }
+};
+
 const searchData = async (searchOptions) => {
   try {
     const params = {};
@@ -114,6 +138,23 @@ const searchData = async (searchOptions) => {
   }
 };
 
+// ✅ 등록/수정/삭제
+const saveData = async (inputData, mode = 'insert') => {
+  try{
+    if (mode === 'insert') {
+      await axios.post(`${API_BASE_URL}`, inputData);
+      toast.add({ severity: 'success', summary: '등록성공', life: 2000});
+    } else if (mode === 'update') {
+      await axios.put(`${API_BASE_URL}/${inputData.departmentId}`, inputData);
+      toast.add({ severity: 'warn', summary: '삭제 성공', life: 2000});
+    }
+    await searchData({}); // 리스트 갱신
+  } catch (error) {
+    toast.add({ severity: 'error', summary: '요청실패', detail: error.message, life: 3000});
+  }
+};
+
+
 // ✅ 부서 목록 초기 로딩용 함수
 const loadDepts = async () => {
   await searchData({});
@@ -122,11 +163,9 @@ const loadDepts = async () => {
 // ✅ 컴포넌트 마운트 시 실행
 onMounted(() => {
   loadDepts();
+  searchData({});
 });
 
-const saveData = (inputData) => {
-  console.log('Saving data:', inputData);
-};
 </script>
 
 <template>

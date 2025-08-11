@@ -302,10 +302,17 @@ const router = createRouter({
                     component: () => import('@/views/sales/SalesPerformancePage.vue'),
                 },
                 /* end of sales */
+               // router/index.js 수정
                 {
-                    path: '/roles/manage',
+                    path: '/roles/empmanage',
+                    name: 'empManage',
+                    component: () => import('@/views/roles/EmpRoleManage.vue'), // 파일명 확인
+                    meta: { roles: ['ROLE_SYSTEM_ADMIN'] }
+                },
+                {
+                    path: '/roles/rolemanage',
                     name: 'roleManage',
-                    component: () => import('@/views/roles/Manage.vue'),
+                    component: () => import('@/views/roles/RollManage.vue'),
                     meta: { roles: ['ROLE_SYSTEM_ADMIN'] }
                 }
             ]

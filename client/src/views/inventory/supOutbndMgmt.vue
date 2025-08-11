@@ -6,6 +6,7 @@ import axios from '@/service/axios';
 import DialogModal from '@/components/overray/DialogModal.vue';
 import moment from "moment";
 import { useToast } from 'primevue';
+import { useAuth } from '@/composables/useAuth';
 
 // 테스트 데이터
 const items = ref([]);
@@ -72,12 +73,21 @@ const confirmModal = async (selectedItems) => {
 
 // 검색 모달을 열 때 호출되는 함수
 // case 문을 사용하여 모달 이름(item-search 타입의 name을 따름)에 따라 다른 모달을 열 수 있도록 구현
-const loadPurchaseOnClick = () => {
+const loadPurchaseOnClick = async() => {
+  await getOrderData();
   orderModalVisible.value = true;
 };
 
-const searchModal = (searchValue) => {
+const searchModal = async (searchValue) => {
+  await getOrderData();
   console.log('Search modal with value:', searchValue);
+  modalItems.value = modalItems.value.filter((e) => {
+    return e.orderTitle.includes(searchValue) 
+      || e.creatorName.includes(searchValue)
+      || e.reasonName.includes(searchValue)
+      || e.orderDate.includes(searchValue)
+      || e.dueDate.includes(searchValue);
+  });
   // 검색 로직 구현
 };
 
@@ -163,14 +173,18 @@ const columns = [
 
 // 발주정보 불러오기
 const getOrderData = async () => {
+  // 사용자 정보 가져오기
+  const user = useAuth().user;
+
   try {
     const result = await axios.get('/api/orders', {
       params: {
-          orderStatus : '030002'
+          orderStatus : '030002', //승인
+          orderTo : user.value.compName //공급업체명
         }
       });
-      result.data.filter((e) => {
-        if (e.orderStatus === '150003' && e.orderType === '150001') {
+      result.data = result.data.filter((e) => {
+        if (e.orderType === '150003' || e.orderType === '150001') {
           return e;
         }
       });
@@ -207,15 +221,25 @@ async function callOutbndProcess(orderId) {
         orderId: orderId
       }
     });
-    alert("출고 처리가 완료되었습니다.");
+    toast.add({
+      severity: 'success',
+      summary: '성공',
+      detail: '출고 처리가 완료되었습니다.',
+      life: 2000
+    });
     resetFormHandler();
-    getOrderData();
   } catch (error) {
     console.error("출고 처리 중 오류 발생:", error);
+    toast.add({
+      severity: 'error',
+      summary: '오류',
+      detail: '출고 처리 중 오류가 발생했습니다.',
+      life: 2000
+    });
     
     // 에러 메시지 추출
-    const message = error.response?.data?.message || "출고 처리 중 오류가 발생했습니다.";
-    alert(message);
+    // const message = error.response?.data?.message || "출고 처리 중 오류가 발생했습니다.";
+    // alert(message);
   }
 }
 
@@ -240,7 +264,7 @@ onMounted(() => {
 
 </script>
 <template>
-  <InputMultiTable title="출고정보"
+  <InputMultiTable title="공급업체 출고정보"
     :defaultForm="formData"
     
     :formSchema="formSchema"

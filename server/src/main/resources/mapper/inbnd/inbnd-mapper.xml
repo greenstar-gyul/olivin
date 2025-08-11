@@ -56,5 +56,8 @@
     </select>
     <update id="callProcBrInbndProcess" parameterType="string" statementType="CALLABLE">
         {CALL proc_br_inbnd_process(#{orderId, mode=IN, jdbcType=VARCHAR})}
+      
+    <update id="callProcHqInbndProcess" parameterType="string" statementType="CALLABLE">
+        {CALL proc_hq_inbnd_process(#{orderId, mode=IN, jdbcType=VARCHAR})}
     </update>
 </mapper>

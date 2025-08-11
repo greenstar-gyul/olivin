@@ -198,7 +198,7 @@
 
     <!-- ========== 사원 관련 쿼리 ========== -->
 
-    <!-- 사원 목록 조회 (권한 정보 포함) -->
+    <!-- 사원 목록 조회 (권한 정보 포함) - 역할명 검색 조건 추가 -->
     <select id="selectEmployeesWithPermissions" parameterType="Map" resultType="map">
         SELECT 
             e.EMPLOYEE_ID,
@@ -228,6 +228,15 @@
         </if>
         <if test="position != null and position != ''">
             AND e.POSITION LIKE '%' || #{position} || '%'
+        </if>
+        <if test="baseRole != null and baseRole != ''">
+            AND r.ROLE_NAME LIKE '%' || #{baseRole} || '%'
+        </if>
+        <if test="hireDateFrom != null and hireDateFrom != ''">
+            AND TRUNC(e.HIRE_DATE) >= TO_DATE(#{hireDateFrom}, 'YYYY-MM-DD')
+        </if>
+        <if test="hireDateTo != null and hireDateTo != ''">
+            AND TRUNC(e.HIRE_DATE) &lt;= TO_DATE(#{hireDateTo}, 'YYYY-MM-DD')
         </if>
         ORDER BY e.EMPLOYEE_ID ASC
     </select>

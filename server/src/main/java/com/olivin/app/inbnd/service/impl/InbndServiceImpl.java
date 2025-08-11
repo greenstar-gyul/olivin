@@ -44,4 +44,13 @@ public class InbndServiceImpl implements InbndService{
     public void processBrInbnd(String orderId) {
         inbndMapper.callProcBrInbndProcess(orderId);
     } // end of processBROutbnd
+    
+    /**
+     * 본사 입고처리 프로시저 호출
+     * param_orderId_발주 ID
+     */
+    @Override
+    public void processHqInbnd(String orderId) {
+    	inbndMapper.callProcHqInbndProcess(orderId);
+    }
 } // end of class

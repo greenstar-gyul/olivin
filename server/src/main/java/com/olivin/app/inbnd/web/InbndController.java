@@ -51,4 +51,12 @@ public class InbndController {
     public void processHqOutbnd(@RequestParam String orderId) {
         inbndService.processBrInbnd(orderId);
     } // end of processHqOutbnd
+    
+    /**
+     * 본사 입고 처리 프로시저 호출
+     */
+    @PostMapping("/inbnd/hqProcess")
+    public void processHqInbnd(@RequestParam String orderId) {
+      inbndService.processHqInbnd(orderId);
+  } // end of processHqInbnd
 } // end of class
