@@ -165,7 +165,7 @@
 
       <!-- 상위 판매 상품 -->
       <div class="card">
-        <div class="text-surface-900 dark:text-surface-0 text-xl font-semibold mb-6">이달 상위 판매 상품 TOP 5</div>
+        <div class="text-surface-900 dark:text-surface-0 text-xl font-semibold mb-6">이달 상위 판매 상품</div>
         <div v-if="topProducts.length === 0" class="text-center text-muted-color p-8 bg-surface-50 dark:bg-surface-800 rounded-lg">
           판매 데이터를 불러오는 중입니다...
         </div>
@@ -767,3 +767,8 @@ onUnmounted(() => {
 })
 </script>
 
+<style>
+.card {
+  margin-bottom: 0px;
+}
+</style>

@@ -114,7 +114,7 @@
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
       <!-- 상위 공급업체 -->
       <div class="card">
-        <div class="text-surface-900 dark:text-surface-0 text-xl font-semibold mb-6">발주 빈도 높은 공급업체 TOP 5</div>
+        <div class="text-surface-900 dark:text-surface-0 text-xl font-semibold mb-6">발주 빈도 높은 공급업체</div>
         <div v-if="topSuppliers.length === 0" class="text-center text-muted-color p-8 bg-surface-50 dark:bg-surface-800 rounded-lg">
           공급업체 데이터를 불러오는 중입니다...
         </div>
@@ -743,3 +743,8 @@ onUnmounted(() => {
 })
 </script>
 
+<style>
+.card {
+  margin-bottom: 0px;
+}
+</style>

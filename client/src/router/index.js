@@ -22,6 +22,12 @@ const router = createRouter({
                     // meta: { roles: ['ROLE_SYSTEM_ADMIN', 'ROLE_branch_manager', 'sales_manager'] }
                 },
                 {
+                    path: '/dashboard/supplier',
+                    name: 'SupplierDashboard',
+                    component: () => import('@/views/dashboard/SupplierDashboard.vue'),
+                    meta: { roles: ['ROLE_SUPPLIER', 'ROLE_SYSTEM_ADMIN', 'ROLE_HEADQUARTERS', 'ROLE_GENERAL_MANAGER'] }
+                },
+                {
                     path: '/',
                     name: 'dashboard',
                     component: () => import('@/views/Dashboard.vue')
@@ -418,6 +424,9 @@ router.beforeEach(async (to, from, next) => {
 function getDefaultTitle(routeName) {
     const titleMap = {
         'dashboard': '대시보드',
+        'HqDashboard': '본사 대시보드',
+        'BranchDashboard': '지점 대시보드',
+        'SupplierDashboard': '공급업체 대시보드',
         'formlayout': 'Form Layout',
         'input': 'Input',
         'button': 'Button',
