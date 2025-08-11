@@ -47,9 +47,9 @@ const selectEmpId = ref('');
 const header = ref({
   title: '조회 결과',
   header: {
-    compId: '회사코드',
+    //compId: '회사코드',
     compName: '회사명',
-    departmentId: '부서코드',
+    //departmentId: '부서코드',
     deptName: '부서명',
     employeeId: '사원코드',
     empName: '사원이름',
