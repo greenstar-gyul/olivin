@@ -37,11 +37,11 @@ public class InbndServiceImpl implements InbndService{
     } // end of getCodeForUpdate()
 
     /**
-     * 본사 입고처리 프로시저 호출
+     * 지점 입고처리 프로시저 호출
      * param_orderId_발주 ID
      */
     @Override
     public void processBrInbnd(String orderId) {
         inbndMapper.callProcBrInbndProcess(orderId);
-    } // end of processHqOutbnd
+    } // end of processBROutbnd
 } // end of class
