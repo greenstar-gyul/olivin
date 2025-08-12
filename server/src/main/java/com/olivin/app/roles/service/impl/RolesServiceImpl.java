@@ -37,9 +37,9 @@ public class RolesServiceImpl implements RolesService {
     public RolesVO getRole(Integer roleId) {
         RolesVO role = roleMapper.selectRole(roleId);
         
-        // 권한의 권한 ID 목록도 함께 조회
+        // 권한의 권한 ID 목록도 함께 조회 (String 타입으로 변경)
         if (role != null) {
-            List<Integer> permissionIds = roleMapper.selectPermissionIdsByRoleId(roleId);
+            List<String> permissionIds = roleMapper.selectPermissionIdsByRoleId(roleId);
             role.setPermissionIds(permissionIds);
         }
         
@@ -54,15 +54,9 @@ public class RolesServiceImpl implements RolesService {
             roleVO.setRoleId(nextRoleId);
         }
         
-        // REG_DATE, REG_USER 제거 - 테이블에 없으면 주석 처리
-        // roleVO.setRegDate(new Date());
-        // if (roleVO.getRegUser() == null || roleVO.getRegUser().isEmpty()) {
-        //     roleVO.setRegUser("SYSTEM");
-        // }
-        
         int result = roleMapper.insertRole(roleVO);
         
-        // 권한 할당이 있는 경우 처리
+        // 권한 할당이 있는 경우 처리 (String 타입으로 변경)
         if (result > 0 && roleVO.getPermissionIds() != null && !roleVO.getPermissionIds().isEmpty()) {
             assignPermissionsToRole(roleVO.getRoleId(), roleVO.getPermissionIds());
         }
@@ -72,12 +66,9 @@ public class RolesServiceImpl implements RolesService {
     
     @Override
     public int modifyRole(RolesVO roleVO) {
-        // UPDATE_DATE 설정 제거 - 굳이 필요없음
-        // roleVO.setUpdateDate(new Date());
-        
         int result = roleMapper.updateRole(roleVO);
         
-        // 권한 재할당이 있는 경우 처리
+        // 권한 재할당이 있는 경우 처리 (String 타입으로 변경)
         if (result > 0 && roleVO.getPermissionIds() != null) {
             assignPermissionsToRole(roleVO.getRoleId(), roleVO.getPermissionIds());
         }
@@ -141,7 +132,7 @@ public class RolesServiceImpl implements RolesService {
         return roleMapper.checkRoleInUse(roleId) > 0;
     }
     
-    // === 권한-권한 매핑 관련 (간소화) ===
+    // === 권한-권한 매핑 관련 (String 타입으로 변경) ===
     
     @Override
     public List<Map<String, Object>> getAllPermissions() {
@@ -149,21 +140,21 @@ public class RolesServiceImpl implements RolesService {
     }
     
     @Override
-    public List<Integer> getPermissionIdsByRoleId(Integer roleId) {
+    public List<String> getPermissionIdsByRoleId(Integer roleId) {
         return roleMapper.selectPermissionIdsByRoleId(roleId);
     }
     
     @Override
     @Transactional
-    public int assignPermissionsToRole(Integer roleId, List<Integer> permissionIds) {
+    public int assignPermissionsToRole(Integer roleId, List<String> permissionIds) {
         // 기존 권한 매핑 모두 삭제
         roleMapper.deleteRolePermissions(roleId);
         
         int totalAssigned = 0;
         
-        // 새로운 권한 매핑 추가
+        // 새로운 권한 매핑 추가 (String 타입으로 변경)
         if (permissionIds != null && !permissionIds.isEmpty()) {
-            for (Integer permId : permissionIds) {
+            for (String permId : permissionIds) {
                 int result = roleMapper.insertRolePermission(roleId, permId);
                 totalAssigned += result;
             }
@@ -210,7 +201,7 @@ public class RolesServiceImpl implements RolesService {
     }
     
     @Override
-    public List<Integer> getEmployeePermissionIds(String employeeId) {
+    public List<String> getEmployeePermissionIds(String employeeId) {
         try {
             // 사원 존재 여부 확인
             if (!isEmployeeExists(employeeId)) {
@@ -242,7 +233,6 @@ public class RolesServiceImpl implements RolesService {
             Map<String, Object> params = new HashMap<>();
             params.put("employeeId", employeeId);
             params.put("roleId", roleId);
-            // updateUser와 updateDate 제거 - 굳이 필요없음
             
             int result = roleMapper.updateEmployeeRole(params);
             

@@ -235,13 +235,13 @@ public class RolesController {
         return ResponseEntity.ok(result);
     }
     
-    // 특정 권한의 권한 ID 목록 조회
+    // ✅ 특정 권한의 권한 ID 목록 조회 - String으로 변경
     @GetMapping("/{roleId}/permissions")
     public ResponseEntity<Map<String, Object>> getPermissionIdsByRoleId(@PathVariable Integer roleId) {
         Map<String, Object> result = new HashMap<>();
         
         try {
-            List<Integer> permissionIds = roleService.getPermissionIdsByRoleId(roleId);
+            List<String> permissionIds = roleService.getPermissionIdsByRoleId(roleId);
             
             result.put("result_code", "SUCCESS");
             result.put("message", "성공");
@@ -256,7 +256,7 @@ public class RolesController {
         return ResponseEntity.ok(result);
     }
     
-    // 권한에 권한 할당
+    // ✅ 권한에 권한 할당 - String으로 변경
     @PostMapping("/{roleId}/permissions")
     public ResponseEntity<Map<String, Object>> assignPermissionsToRole(
             @PathVariable Integer roleId, 
@@ -266,7 +266,7 @@ public class RolesController {
         
         try {
             @SuppressWarnings("unchecked")
-            List<Integer> permissionIds = (List<Integer>) requestData.get("permissionIds");
+            List<String> permissionIds = (List<String>) requestData.get("permissionIds");
             
             int assignResult = roleService.assignPermissionsToRole(roleId, permissionIds);
             
@@ -316,13 +316,13 @@ class EmployeeController {
         return ResponseEntity.ok(result);
     }
     
-    // 특정 사원의 권한 ID 목록 조회
+    // ✅ 특정 사원의 권한 ID 목록 조회 - String으로 변경
     @GetMapping("/{employeeId}/permissions")
     public ResponseEntity<Map<String, Object>> getEmployeePermissions(@PathVariable String employeeId) {
         Map<String, Object> result = new HashMap<>();
         
         try {
-            List<Integer> permissionIds = roleService.getEmployeePermissionIds(employeeId);
+            List<String> permissionIds = roleService.getEmployeePermissionIds(employeeId);
             
             result.put("result_code", "SUCCESS");
             result.put("message", "성공");

@@ -145,7 +145,7 @@ const allPermissions = ref([]);
 // 선택된 역할의 권한 목록
 const rolePermissions = ref([]);
 
-// 선택된 권한들 (체크박스용)
+// ✅ 선택된 권한들 (체크박스용) - String 타입으로 변경
 const selectedPermissions = ref([]);
 
 // 역할 목록 조회
@@ -199,10 +199,13 @@ const loadAllPermissions = async () => {
     const response = await axios.get(PERMISSIONS_API_URL);
     
     if (response.data.result_code === 'SUCCESS' && response.data.data) {
+      // ✅ PERM_ID를 String으로 처리하도록 수정
       allPermissions.value = response.data.data.map(perm => ({
-        id: perm.PERM_ID || perm.permId,
+        id: String(perm.PERM_ID || perm.permId), // String으로 변환
         name: perm.PERM_NAME || perm.permName,
-        description: perm.PERM_DESCRIPTION || perm.permDescription
+        description: perm.PERM_DESCRIPTION || perm.permDescription,
+        icon: perm.ICON || perm.icon,
+        parentTo: perm.PARENT_TO || perm.parentTo
       }));
       
       console.log('모든 권한 목록:', allPermissions.value);
@@ -219,7 +222,8 @@ const loadRolePermissions = async (roleId) => {
     const response = await axios.get(`${ROLES_API_URL}/${roleId}/permissions`);
     
     if (response.data.result_code === 'SUCCESS' && response.data.data) {
-      rolePermissions.value = response.data.data;
+      // ✅ 응답 데이터를 String 배열로 처리
+      rolePermissions.value = response.data.data.map(permId => String(permId));
       console.log('역할별 권한 목록:', rolePermissions.value);
     }
   } catch (error) {
@@ -255,7 +259,7 @@ const onRowSelect = async (event) => {
   // 역할의 권한 목록 조회
   await loadRolePermissions(role.roleId);
   
-  // 현재 역할의 권한을 체크박스에 반영
+  // ✅ 현재 역할의 권한을 체크박스에 반영 (String 배열로 처리)
   selectedPermissions.value = [...rolePermissions.value];
 };
 
@@ -276,8 +280,9 @@ const savePermissions = async () => {
     
     console.log('권한 설정 저장:', selectedPermissions.value);
     
+    // ✅ permissionIds를 String 배열로 전송
     const response = await axios.post(`${ROLES_API_URL}/${selectedRole.value.roleId}/permissions`, {
-      permissionIds: selectedPermissions.value
+      permissionIds: selectedPermissions.value // 이미 String 배열임
     });
     
     if (response.data.result_code === 'SUCCESS') {
@@ -383,7 +388,7 @@ onMounted(async () => {
           @click="handleResetSearchOptions"
           severity="secondary"
         />
-        <!-- ✅ 조회 버튼 색상을 다른 페이지와 일치시킴 (severity 제거 또는 primary로 변경) -->
+        <!-- ✅ 조회 버튼 색상을 다른 페이지와 일치시킴 (severity 제거) -->
         <Button 
           label="조회" 
           @click="() => {
@@ -484,6 +489,7 @@ onMounted(async () => {
             <div class="grid grid-cols-1 gap-3 max-h-96 overflow-y-auto border rounded p-3">
               <div v-for="permission in allPermissions" :key="permission.id" 
                    class="flex items-center space-x-2 p-2 border rounded hover:bg-gray-50">
+                <!-- ✅ Checkbox의 value를 String으로 처리 -->
                 <Checkbox 
                   v-model="selectedPermissions" 
                   :value="permission.id" 
@@ -492,6 +498,11 @@ onMounted(async () => {
                 <label :for="`perm-${permission.id}`" class="flex-1 cursor-pointer">
                   <div class="font-medium text-sm">{{ permission.name }}</div>
                   <div class="text-xs text-gray-500">{{ permission.description }}</div>
+                  <!-- ✅ 추가 권한 정보 표시 (있는 경우) -->
+                  <div v-if="permission.icon || permission.parentTo" class="text-xs text-gray-400 mt-1">
+                    <span v-if="permission.icon">아이콘: {{ permission.icon }}</span>
+                    <span v-if="permission.parentTo"> | 상위: {{ permission.parentTo }}</span>
+                  </div>
                 </label>
               </div>
             </div>
