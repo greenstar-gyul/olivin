@@ -93,7 +93,7 @@ public class AuthService {
                 ))
                 .collect(Collectors.toList());
             
-            LoginResponseVO response = new LoginResponseVO(token, userDto, roleDto, permissionDtos);
+            LoginResponseVO response = new LoginResponseVO(token, userDto, roleDto, permissionDtos, new ArrayList<>());
             
             log.info("로그인 성공: {} (역할: {}, 권한 수: {})", 
                 user.getEmployeeId(), user.getRoleName(), permissions.size());
@@ -143,7 +143,7 @@ public class AuthService {
                 ))
                 .collect(Collectors.toList());
             
-            return new LoginResponseVO(null, userDto, roleDto, permissionDtos);
+            return new LoginResponseVO(null, userDto, roleDto, permissionDtos, new ArrayList<>());
             
         } catch (Exception e) {
             log.error("사용자 정보 조회 실패: {} - {}", employeeId, e.getMessage());
