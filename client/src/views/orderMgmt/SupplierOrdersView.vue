@@ -90,7 +90,11 @@ const getOrdersData = async (options) => {
 }
 
 const actionHandler = (rowData) => {
-  router.push(`/orders/view/${rowData.orderId}`);
+  let move = "?move=";
+  if (useAuth().user.value.compId === 'COM10001') {
+    move += "supplier";
+  }
+  router.push(`/orders/view/${rowData.orderId}${move}`);
 }
 
 const getSupplierInfo = async (empId) => {

@@ -270,6 +270,14 @@ const saveFormHandler = async (formData, tableData) => {
     },
     accept: async () => {
       fetchOrders(formData, tableData);
+      toast.add({
+        severity: 'success',
+        summary: '성공',
+        detail: '발주서가 등록되었습니다.',
+        life: 2000
+      });
+      inputRef.value.resetFormHandler();
+      inputRef.value.resetTableHandler();
     },
     reject: () => {
       toast.add({

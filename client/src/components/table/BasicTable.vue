@@ -171,6 +171,11 @@ const header = computed(() => props.header);
       :scrollHeight="props.scrollHeight" tableStyle="min-width: 50rem" @rowSelect="onRowSelect" @rowUnselect="onRowUnselect"
       :selectionMode="props.checked ? props.checkType : null">
 
+      <!-- 비어있는 데이터일 때 표시 -->
+      <template #empty>
+        <div class="text-center py-3">데이터가 비어있습니다. 😥</div>
+      </template>
+
       <Column v-if="props.checked" :selectionMode="props.checkType" headerStyle="width: 3rem"></Column>
 
       <!-- 동적 컬럼 생성 -->

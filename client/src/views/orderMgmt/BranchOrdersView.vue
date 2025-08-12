@@ -89,7 +89,11 @@ const getOrdersData = async (options) => {
 }
 
 const actionHandler = (rowData) => {
-  router.push(`/orders/view/${rowData.orderId}`);
+  let move = "?move=";
+  if (useAuth().user.value.compId === 'COM10001') {
+    move += "branch";
+  }
+  router.push(`/orders/view/${rowData.orderId}${move}`);
 }
 
 const getBranchInfo = async (empId) => {
@@ -142,7 +146,7 @@ onMounted(async () => {
 </script>
 <template>
   <SearchDetailTable ref="searchDetailTableRef" :filters="filters" 
-    :items="items" :header="header" 
+    :items="items" :header="header"
     @searchData="searchData" @resetSearchOptions="resetSearchData"
     @actionHandler="actionHandler"
   />

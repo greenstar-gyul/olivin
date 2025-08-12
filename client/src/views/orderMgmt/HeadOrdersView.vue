@@ -4,6 +4,7 @@ import { onMounted, ref } from 'vue';
 import { convertDate } from '@/utils/dateUtils';
 import { useRouter } from 'vue-router';
 import axios from '@/service/axios';
+import { useAuth } from '@/composables/useAuth';
 
 const router = useRouter();
 
@@ -97,7 +98,11 @@ const getOrdersData = async (options) => {
 }
 
 const actionHandler = (rowData) => {
-  router.push(`/orders/view/${rowData.orderId}`);
+  let move = "?move=";
+  if (useAuth().user.value.compId === 'COM10001') {
+    move += "head";
+  }
+  router.push(`/orders/view/${rowData.orderId}${move}`);
 }
 
 const defaultFilterOptions = async () => {

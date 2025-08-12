@@ -59,7 +59,8 @@ const columns = {
 /* redirect */
 const redirectToList = () => {
   if (defaultForm.value?.compType === '100001') {
-    router.push('/orders/head/view');
+    const move = route.query.move || 'head';
+    router.push(`/orders/${move}/view`);
   } else {
     switch(defaultForm.value.orderType) {
       case '150001':
@@ -85,7 +86,15 @@ const approvalHandler = async () => {
     employeeId: userInfo.value.employeeId,
     orderId: route.params.orderId
   });
-  redirectToList(); //목록으로 이동
+  toast.add({
+    severity: 'success',
+    summary: '성공',
+    detail: '발주서가 승인되었습니다.',
+    life: 2000
+  });
+  approvalBtnSlot.value = null; // 승인 버튼 제거
+  rejectionBtnSlot.value = null; // 반려 버튼 제거
+  // redirectToList(); //목록으로 이동
 }
 
 const approvalDialogHandler = async () => {
@@ -134,7 +143,17 @@ const rejectionHandler = async () => {
     rejectionUser: userInfo.value.empName,
     rejectionReson: rejectionReason.value
   });
-  redirectToList(); //목록으로 이동
+
+  toast.add({
+    severity: 'success',
+    summary: '성공',
+    detail: '발주서가 반려되었습니다.',
+    life: 2000
+  });
+  rejectionVisible.value = false;
+  approvalBtnSlot.value = null; // 승인 버튼 제거
+  rejectionBtnSlot.value = null; // 반려 버튼 제거
+  // redirectToList(); //목록으로 이동
 }
 
 onBeforeMount(async () => {
