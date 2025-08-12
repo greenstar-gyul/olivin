@@ -262,6 +262,39 @@ const saveFormHandler = async (formData, tableData) => {
         });
         return;
     }
+  }
+
+  confirm.require({
+    icon: 'pi pi-info-circle',
+    header: '발주서 등록',
+    message: '발주서를 등록하시겠습니까?',
+    rejectProps: {
+      label: '취소',
+      severity: 'secondary',
+      outlined: true
+    },
+    acceptProps: {
+      label: '저장'
+    },
+    accept: async () => {
+      fetchOrders(formData, tableData);
+      toast.add({
+        severity: 'success',
+        summary: '성공',
+        detail: '발주서가 등록되었습니다.',
+        life: 2000
+      });
+      inputRef.value.resetFormHandler();
+      inputRef.value.resetTableHandler();
+    },
+    reject: () => {
+      toast.add({
+        severity: 'error',
+        summary: '오류',
+        detail: '발주서 등록이 취소되었습니다.',
+        life: 2000
+      });
+      return;
 
     for (const table of tableData) {
         for (const data in table) {

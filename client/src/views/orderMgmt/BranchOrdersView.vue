@@ -97,8 +97,12 @@ const getOrdersData = async (options) => {
 };
 
 const actionHandler = (rowData) => {
-    router.push(`/orders/view/${rowData.orderId}`);
-};
+  let move = "?move=";
+  if (useAuth().user.value.compId === 'COM10001') {
+    move += "branch";
+  }
+  router.push(`/orders/view/${rowData.orderId}${move}`);
+}
 
 const getBranchInfo = async (empId) => {
     const req = await axios.get('/api/orders/user/compInfo', {
@@ -148,5 +152,9 @@ onMounted(async () => {
 });
 </script>
 <template>
-    <SearchDetailTable ref="searchDetailTableRef" :filters="filters" :items="items" :header="header" @searchData="searchData" @resetSearchOptions="resetSearchData" @actionHandler="actionHandler" />
+  <SearchDetailTable ref="searchDetailTableRef" :filters="filters" 
+    :items="items" :header="header"
+    @searchData="searchData" @resetSearchOptions="resetSearchData"
+    @actionHandler="actionHandler"
+  />
 </template>
