@@ -18,7 +18,7 @@ const router = createRouter({
                 {
                     path: '/dashboard/branch',
                     name: 'BranchDashboard',
-                    component: () => import('@/views/dashboard/BranchDashboard.vue'),
+                    component: () => import('@/views/dashboard/BranchDashboard.vue')
                     // meta: { roles: ['ROLE_SYSTEM_ADMIN', 'ROLE_branch_manager', 'sales_manager'] }
                 },
                 {
@@ -158,17 +158,17 @@ const router = createRouter({
                 {
                     path: '/test',
                     name: 'test',
-                    component: () => import('@/views/test/TestPage.vue'),
+                    component: () => import('@/views/test/TestPage.vue')
                 },
                 {
                     path: '/test2',
                     name: 'test2',
-                    component: () => import('@/views/test/InputTestPage.vue'),
+                    component: () => import('@/views/test/InputTestPage.vue')
                 },
                 {
                     path: '/test3',
                     name: 'test3',
-                    component: () => import('@/views/test/StandardInputTestPage.vue'),
+                    component: () => import('@/views/test/StandardInputTestPage.vue')
                 },
                 {
                     path: '/test4',
@@ -199,7 +199,7 @@ const router = createRouter({
                 {
                     path: '/supOutbndMgmt',
                     name: 'supOutbndMgmt',
-                    component: () => import('@/views/inventory/supOutbndMgmt.vue'),
+                    component: () => import('@/views/inventory/supOutbndMgmt.vue')
                 },
                 /* end of inventory */
                 {
@@ -289,26 +289,26 @@ const router = createRouter({
                 {
                     path: '/sales/orders',
                     name: 'salesOrders',
-                    component: () => import('@/views/sales/SalesOrdersMgmt.vue'),
+                    component: () => import('@/views/sales/SalesOrdersMgmt.vue')
                     // meta: { roles: ['ROLE_STORE_MANAGER', 'ROLE_EMPLOYEE'] }
                 },
                 {
                     path: '/sales/orders/view',
                     name: 'salesOrdersView',
-                    component: () => import('@/views/sales/SalesOrdersPage.vue'),
+                    component: () => import('@/views/sales/SalesOrdersPage.vue')
                 },
                 {
                     path: '/sales/history',
                     name: 'salesHistory',
-                    component: () => import('@/views/sales/SalesHistoryPage.vue'),
+                    component: () => import('@/views/sales/SalesHistoryPage.vue')
                 },
                 {
                     path: '/sales/performance',
                     name: 'salesPerformance',
-                    component: () => import('@/views/sales/SalesPerformancePage.vue'),
+                    component: () => import('@/views/sales/SalesPerformancePage.vue')
                 },
                 /* end of sales */
-               // router/index.js 수정
+                // router/index.js 수정
                 {
                     path: '/roles/empmanage',
                     name: 'empManage',
@@ -364,15 +364,14 @@ const router = createRouter({
 // 📍 DB 기반 권한 체크 라우터 가드
 router.beforeEach(async (to, from, next) => {
     const authStore = useAuthStore();
-    
+
     // 자동 페이지 타이틀
     const pageTitle = to.meta?.title || getDefaultTitle(to.name) || '페이지';
     document.title = `${pageTitle} - SCM 시스템`;
-    
+
     // AppLayout 하위는 로그인 필요
-    const requiresAuth = to.meta?.requiresAuth !== false && 
-                        to.matched.some(record => record.components?.default === AppLayout);
-    
+    const requiresAuth = to.meta?.requiresAuth !== false && to.matched.some((record) => record.components?.default === AppLayout);
+
     if (requiresAuth) {
         // 로그인 체크
         if (!authStore.isAuthenticated) {
@@ -380,81 +379,81 @@ router.beforeEach(async (to, from, next) => {
             next('/auth/login');
             return;
         }
-        
+
         // ✅ 사용자 정보 복구는 App.vue에서 처리하므로 여기서는 제거
         // 권한 체크는 사용자 정보가 있을 때만 수행
         if (authStore.user) {
             // 📍 권한 기반 접근 제어
             if (to.meta?.permissions && to.meta.permissions.length > 0) {
                 const hasRequiredPermission = authStore.hasAnyPermission(to.meta.permissions);
-                
+
                 if (!hasRequiredPermission) {
                     console.warn(`🚫 접근 권한이 없습니다. 필요 권한: [${to.meta.permissions.join(', ')}]`);
                     next('/auth/access');
                     return;
                 }
             }
-            
+
             // 📍 역할 기반 접근 제어 (하위 호환성)
             if (to.meta?.roles && to.meta.roles.length > 0) {
                 const hasRequiredRole = to.meta.roles.includes(authStore.roleName);
-                
+
                 if (!hasRequiredRole) {
                     console.warn(`🚫 접근 권한이 없습니다. 필요 역할: [${to.meta.roles.join(', ')}]`);
                     next('/auth/access');
                     return;
                 }
             }
-            
+
             console.log(`✅ 페이지 접근 허용: ${to.path} (역할: ${authStore.roleName})`);
         }
     }
-    
+
     // 로그인된 사용자가 로그인 페이지 접근 시
     if (to.name === 'login' && authStore.isAuthenticated) {
         console.log('👤 이미 로그인되어 있습니다.');
         next('/');
         return;
     }
-    
+
     next();
 });
 
 // 기본 타이틀 생성 함수
 function getDefaultTitle(routeName) {
     const titleMap = {
-        'dashboard': '대시보드',
-        'HqDashboard': '본사 대시보드',
-        'BranchDashboard': '지점 대시보드',
-        'SupplierDashboard': '공급업체 대시보드',
-        'formlayout': 'Form Layout',
-        'input': 'Input',
-        'button': 'Button',
-        'table': 'Table',
-        'list': 'List',
-        'tree': 'Tree',
-        'panel': 'Panel',
-        'overlay': 'Overlay',
-        'media': 'Media',
-        'message': 'Message',
-        'file': 'File',
-        'menu': 'Menu',
-        'charts': 'Charts',
-        'misc': 'Misc',
-        'timeline': 'Timeline',
-        'empty': 'Empty Page',
-        'crud': 'CRUD',
-        'documentation': 'Documentation',
-        'test': 'Test Page',
-        'test2': 'Input Test Page',
-        'salesPerformance': '매출 실적 조회',
-        'landing': '랜딩 페이지',
-        'notfound': '페이지를 찾을 수 없음',
-        'login': '로그인',
-        'accessDenied': '접근 거부',
-        'error': '오류'
+        dashboard: '대시보드',
+        HqDashboard: '본사 대시보드',
+        BranchDashboard: '지점 대시보드',
+        SupplierDashboard: '공급업체 대시보드',
+        formlayout: 'Form Layout',
+        input: 'Input',
+        button: 'Button',
+        table: 'Table',
+        list: 'List',
+        tree: 'Tree',
+        panel: 'Panel',
+        overlay: 'Overlay',
+        media: 'Media',
+        message: 'Message',
+        file: 'File',
+        menu: 'Menu',
+        charts: 'Charts',
+        misc: 'Misc',
+        timeline: 'Timeline',
+        empty: 'Empty Page',
+        crud: 'CRUD',
+        documentation: 'Documentation',
+        test: 'Test Page',
+        test2: 'Input Test Page',
+        salesPerformance: '매출 실적 조회',
+        landing: '랜딩 페이지',
+        notfound: '페이지를 찾을 수 없음',
+        login: '로그인',
+        accessDenied: '접근 거부',
+        error: '오류'
     };
-    
+
     return titleMap[routeName];
 }
 

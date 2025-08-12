@@ -8,26 +8,26 @@ import BasicTable from '../table/BasicTable.vue';
 // ✅ rowSelect, rowUnselect 이벤트 추가
 const emit = defineEmits(['searchData', 'saveData', 'openSearchModal', 'rowSelect', 'rowUnselect']);
 const props = defineProps({
-  filters: {
-    type: Array,
-    required: true
-  },
-  items: {
-    type: Array,
-    default: () => []
-  },
-  header: {
-    type: Object,
-    required: true
-  },
-  inputs: {
-    type: Object,
-    required: true
-  },
-  scrollHeight: {
-    type: String,
-    default: '400px'  // 기본값 400px
-  }
+    filters: {
+        type: Array,
+        required: true
+    },
+    items: {
+        type: Array,
+        default: () => []
+    },
+    header: {
+        type: Object,
+        required: true
+    },
+    inputs: {
+        type: Object,
+        required: true
+    },
+    scrollHeight: {
+        type: String,
+        default: '400px' // 기본값 400px
+    }
 });
 
 const selectedItems = ref(null);
@@ -36,58 +36,56 @@ const searchFormRef = ref(null);
 const inputFormRef = ref(null);
 
 const searchData = (searchOptions) => {
-  emit('searchData', searchOptions);
+    emit('searchData', searchOptions);
 };
 
 const saveData = (inputData) => {
-  emit('saveData', inputData);
+    emit('saveData', inputData);
 };
 
 const onRowSelect = (data) => {
-  if (props.checkType === 'single') {
-    selectedItems.value = data;
-  } else {
-    if (!selectedItems.value) {
-      selectedItems.value = [];
+    if (props.checkType === 'single') {
+        selectedItems.value = data;
+    } else {
+        if (!selectedItems.value) {
+            selectedItems.value = [];
+        }
+        selectedItems.value.push(data);
     }
-    selectedItems.value.push(data);
-  }
-  
-  // ✅ 부모 컴포넌트로 이벤트 전달
-  emit('rowSelect', data);
-}
+
+    // ✅ 부모 컴포넌트로 이벤트 전달
+    emit('rowSelect', data);
+};
 
 const onRowUnselect = (data) => {
-  if (props.checkType !== 'single') {
-    selectedItems.value = selectedItems.value.filter(item => item !== data);
-  } else {
-    selectedItems.value = null;
-  }
-  
-  // ✅ 부모 컴포넌트로 이벤트 전달
-  emit('rowUnselect', data);
+    if (props.checkType !== 'single') {
+        selectedItems.value = selectedItems.value.filter((item) => item !== data);
+    } else {
+        selectedItems.value = null;
+    }
+
+    // ✅ 부모 컴포넌트로 이벤트 전달
+    emit('rowUnselect', data);
 };
 
 const openSearchModal = (inputName) => {
-  emit('openSearchModal', inputName);
+    emit('openSearchModal', inputName);
 };
 
 defineExpose({
-  searchFormRef,
-  inputFormRef
-})
-
+    searchFormRef,
+    inputFormRef
+});
 </script>
 <template>
-  <SearchForm ref="searchFormRef" :filters="props.filters" @searchData="searchData" @openSearchModal="openSearchModal" />
-  <div class="grid grid-cols-7 gap-4 mb-4 items-stretch">
-    <BasicTable :data="props.items" :header="props.header" :checked="true" :scrollHeight="props.scrollHeight" @rowSelect="onRowSelect" @rowUnselect="onRowUnselect" class="col-span-4">
-      <template #btn>
-        <slot name="btn"></slot>
-      </template>
-    </BasicTable>
-    <InputForm ref="inputFormRef" :inputs="props.inputs" @saveData="saveData" @openSearchModal="openSearchModal" class="col-span-3"></InputForm>
-  </div>
+    <SearchForm ref="searchFormRef" :filters="props.filters" @searchData="searchData" @openSearchModal="openSearchModal" />
+    <div class="grid grid-cols-7 gap-4 mb-4 items-stretch">
+        <BasicTable :data="props.items" :header="props.header" :checked="true" :scrollHeight="props.scrollHeight" @rowSelect="onRowSelect" @rowUnselect="onRowUnselect" class="col-span-4">
+            <template #btn>
+                <slot name="btn"></slot>
+            </template>
+        </BasicTable>
+        <InputForm ref="inputFormRef" :inputs="props.inputs" @saveData="saveData" @openSearchModal="openSearchModal" class="col-span-3"></InputForm>
+    </div>
 </template>
-<style scoped>
-</style>
+<style scoped></style>
