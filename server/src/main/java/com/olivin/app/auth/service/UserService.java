@@ -54,18 +54,17 @@ public class UserService implements UserDetailsService {
         if (permissions.isEmpty()) {
             log.warn("사용자 {}에게 설정된 권한이 없습니다. 기본 권한을 부여합니다.", employeeId);
             // 기본 권한들 추가
-            authorities.add(new SimpleGrantedAuthority("PERM_MAIN"));
-            authorities.add(new SimpleGrantedAuthority("PERM_READ"));
-            authorities.add(new SimpleGrantedAuthority("PERM_BASIC"));
+            authorities.add(new SimpleGrantedAuthority("/main"));
+            authorities.add(new SimpleGrantedAuthority("/test"));
         } else {
-            // 실제 권한들 추가
+            // 실제 권한들 추가 (permId를 그대로 사용)
             authorities = permissions.stream()
-                .filter(permission -> permission != null && permission.getPermName() != null)
-                .map(permission -> new SimpleGrantedAuthority("PERM_" + permission.getPermName()))
+                .filter(permission -> permission != null && permission.getPermId() != null)
+                .map(permission -> new SimpleGrantedAuthority(permission.getPermId()))
                 .collect(Collectors.toList());
             
             log.debug("사용자 {}에게 부여된 권한: {}", employeeId, 
-                permissions.stream().map(PermissionVO::getPermName).collect(Collectors.toList()));
+                permissions.stream().map(PermissionVO::getPermId).collect(Collectors.toList()));
         }
         
         // 역할도 권한으로 추가

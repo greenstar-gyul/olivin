@@ -45,7 +45,7 @@ public class LoginResponseVO {
     @AllArgsConstructor
     @NoArgsConstructor
     public static class PermissionInfoVO {
-        private Long permId;            // 권한ID
+        private String permId;          // 권한ID (VARCHAR2)
         private String permName;        // 권한명
         private String permDescription; // 권한 설명
     }
