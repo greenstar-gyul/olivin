@@ -1,4 +1,4 @@
-package com.olivin.app.example.service;
+package com.olivin.app.standard.service;
 
 import java.util.List;
 import java.util.Map;
@@ -20,7 +20,7 @@ public interface EmpService {
     // 사원 정보 수정
     int modifyEmp(EmpVO empVO);
     
-    // 사원 삭제
+    // 사원 삭제 (퇴사 처리)
     int removeEmp(String employeeId);
     
     // 검색 조건에 따른 사원 목록 조회
@@ -32,7 +32,7 @@ public interface EmpService {
     // 이메일 중복 확인
     boolean isEmailExists(String email, String excludeEmpId);
     
-    // 다음 사원 ID 생성
+    // 다음 사원 ID 생성 (기본값)
     String getNextEmpId();
     
     // 사원 통계
