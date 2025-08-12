@@ -53,8 +53,17 @@ public class MenuService {
         
         // 1. 모든 권한을 메뉴 아이템으로 변환
         for (Map<String, Object> permission : permissions) {
+            log.debug("권한 데이터: {}", permission);
+            
             String menuPath = (String) permission.get("MENU_PATH");
             String parentPath = (String) permission.get("PARENT_MENU_PATH");
+            
+            log.debug("메뉴 경로: {}, 부모 경로: {}", menuPath, parentPath);
+            
+            if (menuPath == null || menuPath.trim().isEmpty()) {
+                log.warn("메뉴 경로가 null 또는 비어있습니다. 권한 ID: {}", permission.get("PERM_ID"));
+                continue;
+            }
             
             Map<String, Object> menuItem = new HashMap<>();
             menuItem.put("label", permission.get("MENU_NAME"));

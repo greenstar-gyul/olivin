@@ -1,10 +1,7 @@
 <script setup>
-import StandardInput from '@/components/common/StandardInput.vue';
-import DialogModal from '@/components/overray/DialogModal.vue';
-import { ref, onMounted, computed, watch, nextTick } from 'vue';
+import { ref, onMounted } from 'vue';
 import axios from '@/service/axios';
 import Button from 'primevue/button';
-import Dialog from 'primevue/dialog';
 import Checkbox from 'primevue/checkbox';
 import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
@@ -131,10 +128,7 @@ const allPermissions = ref([]);
 // 선택된 역할의 권한 목록
 const rolePermissions = ref([]);
 
-// 권한 설정 모달 관련 변수 제거 (우측 폼에 직접 통합)
-// const permissionModalVisible = ref(false);
-
-// 선택된 권한들 (체크박스용)
+// ✅ 선택된 권한들 (체크박스용) - String 타입으로 변경
 const selectedPermissions = ref([]);
 
 // 역할 목록 조회
@@ -183,36 +177,41 @@ const loadRoles = async (searchParams = {}) => {
 
 // 모든 권한 목록 조회
 const loadAllPermissions = async () => {
-    try {
-        const response = await axios.get(PERMISSIONS_API_URL);
-
-        if (response.data.result_code === 'SUCCESS' && response.data.data) {
-            allPermissions.value = response.data.data.map((perm) => ({
-                id: perm.PERM_ID || perm.permId,
-                name: perm.PERM_NAME || perm.permName,
-                description: perm.PERM_DESCRIPTION || perm.permDescription
-            }));
-
-            console.log('모든 권한 목록:', allPermissions.value);
-        }
-    } catch (error) {
-        console.error('권한 목록 조회 실패:', error);
-        alert('권한 목록 조회에 실패했습니다.');
+  try {
+    const response = await axios.get(PERMISSIONS_API_URL);
+    
+    if (response.data.result_code === 'SUCCESS' && response.data.data) {
+      // ✅ PERM_ID를 String으로 처리하도록 수정
+      allPermissions.value = response.data.data.map(perm => ({
+        id: String(perm.PERM_ID || perm.permId), // String으로 변환
+        name: perm.PERM_NAME || perm.permName,
+        description: perm.PERM_DESCRIPTION || perm.permDescription,
+        icon: perm.ICON || perm.icon,
+        parentTo: perm.PARENT_TO || perm.parentTo
+      }));
+      
+      console.log('모든 권한 목록:', allPermissions.value);
     }
+  } catch (error) {
+    console.error('권한 목록 조회 실패:', error);
+    allPermissions.value = [];
+  }
 };
 
 // 특정 역할의 권한 목록 조회
 const loadRolePermissions = async (roleId) => {
-    try {
-        const response = await axios.get(`${ROLES_API_URL}/${roleId}/permissions`);
-
-        if (response.data.result_code === 'SUCCESS' && response.data.data) {
-            rolePermissions.value = response.data.data;
-            console.log('역할별 권한 목록:', rolePermissions.value);
-        }
-    } catch (error) {
-        console.error('역할별 권한 조회 실패:', error);
+  try {
+    const response = await axios.get(`${ROLES_API_URL}/${roleId}/permissions`);
+    
+    if (response.data.result_code === 'SUCCESS' && response.data.data) {
+      // ✅ 응답 데이터를 String 배열로 처리
+      rolePermissions.value = response.data.data.map(permId => String(permId));
+      console.log('역할별 권한 목록:', rolePermissions.value);
     }
+  } catch (error) {
+    console.error('역할별 권한 조회 실패:', error);
+    rolePermissions.value = [];
+  }
 };
 
 // 검색 실행
@@ -236,15 +235,15 @@ const searchData = async (searchOptions) => {
 
 // 행 선택 처리 (PrimeVue DataTable 이벤트 형식에 맞게 수정)
 const onRowSelect = async (event) => {
-    const role = event.data;
-    console.log('선택된 역할:', role);
-    selectedRole.value = role;
-
-    // 역할의 권한 목록 조회
-    await loadRolePermissions(role.roleId);
-
-    // 현재 역할의 권한을 체크박스에 반영
-    selectedPermissions.value = [...rolePermissions.value];
+  const role = event.data;
+  console.log('선택된 역할:', role);
+  selectedRole.value = role;
+  
+  // 역할의 권한 목록 조회
+  await loadRolePermissions(role.roleId);
+  
+  // ✅ 현재 역할의 권한을 체크박스에 반영 (String 배열로 처리)
+  selectedPermissions.value = [...rolePermissions.value];
 };
 
 // 행 선택 해제 처리 (PrimeVue DataTable 이벤트 형식에 맞게 수정)
@@ -253,9 +252,6 @@ const onRowUnselect = (event) => {
     rolePermissions.value = [];
     selectedPermissions.value = []; // 권한 체크박스도 초기화
 };
-
-// 권한 설정 모달 함수들 제거 (우측 폼에 직접 통합)
-// const openPermissionModal = () => { ... }
 
 // 권한 설정 저장 (모달 없이 직접 저장)
 const savePermissions = async () => {
@@ -292,19 +288,29 @@ const savePermissions = async () => {
     }
 };
 
-// 검색 조건 초기화 시 우측 폼도 함께 초기화
-const handleResetSearchOptions = () => {
-    console.log('검색 조건 초기화');
-
-    selectedRole.value = null;
-    rolePermissions.value = [];
-    selectedPermissions.value = []; // 권한 체크박스도 초기화
-
-    if (standardInputRef.value && standardInputRef.value.inputFormRef) {
-        standardInputRef.value.inputFormRef.resetInputDatas();
-    }
-
-    console.log('검색 조건 및 입력 폼 초기화 완료');
+// ✅ 수정된 검색 조건 초기화 함수 - 초기화 후 전체 목록 자동 조회
+const handleResetSearchOptions = async () => {
+  console.log('검색 조건 초기화');
+  
+  // 검색 조건 초기화
+  filters.value.filters.forEach(filter => {
+    filter.value = '';
+  });
+  
+  // 선택된 역할 및 권한 초기화
+  selectedRole.value = null;
+  rolePermissions.value = [];
+  selectedPermissions.value = [];
+  
+  // 우측 폼 초기화
+  if (standardInputRef.value && standardInputRef.value.inputFormRef) {
+    standardInputRef.value.inputFormRef.resetInputDatas();
+  }
+  
+  // ✅ 초기화 후 전체 목록 자동 조회
+  await loadRoles(); // 빈 객체 전달로 전체 목록 조회
+  
+  console.log('검색 조건 초기화 및 전체 목록 조회 완료');
 };
 
 // 모달 처리 함수
@@ -340,122 +346,159 @@ onMounted(async () => {
 </script>
 
 <template>
-    <!-- StandardInput 대신 커스텀 레이아웃 사용 -->
-    <div class="space-y-6">
-        <!-- 상단: 검색 조건 -->
-        <div class="card p-6">
-            <div class="font-semibold text-xl mb-4">조회 조건</div>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
-                <div v-for="filter in filters.filters" :key="filter.name" class="flex flex-col">
-                    <label class="block text-sm font-medium mb-2">{{ filter.label }}</label>
-                    <input v-model="filter.value" :type="filter.type" :placeholder="filter.placeholder" class="p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                </div>
-            </div>
-
-            <div class="flex justify-center gap-3">
-                <Button label="초기화" @click="handleResetSearchOptions" severity="secondary" />
-                <Button
-                    label="조회"
-                    @click="
-                        () => {
-                            const searchOptions = {};
-                            filters.filters.forEach((filter) => {
-                                searchOptions[filter.name] = filter.value;
-                            });
-                            searchData(searchOptions);
-                        }
-                    "
-                    severity="success"
-                />
-            </div>
+  <!-- StandardInput 대신 커스텀 레이아웃 사용 -->
+  <div class="space-y-6">
+    <!-- 상단: 검색 조건 -->
+    <div class="card p-6">
+      <div class="font-semibold text-xl mb-4">조회 조건</div>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+        <div v-for="filter in filters.filters" :key="filter.name" class="flex flex-col">
+          <label class="block text-sm font-medium mb-2">{{ filter.label }}</label>
+          <input
+            v-model="filter.value"
+            :type="filter.type"
+            :placeholder="filter.placeholder"
+            class="p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
         </div>
-
-        <!-- 하단: 좌우 분할 -->
-        <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
-            <!-- 좌측: 역할 목록 -->
-            <div class="card p-6">
-                <div class="font-semibold text-xl mb-4">{{ header.title }}</div>
-                <DataTable v-model:selection="selectedRole" :value="items" dataKey="roleId" showGridlines scrollable scrollHeight="400px" tableStyle="min-width: 50rem" @rowSelect="onRowSelect" @rowUnselect="onRowUnselect" selectionMode="single">
-                    <Column selectionMode="single" headerStyle="width: 3rem"></Column>
-
-                    <Column v-for="(headerText, key) in header.header" :key="key" :field="key" :header="headerText">
-                        <template #body="slotProps">
-                            <span v-if="key === 'permissionNames' && slotProps.data[key]" class="inline-block max-w-[200px] truncate" :title="slotProps.data[key]">
-                                {{ slotProps.data[key] }}
-                            </span>
-                            <span v-else-if="header.rightAligned?.includes(key)">
-                                {{ slotProps.data[key] ? slotProps.data[key].toLocaleString() : '0' }}
-                            </span>
-                            <span v-else>
-                                {{ slotProps.data[key] || '' }}
-                            </span>
-                        </template>
-                    </Column>
-                </DataTable>
-            </div>
-
-            <!-- 우측: 역할 정보 및 권한 설정 -->
-            <div class="card p-6">
-                <div class="font-semibold text-xl mb-4">역할 권한 설정</div>
-
-                <div v-if="!selectedRole" class="text-center text-gray-500 py-8">역할을 선택하면 정보가 표시됩니다.</div>
-
-                <div v-else class="space-y-6">
-                    <!-- 역할 기본 정보 -->
-                    <div class="grid grid-cols-2 gap-4">
-                        <div class="grid grid-cols-12 gap-2">
-                            <label class="flex items-center col-span-3">역할ID</label>
-                            <div class="col-span-9">
-                                <input type="text" :value="selectedRole.roleId" readonly class="w-full p-2 border border-gray-300 rounded bg-gray-50" />
-                            </div>
-                        </div>
-
-                        <div class="grid grid-cols-12 gap-2">
-                            <label class="flex items-center col-span-3">역할명</label>
-                            <div class="col-span-9">
-                                <input type="text" :value="selectedRole.roleName" readonly class="w-full p-2 border border-gray-300 rounded bg-gray-50" />
-                            </div>
-                        </div>
-
-                        <div class="grid grid-cols-12 gap-2">
-                            <label class="flex items-center col-span-3">역할설명</label>
-                            <div class="col-span-9">
-                                <input type="text" :value="selectedRole.roleDesc" readonly class="w-full p-2 border border-gray-300 rounded bg-gray-50" />
-                            </div>
-                        </div>
-
-                        <div class="grid grid-cols-12 gap-2">
-                            <label class="flex items-center col-span-3">현재권한수</label>
-                            <div class="col-span-9">
-                                <input type="text" :value="selectedPermissions.length" readonly class="w-full p-2 border border-gray-300 rounded bg-gray-50" />
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- 권한 설정 영역 -->
-                    <div class="border-t pt-4">
-                        <h5 class="font-semibold mb-3">권한 목록 (체크박스로 선택/해제)</h5>
-                        <div class="grid grid-cols-1 gap-3 max-h-96 overflow-y-auto border rounded p-3">
-                            <div v-for="permission in allPermissions" :key="permission.id" class="flex items-center space-x-2 p-2 border rounded hover:bg-gray-50">
-                                <Checkbox v-model="selectedPermissions" :value="permission.id" :inputId="`perm-${permission.id}`" />
-                                <label :for="`perm-${permission.id}`" class="flex-1 cursor-pointer">
-                                    <div class="font-medium text-sm">{{ permission.name }}</div>
-                                    <div class="text-xs text-gray-500">{{ permission.description }}</div>
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- 저장 버튼 -->
-                    <div class="flex justify-between items-center pt-4 border-t">
-                        <div class="text-sm text-gray-600">선택된 권한: {{ selectedPermissions.length }}개 / 전체: {{ allPermissions.length }}개</div>
-                        <div class="flex gap-2">
-                            <Button label="초기화" severity="secondary" outlined @click="onRowUnselect" />
-                            <Button label="저장" severity="success" @click="savePermissions" />
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+      </div>
+      
+      <div class="flex justify-center gap-3">
+        <Button 
+          label="초기화" 
+          @click="handleResetSearchOptions"
+          severity="secondary"
+        />
+        <!-- ✅ 조회 버튼 색상을 다른 페이지와 일치시킴 (severity 제거) -->
+        <Button 
+          label="조회" 
+          @click="() => {
+            const searchOptions = {};
+            filters.filters.forEach(filter => {
+              searchOptions[filter.name] = filter.value;
+            });
+            searchData(searchOptions);
+          }"
+        />
+      </div>
     </div>
+    
+    <!-- 하단: 좌우 분할 -->
+    <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+      <!-- 좌측: 역할 목록 -->
+      <div class="card p-6">
+        <div class="font-semibold text-xl mb-4">{{ header.title }}</div>
+        <DataTable 
+          v-model:selection="selectedRole" 
+          :value="items" 
+          dataKey="roleId" 
+          showGridlines 
+          scrollable
+          scrollHeight="400px" 
+          tableStyle="min-width: 50rem"
+          @rowSelect="onRowSelect" 
+          @rowUnselect="onRowUnselect"
+          selectionMode="single"
+        >
+          <Column selectionMode="single" headerStyle="width: 3rem"></Column>
+          
+          <Column v-for="(headerText, key) in header.header" :key="key" :field="key" :header="headerText">
+            <template #body="slotProps">
+              <span v-if="key === 'permissionNames' && slotProps.data[key]" 
+                    class="inline-block max-w-[200px] truncate" 
+                    :title="slotProps.data[key]">
+                {{ slotProps.data[key] }}
+              </span>
+              <span v-else-if="header.rightAligned?.includes(key)">
+                {{ slotProps.data[key] ? slotProps.data[key].toLocaleString() : '0' }}
+              </span>
+              <span v-else>
+                {{ slotProps.data[key] || '' }}
+              </span>
+            </template>
+          </Column>
+        </DataTable>
+      </div>
+      
+      <!-- 우측: 역할 정보 및 권한 설정 -->
+      <div class="card p-6">
+        <div class="font-semibold text-xl mb-4">역할 권한 설정</div>
+        
+        <div v-if="!selectedRole" class="text-center text-gray-500 py-8">
+          역할을 선택하면 정보가 표시됩니다.
+        </div>
+        
+        <div v-else class="space-y-6">
+          <!-- 역할 기본 정보 -->
+          <div class="grid grid-cols-2 gap-4">
+            <div class="grid grid-cols-12 gap-2">
+              <label class="flex items-center col-span-3">역할ID</label>
+              <div class="col-span-9">
+                <input type="text" :value="selectedRole.roleId" readonly 
+                       class="w-full p-2 border border-gray-300 rounded bg-gray-50" />
+              </div>
+            </div>
+            
+            <div class="grid grid-cols-12 gap-2">
+              <label class="flex items-center col-span-3">역할명</label>
+              <div class="col-span-9">
+                <input type="text" :value="selectedRole.roleName" readonly 
+                       class="w-full p-2 border border-gray-300 rounded bg-gray-50" />
+              </div>
+            </div>
+            
+            <div class="grid grid-cols-12 gap-2">
+              <label class="flex items-center col-span-3">역할설명</label>
+              <div class="col-span-9">
+                <input type="text" :value="selectedRole.roleDesc" readonly 
+                       class="w-full p-2 border border-gray-300 rounded bg-gray-50" />
+              </div>
+            </div>
+            
+            <div class="grid grid-cols-12 gap-2">
+              <label class="flex items-center col-span-3">현재권한수</label>
+              <div class="col-span-9">
+                <input type="text" :value="selectedPermissions.length" readonly 
+                       class="w-full p-2 border border-gray-300 rounded bg-gray-50" />
+              </div>
+            </div>
+          </div>
+          
+          <!-- 권한 설정 영역 -->
+          <div class="border-t pt-4">
+            <h5 class="font-semibold mb-3">권한 목록 (체크박스로 선택/해제)</h5>
+            <div class="grid grid-cols-1 gap-3 max-h-96 overflow-y-auto border rounded p-3">
+              <div v-for="permission in allPermissions" :key="permission.id" 
+                   class="flex items-center space-x-2 p-2 border rounded hover:bg-gray-50">
+                <!-- ✅ Checkbox의 value를 String으로 처리 -->
+                <Checkbox 
+                  v-model="selectedPermissions" 
+                  :value="permission.id" 
+                  :inputId="`perm-${permission.id}`"
+                />
+                <label :for="`perm-${permission.id}`" class="flex-1 cursor-pointer">
+                  <div class="font-medium text-sm">{{ permission.name }}</div>
+                  <div class="text-xs text-gray-500">{{ permission.description }}</div>
+                  <!-- ✅ 추가 권한 정보 표시 (있는 경우) -->
+                  <div v-if="permission.icon || permission.parentTo" class="text-xs text-gray-400 mt-1">
+                    <span v-if="permission.icon">아이콘: {{ permission.icon }}</span>
+                    <span v-if="permission.parentTo"> | 상위: {{ permission.parentTo }}</span>
+                  </div>
+                </label>
+              </div>
+            </div>
+          
+          <!-- 저장 버튼 -->
+          <div class="flex justify-between items-center pt-4 border-t">
+            <div class="text-sm text-gray-600">선택된 권한: {{ selectedPermissions.length }}개 / 전체: {{ allPermissions.length }}개</div>
+            <div class="flex gap-2">
+              <Button label="초기화" severity="secondary" outlined @click="onRowUnselect" />
+              <Button label="저장" severity="success" @click="savePermissions" />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  </div>
 </template>

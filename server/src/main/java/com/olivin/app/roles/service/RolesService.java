@@ -46,14 +46,16 @@ public interface RolesService {
     // 권한 사용 여부 확인 (직원이 사용 중인지)
     boolean isRoleInUse(Integer roleId);
     
+    // ========== 권한 관련 메서드 (PERM_ID를 String으로 변경) ==========
+    
     // 모든 권한 목록 조회
     List<Map<String, Object>> getAllPermissions();
     
-    // 특정 권한의 권한 ID 목록 조회
-    List<Integer> getPermissionIdsByRoleId(Integer roleId);
+    // ✅ 특정 권한의 권한 ID 목록 조회 - String으로 변경
+    List<String> getPermissionIdsByRoleId(Integer roleId);
     
-    // 권한에 권한 할당/수정
-    int assignPermissionsToRole(Integer roleId, List<Integer> permissionIds);
+    // ✅ 권한에 권한 할당/수정 - String으로 변경
+    int assignPermissionsToRole(Integer roleId, List<String> permissionIds);
     
     // 권한의 모든 권한 삭제
     int removeAllPermissionsFromRole(Integer roleId);
@@ -66,8 +68,8 @@ public interface RolesService {
     // 사원 목록 조회 (권한 정보 포함)
     List<Map<String, Object>> getEmployeesWithPermissions(Map<String, Object> searchParams);
     
-    // 특정 사원의 권한 ID 목록 조회 (역할을 통해)
-    List<Integer> getEmployeePermissionIds(String employeeId);
+    // ✅ 특정 사원의 권한 ID 목록 조회 (역할을 통해) - String으로 변경
+    List<String> getEmployeePermissionIds(String employeeId);
     
     // 사원의 역할 변경
     int updateEmployeeRole(String employeeId, Integer roleId, String updateUser);

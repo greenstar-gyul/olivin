@@ -1,9 +1,10 @@
-// AuthService.java
+// AuthService.java (수정됨)
 package com.olivin.app.auth.service;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.ArrayList;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -50,8 +51,11 @@ public class AuthService {
             // 사용자 정보 조회
             UserVO user = userService.findByEmployeeId(request.getEmployeeId());
             
-            // 사용자 권한 조회
+            // 사용자 권한 조회 (빈 목록이어도 처리)
             List<PermissionVO> permissions = userService.getUserPermissions(user.getEmployeeId());
+            if (permissions == null) {
+                permissions = new ArrayList<>();
+            }
             
             // UserDetails 생성
             UserDetails userDetails = userService.loadUserByUsername(request.getEmployeeId());
@@ -59,32 +63,33 @@ public class AuthService {
             // JWT 토큰 생성 (추가 정보 포함)
             Map<String, Object> extraClaims = new HashMap<>();
             extraClaims.put("employeeId", user.getEmployeeId());
-            extraClaims.put("empName", user.getEmpName());
-            extraClaims.put("role", user.getRoleName());
-            extraClaims.put("departmentId", user.getDepartmentId());
-            extraClaims.put("position", user.getPosition());
-            extraClaims.put("compId", user.getCompId());
-            extraClaims.put("compName", user.getCompName());
+            extraClaims.put("empName", user.getEmpName() != null ? user.getEmpName() : "");
+            extraClaims.put("role", user.getRoleName() != null ? user.getRoleName() : "USER");
+            extraClaims.put("departmentId", user.getDepartmentId() != null ? user.getDepartmentId() : "");
+            extraClaims.put("position", user.getPosition() != null ? user.getPosition() : "");
+            extraClaims.put("compId", user.getCompId() != null ? user.getCompId() : "");
+            extraClaims.put("compName", user.getCompName() != null ? user.getCompName() : "");
             
             String token = jwtService.generateToken(userDetails, extraClaims);
             
             // 응답 데이터 구성
             LoginResponseVO.UserInfoVO userDto = new LoginResponseVO.UserInfoVO(
                 user.getEmployeeId(),
-                user.getEmpName(),
-                user.getEmail(),
-                user.getPosition(),
-                user.getDepartmentId(),
-                user.getDeptName(),
-                user.getCompId(),
-                user.getCompName()
+                user.getEmpName() != null ? user.getEmpName() : "",
+                user.getEmail() != null ? user.getEmail() : "",
+                user.getPosition() != null ? user.getPosition() : "",
+                user.getDepartmentId() != null ? user.getDepartmentId() : "",
+                user.getDeptName() != null ? user.getDeptName() : "",
+                user.getCompId() != null ? user.getCompId() : "",
+                user.getCompName() != null ? user.getCompName() : ""
             );
             
             LoginResponseVO.RoleInfoVO roleDto = new LoginResponseVO.RoleInfoVO(
-                user.getRoleId(),
-                user.getRoleName()
+                user.getRoleId() != null ? user.getRoleId() : 0L,
+                user.getRoleName() != null ? user.getRoleName() : "USER"
             );
             
+            // 권한이 없는 경우 빈 목록 반환
             List<LoginResponseVO.PermissionInfoVO> permissionDtos = permissions.stream()
                 .map(permission -> new LoginResponseVO.PermissionInfoVO(
                     permission.getPermId(),
@@ -96,7 +101,9 @@ public class AuthService {
             LoginResponseVO response = new LoginResponseVO(token, userDto, roleDto, permissionDtos, new ArrayList<>());
             
             log.info("로그인 성공: {} (역할: {}, 권한 수: {})", 
-                user.getEmployeeId(), user.getRoleName(), permissions.size());
+                user.getEmployeeId(), 
+                user.getRoleName() != null ? user.getRoleName() : "USER", 
+                permissions.size());
             
             return response;
             
@@ -119,20 +126,24 @@ public class AuthService {
             UserVO user = userService.findByEmployeeId(employeeId);
             List<PermissionVO> permissions = userService.getUserPermissions(user.getEmployeeId());
             
+            if (permissions == null) {
+                permissions = new ArrayList<>();
+            }
+            
             LoginResponseVO.UserInfoVO userDto = new LoginResponseVO.UserInfoVO(
                 user.getEmployeeId(),
-                user.getEmpName(),
-                user.getEmail(),
-                user.getPosition(),
-                user.getDepartmentId(),
-                user.getDeptName(),
-                user.getCompId(),
-                user.getCompName()
+                user.getEmpName() != null ? user.getEmpName() : "",
+                user.getEmail() != null ? user.getEmail() : "",
+                user.getPosition() != null ? user.getPosition() : "",
+                user.getDepartmentId() != null ? user.getDepartmentId() : "",
+                user.getDeptName() != null ? user.getDeptName() : "",
+                user.getCompId() != null ? user.getCompId() : "",
+                user.getCompName() != null ? user.getCompName() : ""
             );
             
             LoginResponseVO.RoleInfoVO roleDto = new LoginResponseVO.RoleInfoVO(
-                user.getRoleId(),
-                user.getRoleName()
+                user.getRoleId() != null ? user.getRoleId() : 0L,
+                user.getRoleName() != null ? user.getRoleName() : "USER"
             );
             
             List<LoginResponseVO.PermissionInfoVO> permissionDtos = permissions.stream()

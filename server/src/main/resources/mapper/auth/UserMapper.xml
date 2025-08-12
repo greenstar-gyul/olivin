@@ -26,17 +26,17 @@
         SELECT 
             e.EMPLOYEE_ID,
             e.COMP_ID,
-            c.COMP_NAME,
+            NVL(c.COMP_NAME, '') AS COMP_NAME,
             e.EMP_NAME,
             e.PASSWORD,
-            e.EMAIL,
-            e.PHONE,
-            e.POSITION,
+            NVL(e.EMAIL, '') AS EMAIL,
+            NVL(e.PHONE, '') AS PHONE,
+            NVL(e.POSITION, '') AS POSITION,
             e.ROLE_ID,
             e.STATUS,
             e.DEPARTMENT_ID,
-            upper(r.ROLE_NAME) AS ROLE_NAME,
-            d.DEPT_NAME
+            NVL(r.ROLE_NAME, 'USER') AS ROLE_NAME,
+            NVL(d.DEPT_NAME, '') AS DEPT_NAME
         FROM EMPLOYEES e
         LEFT JOIN ROLES r ON e.ROLE_ID = r.ROLE_ID
         LEFT JOIN DEPARTMENTS d ON e.DEPARTMENT_ID = d.DEPARTMENT_ID
@@ -50,34 +50,41 @@
         SELECT 
             e.EMPLOYEE_ID,
             e.COMP_ID,
-            c.COMP_NAME,
+            NVL(c.COMP_NAME, '') AS COMP_NAME,
             e.EMP_NAME,
             e.PASSWORD,
-            e.EMAIL,
-            e.PHONE,
-            e.POSITION,
+            NVL(e.EMAIL, '') AS EMAIL,
+            NVL(e.PHONE, '') AS PHONE,
+            NVL(e.POSITION, '') AS POSITION,
             e.ROLE_ID,
             e.STATUS,
             e.DEPARTMENT_ID,
-            upper(r.ROLE_NAME) AS ROLE_NAME,
-            d.DEPT_NAME
+            NVL(r.ROLE_NAME, 'USER') AS ROLE_NAME,
+            NVL(d.DEPT_NAME, '') AS DEPT_NAME
         FROM EMPLOYEES e
         LEFT JOIN ROLES r ON e.ROLE_ID = r.ROLE_ID
         LEFT JOIN DEPARTMENTS d ON e.DEPARTMENT_ID = d.DEPARTMENT_ID
+        LEFT JOIN COMPANYS c ON e.COMP_ID = c.COMP_ID
         WHERE e.EMPLOYEE_ID = #{employeeId}
     </select>
 
-    <!-- 사용자의 권한 목록 조회 -->
+    <!-- 사용자의 권한 목록 조회 (안전한 버전) -->
     <select id="findPermissionsByEmployeeId" parameterType="string" resultType="com.olivin.app.auth.service.PermissionVO">
         SELECT 
             p.PERM_ID as permId,
             p.PERM_NAME as permName,
-            p.PERM_DESCRIPTION as permDescription
+            NVL(p.PERM_DESCRIPTION, '') as permDescription
         FROM PERMISSIONS p
-        INNER JOIN ROLE_PERMISSION rp ON p.PERM_ID = rp.PERM_ID
-        INNER JOIN EMPLOYEES e ON rp.ROLE_ID = e.ROLE_ID
-        WHERE e.EMPLOYEE_ID = #{employeeId}
-        AND e.STATUS = '050001'
+        WHERE p.PERM_ID IN (
+            SELECT DISTINCT rp.PERM_ID 
+            FROM ROLE_PERMISSION rp
+            INNER JOIN EMPLOYEES e ON rp.ROLE_ID = e.ROLE_ID
+            WHERE e.EMPLOYEE_ID = #{employeeId}
+            AND e.STATUS = '050001'
+            AND rp.ROLE_ID IS NOT NULL
+            AND rp.PERM_ID IS NOT NULL
+        )
+        ORDER BY p.PERM_ID
     </select>
 
     <!-- 사용자 정보 수정 -->
