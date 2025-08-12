@@ -32,7 +32,9 @@ public class RolesVO {
     
     // 권한 정보 (조인으로 가져온 데이터)
     private String permissionNames;  // 권한명들을 콤마로 구분한 문자열
-    private List<Integer> permissionIds; // 권한 ID 목록 (권한 할당/수정용)
+    
+    // ✅ PERM_ID가 VARCHAR2(300)이므로 String 타입으로 변경
+    private List<String> permissionIds; // 권한 ID 목록 (권한 할당/수정용) - String으로 변경
     
     @Override
     public String toString() {
@@ -41,6 +43,7 @@ public class RolesVO {
                 ", roleName='" + roleName + '\'' +
                 ", roleDesc='" + roleDesc + '\'' +
                 ", permissionCount=" + permissionCount +
+                ", permissionIds=" + permissionIds +
                 '}';
     }
 }
