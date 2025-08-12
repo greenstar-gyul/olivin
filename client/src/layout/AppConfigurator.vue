@@ -84,7 +84,7 @@ onMounted(() => {
         const surface = surfaces.value.find((c) => c.name === layoutConfig.surface);
         updateColors('surface', surface);
         onPresetChange();
-    })
+    });
 });
 
 function getPresetExt() {

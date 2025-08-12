@@ -141,7 +141,7 @@ function calculateCustomerTotal(name) {
 }
 </script>
 <template>
-      <div class="card">
+    <div class="card">
         <div class="font-semibold text-xl mb-4">Frozen Columns</div>
         <ToggleButton v-model="balanceFrozen" onIcon="pi pi-lock" offIcon="pi pi-lock-open" onLabel="Balance" offLabel="Balance" />
 
