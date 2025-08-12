@@ -178,6 +178,12 @@ const header = computed(() => props.header);
             @rowUnselect="onRowUnselect"
             :selectionMode="props.checked ? props.checkType : null"
         >
+
+            <!-- 비어있는 데이터일 때 표시 -->
+            <template #empty>
+                <div class="text-center py-3">데이터가 비어있습니다. </div>
+            </template>
+
             <Column v-if="props.checked" :selectionMode="props.checkType" headerStyle="width: 3rem"></Column>
 
             <!-- 동적 컬럼 생성 -->
@@ -208,51 +214,6 @@ const header = computed(() => props.header);
             </Column>
         </DataTable>
     </div>
-    
-    <!-- DataTable (PrimeVue) -->
-    <DataTable v-model:selection="selectedItems" :value="props.data" :dataKey="props.dataKey" showGridlines scrollable
-      :scrollHeight="props.scrollHeight" tableStyle="min-width: 50rem" @rowSelect="onRowSelect" @rowUnselect="onRowUnselect"
-      :selectionMode="props.checked ? props.checkType : null">
-
-      <!-- 비어있는 데이터일 때 표시 -->
-      <template #empty>
-        <div class="text-center py-3">데이터가 비어있습니다. 😥</div>
-      </template>
-
-      <Column v-if="props.checked" :selectionMode="props.checkType" headerStyle="width: 3rem"></Column>
-
-      <!-- 동적 컬럼 생성 -->
-      <Column v-for="item in items" :key="item" :field="item" :header="header.header[item] ?? item" :sortable="header.sortable && header.sortable.includes(item) ? true : false">
-        <!-- 날짜포맷변경을 위해 추가한 파트 -->
-        <template #body="slotProps">
-          <!-- Tag 렌더링이 정의된 경우 -->
-          <div v-if="props.tagRenderer && props.tagRenderer(slotProps.data, item)"
-               :class="header.rightAligned && header.rightAligned.includes(item) ? 'text-right' : ''">
-            <Tag :value="props.tagRenderer(slotProps.data, item).value"
-                 :severity="props.tagRenderer(slotProps.data, item).severity"
-                 :rounded="true" />
-          </div>
-          
-          <!-- 기본 렌더링 -->
-          <span v-else
-            :class="[
-              header.rightAligned && header.rightAligned.includes(item) ? 'text-right block' : '',
-              props.cellClass ? props.cellClass(slotProps.data, item) : ''
-            ]"
-            :style="props.cellStyle ? props.cellStyle(slotProps.data, item) : {}">
-            <!-- 숫자형 데이터는 3자리 콤마 추가 -->
-            <span v-if="header.rightAligned && header.rightAligned.includes(item)">
-              {{ slotProps.data[item].toLocaleString() }}
-            </span>
-            <!-- 일반 텍스트 데이터 -->
-            <span v-else>
-              {{ slotProps.data[item] }}
-            </span>
-          </span>
-        </template>
-      </Column>
-    </DataTable>
-  </div>
 </template>
 <style scoped>
 /* 필요시 커스텀 스타일 여기에 추가 */

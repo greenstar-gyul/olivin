@@ -62,10 +62,6 @@ const redirectToList = () => {
     const move = route.query.move || 'head';
     router.push(`/orders/${move}/view`);
   } else {
-    switch(defaultForm.value.orderType) {
-      case '150001':
-        router.push('/orders/head/view');
-    } else {
         switch (defaultForm.value.orderType) {
             case '150001':
                 router.push('/orders/head/view');
@@ -149,25 +145,10 @@ const rejectionHandler = async () => {
     });
     rejectionVisible.value = false;
     rejectionReason.value = ''; //초기화
-    return;
-  } 
 
-  const res = await axios.post(`/api/orders/${route.params.orderId}/rejection`, {
-    orderId: route.params.orderId,
-    rejectionUser: userInfo.value.empName,
-    rejectionReson: rejectionReason.value
-  });
-
-  toast.add({
-    severity: 'success',
-    summary: '성공',
-    detail: '발주서가 반려되었습니다.',
-    life: 2000
-  });
-  rejectionVisible.value = false;
-  approvalBtnSlot.value = null; // 승인 버튼 제거
-  rejectionBtnSlot.value = null; // 반려 버튼 제거
-  // redirectToList(); //목록으로 이동
+    approvalBtnSlot.value = null; // 승인 버튼 제거
+    rejectionBtnSlot.value = null; // 반려 버튼 제거
+    // redirectToList(); //목록으로 이동
 }
 
 onBeforeMount(async () => {
