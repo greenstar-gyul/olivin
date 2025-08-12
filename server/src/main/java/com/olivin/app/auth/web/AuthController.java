@@ -5,6 +5,7 @@ import com.olivin.app.auth.service.ApiResponseVO;
 import com.olivin.app.auth.service.LoginRequestVO;
 import com.olivin.app.auth.service.LoginResponseVO;
 import com.olivin.app.auth.service.AuthService;
+import com.olivin.app.auth.service.MenuService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -14,6 +15,9 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+import java.util.Map;
+
 @RestController
 @RequiredArgsConstructor
 @Slf4j
@@ -21,6 +25,7 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
     
     private final AuthService authService;
+    private final MenuService menuService;
     
     /**
      * 로그인
@@ -84,6 +89,20 @@ public class AuthController {
             log.debug("현재 사용자 정보 조회: {}", employeeId);
             
             LoginResponseVO response = authService.getUserInfo(employeeId);
+            
+            // 메뉴 정보 추가
+            try {
+                List<Map<String, Object>> userMenus = menuService.getUserMenus(employeeId);
+                response.setMenus(userMenus);
+            } catch (Exception e) {
+                log.warn("메뉴 정보 조회 실패, 기본 메뉴 사용: {}", e.getMessage());
+                // 메뉴 조회 실패 시 역할별 기본 메뉴 제공
+                List<Map<String, Object>> defaultMenus = menuService.getDefaultMenusByRole(
+                    response.getRole() != null ? response.getRole().getRoleName() : "USER"
+                );
+                response.setMenus(defaultMenus);
+            }
+            
             return ResponseEntity.ok(ApiResponseVO.success(response));
             
         } catch (RuntimeException e) {

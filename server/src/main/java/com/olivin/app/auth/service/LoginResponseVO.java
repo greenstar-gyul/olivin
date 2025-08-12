@@ -2,6 +2,7 @@
 package com.olivin.app.auth.service;
 
 import java.util.List;
+import java.util.Map;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -16,6 +17,7 @@ public class LoginResponseVO {
     private UserInfoVO user;                        // 사용자 정보
     private RoleInfoVO role;                        // 역할 정보
     private List<PermissionInfoVO> permissions;     // 권한 목록
+    private List<Map<String, Object>> menus;       // 메뉴 목록
     
     @Data
     @AllArgsConstructor
