@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.olivin.app.auth.mapper.MenuMapper">
+
+    <!-- 사용자 역할 조회 -->
+    <select id="getUserRole" resultType="String">
+        SELECT r.ROLE_NAME
+        FROM EMPLOYEES u
+        INNER JOIN ROLES r ON u.ROLE_ID = r.ROLE_ID
+        WHERE u.EMPLOYEE_ID = #{userId}
+    </select>
+
+    <!-- 사용자의 권한(메뉴) 목록 조회 -->
+    <select id="getUserPermissions" resultType="Map">
+        SELECT 
+            TO_CHAR(p.PERM_ID) AS PERM_ID,
+            p.PERM_NAME AS MENU_NAME,
+            p.PERM_DESCRIPTION AS MENU_PATH,
+            p.ICON AS MENU_ICON,
+            p.PARENT_TO AS PARENT_MENU_PATH
+        FROM EMPLOYEES u
+        INNER JOIN ROLES r ON u.ROLE_ID = r.ROLE_ID
+        INNER JOIN ROLE_PERMISSION rp ON r.ROLE_ID = rp.ROLE_ID
+        INNER JOIN PERMISSIONS p ON rp.PERM_ID = p.PERM_ID
+        WHERE u.EMPLOYEE_ID = #{userId}
+        ORDER BY 
+            CASE 
+                WHEN p.PARENT_TO IS NULL THEN 0 
+                ELSE 1 
+            END,
+            p.PERM_ID
+    </select>
+
+    <!-- 모든 권한(메뉴) 목록 조회 (관리자용) -->
+    <select id="getAllPermissions" resultType="Map">
+        SELECT 
+            TO_CHAR(p.PERM_ID) AS PERM_ID,
+            p.PERM_NAME AS MENU_NAME,
+            p.PERM_DESCRIPTION AS MENU_PATH,
+            p.ICON AS MENU_ICON,
+            p.PARENT_TO AS PARENT_MENU_PATH
+        FROM PERMISSIONS p
+        ORDER BY 
+            CASE 
+                WHEN p.PARENT_TO IS NULL THEN 0 
+                ELSE 1 
+            END,
+            p.PERM_ID
+    </select>
+
+</mapper>

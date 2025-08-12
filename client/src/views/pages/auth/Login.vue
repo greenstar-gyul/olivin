@@ -19,37 +19,37 @@ const isLoggingIn = ref(false);
 // 🔥 로그인 처리 함수
 const handleLogin = async () => {
     console.log('🔥 로그인 버튼 클릭됨!', { employeeId: employeeId.value, password: password.value });
-    
+
     // 입력값 검증
     if (!employeeId.value.trim()) {
         loginError.value = '아이디를 입력해주세요.';
         return;
     }
-    
+
     if (!password.value.trim()) {
         loginError.value = '비밀번호를 입력해주세요.';
         return;
     }
-    
+
     loginError.value = '';
     isLoggingIn.value = true;
-    
+
     try {
         console.log('🚀 로그인 시도 중...');
-        
+
         // 로그인 시도
         const result = await authStore.login(employeeId.value, password.value);
-        
+
         if (result.success) {
             console.log('✅ 로그인 성공!');
-            
+
             // 아이디 저장 처리
             if (checked.value) {
                 localStorage.setItem('savedEmployeeId', employeeId.value);
             } else {
                 localStorage.removeItem('savedEmployeeId');
             }
-            
+
             // 대시보드로 리다이렉트
             console.log('🚀 대시보드로 이동 시도...');
             router.push('/');
@@ -115,30 +115,10 @@ const handleKeyPress = (event) => {
                     <form @submit.prevent="handleLogin">
                         <div>
                             <label for="employeeId1" class="block text-surface-900 dark:text-surface-0 text-xl font-medium mb-2">ID</label>
-                            <InputText 
-                                id="employeeId1" 
-                                type="text" 
-                                placeholder="아이디" 
-                                class="w-full md:w-[30rem] mb-2" 
-                                v-model="employeeId"
-                                :disabled="isLoggingIn"
-                                @keypress="handleKeyPress"
-                                required
-                            />
+                            <InputText id="employeeId1" type="text" placeholder="아이디" class="w-full md:w-[30rem] mb-2" v-model="employeeId" :disabled="isLoggingIn" @keypress="handleKeyPress" required />
 
                             <label for="password1" class="block text-surface-900 dark:text-surface-0 font-medium text-xl mb-2 mt-6">Password</label>
-                            <Password 
-                                id="password1" 
-                                v-model="password" 
-                                placeholder="비밀번호" 
-                                :toggleMask="true" 
-                                class="mb-2" 
-                                fluid 
-                                :feedback="false"
-                                :disabled="isLoggingIn"
-                                @keypress="handleKeyPress"
-                                required
-                            />
+                            <Password id="password1" v-model="password" placeholder="비밀번호" :toggleMask="true" class="mb-2" fluid :feedback="false" :disabled="isLoggingIn" @keypress="handleKeyPress" required />
 
                             <!-- 🔥 에러 메시지 표시 -->
                             <div v-if="loginError" class="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
@@ -152,15 +132,9 @@ const handleKeyPress = (event) => {
                                 </div>
                                 <span class="font-medium no-underline ml-2 text-right cursor-pointer text-primary">비밀번호 찾기</span>
                             </div>
-                            
+
                             <!-- 🔥 Button을 실제 로그인과 연결 -->
-                            <Button 
-                                type="submit"
-                                :label="isLoggingIn ? '로그인 중...' : 'Sign In'" 
-                                class="w-full"
-                                :disabled="isLoggingIn"
-                                :loading="isLoggingIn"
-                            />
+                            <Button type="submit" :label="isLoggingIn ? '로그인 중...' : 'Sign In'" class="w-full" :disabled="isLoggingIn" :loading="isLoggingIn" />
                         </div>
                     </form>
                 </div>
@@ -179,4 +153,4 @@ const handleKeyPress = (event) => {
     transform: scale(1.6);
     margin-right: 1rem;
 }
-</style>                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          
+</style>

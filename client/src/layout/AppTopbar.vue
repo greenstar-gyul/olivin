@@ -19,7 +19,7 @@ const authStore = useAuthStore();
                 <i class="pi pi-bars"></i>
             </button>
             <router-link to="/" class="layout-topbar-logo">
-                <img src="../../public/demo/images/logo.png" alt="Olivin Logo" class="layout-topbar-logo-image" style="width: 120px; height: auto;" />
+                <img src="../../public/demo/images/logo.png" alt="Olivin Logo" class="layout-topbar-logo-image" style="width: 120px; height: auto" />
             </router-link>
         </div>
 
@@ -27,9 +27,7 @@ const authStore = useAuthStore();
         <div class="layout-topbar-user">
             <span class="layout-topbar-user-name">{{ `${user ? user.empName : 'Guest'}(${user ? user.employeeId : 'Guest'}, ${user ? user.compName : 'Guest'}) 님` }}</span>
             <!-- 로그인한 사용자일 경우 로그아웃 / 게스트일 경우 로그인 활성화 -->
-            <span v-if="user" class="underline cursor-pointer hover:text-lime-600" @click="authStore.logout">
-                로그아웃
-            </span>
+            <span v-if="user" class="underline cursor-pointer hover:text-lime-600" @click="authStore.logout"> 로그아웃 </span>
         </div>
 
         <div class="layout-topbar-actions">
@@ -37,7 +35,7 @@ const authStore = useAuthStore();
                 <button type="button" class="layout-topbar-action" @click="toggleDarkMode">
                     <i :class="['pi', { 'pi-moon': isDarkTheme, 'pi-sun': !isDarkTheme }]"></i>
                 </button>
-                <div class="relative" style="display: none;">
+                <div class="relative" style="display: none">
                     <button
                         v-styleclass="{ selector: '@next', enterFromClass: 'hidden', enterActiveClass: 'animate-scalein', leaveToClass: 'hidden', leaveActiveClass: 'animate-fadeout', hideOnOutsideClick: true }"
                         type="button"

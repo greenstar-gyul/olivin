@@ -17,18 +17,18 @@ const representatives = reactive([
     { name: 'XuXue Feng', image: 'xuxuefeng.png' }
 ]);
 function formatCurrency(value) {
-  return value.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+    return value.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
 }
 
 onBeforeMount(async () => {
-  customers2.value = await CustomerService.getCustomersLarge();
+    customers2.value = await CustomerService.getCustomersLarge();
 });
 </script>
 
 <template>
-  <div class="card">
-    <div class="font-semibold text-xl mb-4">Frozen Columns</div>
-    <ToggleButton v-model="balanceFrozen" onIcon="pi pi-lock" offIcon="pi pi-lock-open" onLabel="Balance" offLabel="Balance" />
-    <!-- DataTable 포함된 Frozen Columns 렌더링 -->
-  </div>
+    <div class="card">
+        <div class="font-semibold text-xl mb-4">Frozen Columns</div>
+        <ToggleButton v-model="balanceFrozen" onIcon="pi pi-lock" offIcon="pi pi-lock-open" onLabel="Balance" offLabel="Balance" />
+        <!-- DataTable 포함된 Frozen Columns 렌더링 -->
+    </div>
 </template>
