@@ -14,20 +14,23 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class AccountLederVO {
-    private String accountlederId;
+    // DB 컬럼명과 일치하도록 수정
+    private String accountLederId;  // account_leder_id -> accountLederId
     private String increase;
     private String decrease;
     private String balance;
     private String detail;
     private String writeDate;
-    //계정명
+    
+    // 계정 정보
     private String accountId;
     private String accountName;
-    // 회사명
+    
+    // 회사 정보
     private String compId;
     private String compName;
     
-    // 제품명
+    // 제품 정보
     private String productId;
     private String productName;
 
