@@ -111,7 +111,7 @@ const inputs = ref({
         { name: '안전관리팀', value: '안전관리팀' },
       ]
     },
-    { type: 'text', label: '직책', value: '', name: 'position' },
+    { type: 'text', label: '직책', value: '', name: 'position' }
   ]
 });
 

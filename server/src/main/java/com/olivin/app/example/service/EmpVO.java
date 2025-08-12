@@ -22,4 +22,5 @@ public class EmpVO {
   private String password; //비밀번호
   private String phone; //연락처
   private String position; //직급
+  private String updateDate; // 수정일자
 }

@@ -39,7 +39,8 @@
             phone,
             position,
             comp_id,
-            department_id
+            department_id,
+            update_date
         ) VALUES (
             #{employeeId},
             #{empName},
@@ -49,7 +50,8 @@
             #{phone},
             #{position},
             #{compId},
-            #{departmentId}
+            #{departmentId},
+            #{updateDate}
         )
     </insert>
 
