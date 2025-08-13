@@ -21,8 +21,8 @@ const model = ref([
             { label: '지점 기준정보', icon: 'pi pi-fw pi-pen-to-square', to: '/standard/branch' },
             { label: '제품 기준정보', icon: 'pi pi-fw pi-pen-to-square', to: '/standard/product' },
             { label: '제품 승인 정보', icon: 'pi pi-fw pi-pen-to-square', to: '/standard/productapproval' },
-            { label: '부서 기준정보', icon: 'pi pi-fw pi-pen-to-square', to: '/standard/dept' },
-            { label: '사원 기준정보', icon: 'pi pi-fw pi-pen-to-square', to: '/standard/emp' },
+            { label: '부서 기준정보', icon: 'pi pi-fw pi-pen-to-square', to: '/views/dept' },
+            { label: '사원 기준정보', icon: 'pi pi-fw pi-pen-to-square', to: '/views/emp' },
         ]
     },
     /* inventory */ 

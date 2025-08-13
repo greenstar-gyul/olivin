@@ -73,7 +73,9 @@
         SELECT 
             p.PERM_ID as permId,
             p.PERM_NAME as permName,
-            NVL(p.PERM_DESCRIPTION, '') as permDescription
+            NVL(p.PERM_DESCRIPTION, '') as permDescription,
+            p.ICON as icon,
+            p.PARENT_TO as parentTo
         FROM PERMISSIONS p
         WHERE p.PERM_ID IN (
             SELECT DISTINCT rp.PERM_ID 

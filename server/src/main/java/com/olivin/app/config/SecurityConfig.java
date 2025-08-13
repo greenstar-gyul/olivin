@@ -73,9 +73,10 @@ public class SecurityConfig {
                 .requestMatchers("/actuator/health").permitAll()
                 .requestMatchers("/error").permitAll()
                 .requestMatchers("/test**").permitAll()  
-                .requestMatchers("/uikit/**").hasAnyRole("SYSTEM_ADMIN", "GENERAL_MANAGER")
-                .requestMatchers("/standard/**").hasAnyRole("SYSTEM_ADMIN", "GENERAL_MANAGER")
-                .requestMatchers("/roles/**").hasAnyRole("SYSTEM_ADMIN", "GENERAL_MANAGER")
+                // 권한 기반 접근 제어로 변경
+                .requestMatchers("/uikit/**").hasAnyAuthority("/uikit/formlayout", "/uikit/input", "/uikit/button", "/uikit/table", "/uikit/list", "/uikit/tree", "/uikit/panel", "/uikit/overlay", "/uikit/media", "/uikit/message", "/uikit/file", "/uikit/menu", "/uikit/charts", "/uikit/misc", "/uikit/timeline")
+                .requestMatchers("/standard/**").hasAnyAuthority("/standard/supplier", "/standard/branch", "/standard/product", "/standard/productapproval")
+                .requestMatchers("/roles/**").hasAnyAuthority("/roles/empmanage", "/roles/rolemanage")
                 // WebSocket 연결
                 .requestMatchers("/ws/**").permitAll()
                 
