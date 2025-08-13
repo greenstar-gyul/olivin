@@ -43,41 +43,125 @@ public class CompanyServiceImpl implements CompanyService {
     
     @Override
     public int saveCompany(CompanyVO companyVO) {
-        // 비활성화 타입으로 등록 시도 방지
-        if (TYPE_INACTIVE.equals(companyVO.getCompType())) {
-            throw new RuntimeException("비활성화 상태로는 새 회사를 등록할 수 없습니다.");
+        try {
+            System.out.println("=== 회사 등록 시작 ===");
+            System.out.println("입력 데이터: " + companyVO.toString());
+            
+            // ✅ 데이터 전처리
+            companyVO.prepareForSave();
+            
+            // ✅ 필수 필드 검증
+            if (!companyVO.isValidForSave()) {
+                throw new RuntimeException("필수 필드가 누락되었습니다. 회사명, 회사유형, 사업자번호, CEO명은 필수입니다.");
+            }
+            
+            // 비활성화 타입으로 등록 시도 방지
+            if (TYPE_INACTIVE.equals(companyVO.getCompType())) {
+                throw new RuntimeException("비활성화 상태로는 새 회사를 등록할 수 없습니다.");
+            }
+            
+            // ✅ 중복 검증
+            if (isBizNumberExists(companyVO.getBizNumber(), null)) {
+                throw new RuntimeException("이미 등록된 사업자번호입니다: " + companyVO.getBizNumber());
+            }
+            
+            if (isCompanyNameExists(companyVO.getCompName(), null)) {
+                throw new RuntimeException("이미 등록된 회사명입니다: " + companyVO.getCompName());
+            }
+            
+            // ✅ 회사 ID 자동생성
+            if (companyVO.getCompId() == null || companyVO.getCompId().trim().isEmpty()) {
+                String newCompId = getNextCompanyId(companyVO.getCompType());
+                companyVO.setCompId(newCompId);
+                System.out.println("자동 생성된 회사 ID: " + newCompId);
+            }
+            
+            // ✅ 등록일 설정
+            if (companyVO.getRegDate() == null) {
+                companyVO.setRegDate(new Date());
+            }
+            
+            // ✅ 등록자 기본값 설정
+            if (companyVO.getRegUser() == null || companyVO.getRegUser().trim().isEmpty()) {
+                companyVO.setRegUser("SYSTEM");
+            }
+            
+            System.out.println("최종 저장 데이터: " + companyVO.toString());
+            
+            // ✅ DB 저장
+            int result = companyMapper.insertCompany(companyVO);
+            
+            System.out.println("저장 결과: " + result);
+            System.out.println("=== 회사 등록 완료 ===");
+            
+            return result;
+            
+        } catch (Exception e) {
+            System.err.println("회사 등록 중 오류 발생: " + e.getMessage());
+            e.printStackTrace();
+            throw new RuntimeException("회사 등록 실패: " + e.getMessage());
         }
-        
-        // 회사 ID 자동생성
-        if (companyVO.getCompId() == null || companyVO.getCompId().isEmpty()) {
-            String newCompId = getNextCompanyId(companyVO.getCompType());
-            companyVO.setCompId(newCompId);
-        }
-        
-        // 등록일 설정
-        companyVO.setRegDate(new Date());
-        
-        // 등록자가 없으면 기본값 설정
-        if (companyVO.getRegUser() == null || companyVO.getRegUser().isEmpty()) {
-            companyVO.setRegUser("SYSTEM");
-        }
-        
-        return companyMapper.insertCompany(companyVO);
     }
     
     @Override
     public int modifyCompany(CompanyVO companyVO) {
-        companyVO.setUpdateDate(new Date());
-        return companyMapper.updateCompany(companyVO);
+        try {
+            System.out.println("=== 회사 수정 시작 ===");
+            System.out.println("수정 데이터: " + companyVO.toString());
+            
+            // ✅ 데이터 전처리
+            companyVO.prepareForSave();
+            
+            // ✅ 회사 존재 확인
+            CompanyVO existingCompany = companyMapper.selectCompany(companyVO.getCompId());
+            if (existingCompany == null) {
+                throw new RuntimeException("수정할 회사를 찾을 수 없습니다: " + companyVO.getCompId());
+            }
+            
+            // ✅ 중복 검증 (자기 자신 제외)
+            if (companyVO.getBizNumber() != null && 
+                isBizNumberExists(companyVO.getBizNumber(), companyVO.getCompId())) {
+                throw new RuntimeException("이미 등록된 사업자번호입니다: " + companyVO.getBizNumber());
+            }
+            
+            if (companyVO.getCompName() != null && 
+                isCompanyNameExists(companyVO.getCompName(), companyVO.getCompId())) {
+                throw new RuntimeException("이미 등록된 회사명입니다: " + companyVO.getCompName());
+            }
+            
+            // ✅ 수정일 설정
+            companyVO.setUpdateDate(new Date());
+            
+            // ✅ 수정자 기본값 설정
+            if (companyVO.getUpdateUser() == null || companyVO.getUpdateUser().trim().isEmpty()) {
+                companyVO.setUpdateUser("SYSTEM");
+            }
+            
+            System.out.println("최종 수정 데이터: " + companyVO.toString());
+            
+            int result = companyMapper.updateCompany(companyVO);
+            
+            System.out.println("수정 결과: " + result);
+            System.out.println("=== 회사 수정 완료 ===");
+            
+            return result;
+            
+        } catch (Exception e) {
+            System.err.println("회사 수정 중 오류 발생: " + e.getMessage());
+            e.printStackTrace();
+            throw new RuntimeException("회사 수정 실패: " + e.getMessage());
+        }
     }
     
     @Override
     public int removeCompany(String compId) {
         try {
+            System.out.println("=== 회사 삭제 시작: " + compId + " ===");
+            
             // 회사 정보 조회
             CompanyVO company = companyMapper.selectCompany(compId);
             if (company == null) {
-                throw new RuntimeException("삭제할 회사를 찾을 수 없습니다.");
+                throw new RuntimeException("삭제할 회사를 찾을 수 없습니다: " + compId);
             }
             
             // 이미 비활성화된 회사인지 확인
@@ -85,23 +169,38 @@ public class CompanyServiceImpl implements CompanyService {
                 throw new RuntimeException("이미 비활성화된 회사입니다. 필요시 다시 활성화하거나 완전 삭제를 진행하세요.");
             }
             
-            // 발주서에서 사용 중인지 확인
-            int purchaseOrderCount = companyMapper.countPurchaseOrdersByCompId(compId);
-            if (purchaseOrderCount > 0) {
-                // 회사 유형에 따라 메시지 다르게 설정
-                String companyTypeName = company.getCompTypeName();
+            // ✅ 사용 여부 종합 확인
+            Map<String, Object> usageInfo = checkCompanyUsage(compId);
+            boolean isUsed = (Boolean) usageInfo.get("isUsed");
+            
+            if (isUsed) {
+                StringBuilder message = new StringBuilder();
+                message.append(String.format("해당 %s는 다음과 같이 사용 중이어서 삭제할 수 없습니다:\n", 
+                                            company.getCompTypeName()));
                 
-                throw new RuntimeException(
-                    String.format("해당 %s는 발주서 %d건에서 사용 중이어서 삭제할 수 없습니다. " +
-                                "상태를 '비활성'으로 변경하거나 발주서를 먼저 처리해주세요.", 
-                                companyTypeName, purchaseOrderCount)
-                );
+                int purchaseOrderCount = (Integer) usageInfo.get("purchaseOrderCount");
+                int employeeCount = (Integer) usageInfo.get("employeeCount");
+                int productCount = (Integer) usageInfo.get("productCount");
+                
+                if (purchaseOrderCount > 0) message.append("• 발주서: ").append(purchaseOrderCount).append("건\n");
+                if (employeeCount > 0) message.append("• 직원: ").append(employeeCount).append("명\n");
+                if (productCount > 0) message.append("• 제품: ").append(productCount).append("건\n");
+                
+                message.append("\n상태를 '비활성'으로 변경하거나 관련 데이터를 먼저 처리해주세요.");
+                
+                throw new RuntimeException(message.toString());
             }
             
-            // 발주서에서 사용하지 않는 경우에만 삭제 실행
-            return companyMapper.deleteCompany(compId);
+            // 사용하지 않는 경우에만 삭제 실행
+            int result = companyMapper.deleteCompany(compId);
+            
+            System.out.println("삭제 결과: " + result);
+            System.out.println("=== 회사 삭제 완료 ===");
+            
+            return result;
             
         } catch (Exception e) {
+            System.err.println("회사 삭제 중 오류 발생: " + e.getMessage());
             throw new RuntimeException(e.getMessage());
         }
     }
@@ -111,9 +210,11 @@ public class CompanyServiceImpl implements CompanyService {
      */
     public int deactivateCompany(String compId) {
         try {
+            System.out.println("=== 회사 비활성화 시작: " + compId + " ===");
+            
             CompanyVO company = companyMapper.selectCompany(compId);
             if (company == null) {
-                throw new RuntimeException("비활성화할 회사를 찾을 수 없습니다.");
+                throw new RuntimeException("비활성화할 회사를 찾을 수 없습니다: " + compId);
             }
             
             // 이미 비활성화된 회사인지 확인
@@ -124,23 +225,31 @@ public class CompanyServiceImpl implements CompanyService {
             // COMP_TYPE을 FFFFFF로 변경하여 비활성화
             company.setCompType(TYPE_INACTIVE);
             company.setUpdateDate(new Date());
+            company.setUpdateUser("SYSTEM");
             
-            return companyMapper.updateCompany(company);
+            int result = companyMapper.updateCompany(company);
+            
+            System.out.println("비활성화 결과: " + result);
+            System.out.println("=== 회사 비활성화 완료 ===");
+            
+            return result;
             
         } catch (Exception e) {
+            System.err.println("회사 비활성화 중 오류 발생: " + e.getMessage());
             throw new RuntimeException(e.getMessage());
         }
     }
     
     /**
      * 회사를 다시 활성화 처리 (COMP_TYPE을 원래 유형으로 복원)
-     * 주의: 원래 유형을 알 수 없으므로 매개변수로 받아야 함
      */
     public int reactivateCompany(String compId, String originalCompType) {
         try {
+            System.out.println("=== 회사 재활성화 시작: " + compId + " → " + originalCompType + " ===");
+            
             CompanyVO company = companyMapper.selectCompany(compId);
             if (company == null) {
-                throw new RuntimeException("활성화할 회사를 찾을 수 없습니다.");
+                throw new RuntimeException("활성화할 회사를 찾을 수 없습니다: " + compId);
             }
             
             // 비활성화된 회사인지 확인
@@ -156,10 +265,17 @@ public class CompanyServiceImpl implements CompanyService {
             // COMP_TYPE을 원래 유형으로 복원
             company.setCompType(originalCompType);
             company.setUpdateDate(new Date());
+            company.setUpdateUser("SYSTEM");
             
-            return companyMapper.updateCompany(company);
+            int result = companyMapper.updateCompany(company);
+            
+            System.out.println("재활성화 결과: " + result);
+            System.out.println("=== 회사 재활성화 완료 ===");
+            
+            return result;
             
         } catch (Exception e) {
+            System.err.println("회사 재활성화 중 오류 발생: " + e.getMessage());
             throw new RuntimeException(e.getMessage());
         }
     }
@@ -220,63 +336,133 @@ public class CompanyServiceImpl implements CompanyService {
         return companyMapper.checkCompanyName(compName, excludeCompId) > 0;
     }
     
+    // ✅ 명세서에 맞는 회사 ID 생성 로직으로 수정
     @Override
     public String getNextCompanyId(String compType) {
         try {
+            System.out.println("회사 ID 생성 시작 - 유형: " + compType);
+            
             // 비활성화 타입인 경우 ID 생성 불가
             if (TYPE_INACTIVE.equals(compType)) {
                 throw new IllegalArgumentException("비활성화 타입으로는 새 회사 ID를 생성할 수 없습니다.");
             }
             
+            String newId;
+            
             switch (compType) {
-                case TYPE_HEADQUARTERS: // 본사
-                    return "COM10001";
+                case TYPE_HEADQUARTERS: // 본사 (COM10001 고정)
+                    // 본사가 이미 존재하는지 확인
+                    if (isCompanyIdExists("COM10001")) {
+                        throw new RuntimeException("본사는 이미 등록되어 있습니다.");
+                    }
+                    newId = "COM10001";
+                    break;
                     
-                case TYPE_BRANCH: // 지점 (20001~49999)
+                case TYPE_BRANCH: // 지점 (COM20001~COM49999)
                     String lastBranchId = companyMapper.selectLastCompanyIdByType(TYPE_BRANCH);
                     if (lastBranchId != null && !lastBranchId.isEmpty()) {
-                        int lastNum = Integer.parseInt(lastBranchId.substring(3));
-                        int nextNum = lastNum + 1;
-                        if (nextNum > 49999) {
-                            throw new RuntimeException("지점 ID 범위를 초과했습니다.");
+                        try {
+                            // COM20001 형식에서 숫자 부분만 추출
+                            String numberPart = lastBranchId.substring(3); // "20001"
+                            int lastNum = Integer.parseInt(numberPart);
+                            int nextNum = lastNum + 1;
+                            
+                            // 지점 범위 확인 (20001~49999)
+                            if (nextNum > 49999) {
+                                throw new RuntimeException("지점 ID 범위를 초과했습니다. (최대: COM49999)");
+                            }
+                            
+                            newId = "COM" + String.format("%05d", nextNum);
+                        } catch (NumberFormatException e) {
+                            System.err.println("기존 지점 ID 파싱 오류: " + lastBranchId);
+                            newId = "COM20001"; // 기본값
                         }
-                        return "COM" + String.format("%05d", nextNum);
                     } else {
-                        return "COM20001";
+                        newId = "COM20001"; // 첫 번째 지점
                     }
+                    break;
                     
-                case TYPE_SUPPLIER: // 공급업체 (50001~79999)
+                case TYPE_SUPPLIER: // 공급업체 (COM50001~COM79999)
                     String lastSupplierId = companyMapper.selectLastCompanyIdByType(TYPE_SUPPLIER);
                     if (lastSupplierId != null && !lastSupplierId.isEmpty()) {
-                        int lastNum = Integer.parseInt(lastSupplierId.substring(3));
-                        int nextNum = lastNum + 1;
-                        if (nextNum > 79999) {
-                            throw new RuntimeException("공급업체 ID 범위를 초과했습니다.");
+                        try {
+                            // COM50001 형식에서 숫자 부분만 추출
+                            String numberPart = lastSupplierId.substring(3); // "50001"
+                            int lastNum = Integer.parseInt(numberPart);
+                            int nextNum = lastNum + 1;
+                            
+                            // 공급업체 범위 확인 (50001~79999)
+                            if (nextNum > 79999) {
+                                throw new RuntimeException("공급업체 ID 범위를 초과했습니다. (최대: COM79999)");
+                            }
+                            
+                            newId = "COM" + String.format("%05d", nextNum);
+                        } catch (NumberFormatException e) {
+                            System.err.println("기존 공급업체 ID 파싱 오류: " + lastSupplierId);
+                            newId = "COM50001"; // 기본값
                         }
-                        return "COM" + String.format("%05d", nextNum);
                     } else {
-                        return "COM50001";
+                        newId = "COM50001"; // 첫 번째 공급업체
                     }
+                    break;
                     
                 default:
                     throw new IllegalArgumentException("유효하지 않은 회사 유형입니다: " + compType);
             }
             
+            // ✅ 생성된 ID가 이미 존재하는지 재확인
+            if (isCompanyIdExists(newId)) {
+                throw new RuntimeException("생성된 ID가 이미 존재합니다: " + newId + ". 다시 시도해주세요.");
+            }
+            
+            System.out.println("생성된 회사 ID: " + newId);
+            return newId;
+            
         } catch (Exception e) {
             System.err.println("회사 ID 생성 중 오류: " + e.getMessage());
             e.printStackTrace();
             
-            // 기본값 반환
+            // ✅ 오류 시에도 명세서에 맞는 안전한 기본값 반환
+            String fallbackId;
             switch (compType) {
                 case TYPE_HEADQUARTERS:
-                    return "COM10001";
+                    fallbackId = "COM10001";
+                    break;
                 case TYPE_BRANCH:
-                    return "COM20001";
+                    fallbackId = "COM20001";
+                    break;
                 case TYPE_SUPPLIER:
-                    return "COM50001";
+                    fallbackId = "COM50001";
+                    break;
                 default:
-                    return "COM99999";
+                    fallbackId = "COM99999";
             }
+            
+            // 기본값도 중복이면 다음 번호로 순차 검색
+            if (isCompanyIdExists(fallbackId)) {
+                if (TYPE_BRANCH.equals(compType)) {
+                    // 지점인 경우 20002부터 순차 검색
+                    for (int i = 20002; i <= 49999; i++) {
+                        String candidateId = "COM" + String.format("%05d", i);
+                        if (!isCompanyIdExists(candidateId)) {
+                            fallbackId = candidateId;
+                            break;
+                        }
+                    }
+                } else if (TYPE_SUPPLIER.equals(compType)) {
+                    // 공급업체인 경우 50002부터 순차 검색
+                    for (int i = 50002; i <= 79999; i++) {
+                        String candidateId = "COM" + String.format("%05d", i);
+                        if (!isCompanyIdExists(candidateId)) {
+                            fallbackId = candidateId;
+                            break;
+                        }
+                    }
+                }
+            }
+            
+            System.out.println("오류로 인한 대체 ID 사용: " + fallbackId);
+            return fallbackId;
         }
     }
     
@@ -296,29 +482,50 @@ public class CompanyServiceImpl implements CompanyService {
      * @return 사용 여부 정보가 담긴 Map
      */
     public Map<String, Object> checkCompanyUsage(String compId) {
-        int purchaseOrderCount = companyMapper.countPurchaseOrdersByCompId(compId);
-        int employeeCount = companyMapper.countEmployeesByCompId(compId);
-        int productCount = companyMapper.countProductsByCompId(compId);
-        int salesPlanCount = companyMapper.countSalesPlansByCompId(compId);
-        int accountLedgerCount = companyMapper.countAccountLedgersByCompId(compId);
-        
-        boolean isUsed = purchaseOrderCount > 0 || employeeCount > 0 || 
-                        productCount > 0 || salesPlanCount > 0 || accountLedgerCount > 0;
-        
-        return Map.of(
-            "isUsed", isUsed,
-            "purchaseOrderCount", purchaseOrderCount,
-            "employeeCount", employeeCount,
-            "productCount", productCount,
-            "salesPlanCount", salesPlanCount,
-            "accountLedgerCount", accountLedgerCount,
-            "details", Map.of(
-                "hasPurchaseOrders", purchaseOrderCount > 0,
-                "hasEmployees", employeeCount > 0,
-                "hasProducts", productCount > 0,
-                "hasSalesPlans", salesPlanCount > 0,
-                "hasAccountLedgers", accountLedgerCount > 0
-            )
-        );
+        try {
+            int purchaseOrderCount = companyMapper.countPurchaseOrdersByCompId(compId);
+            int employeeCount = companyMapper.countEmployeesByCompId(compId);
+            int productCount = companyMapper.countProductsByCompId(compId);
+            int salesPlanCount = companyMapper.countSalesPlansByCompId(compId);
+            int accountLedgerCount = companyMapper.countAccountLedgersByCompId(compId);
+            
+            boolean isUsed = purchaseOrderCount > 0 || employeeCount > 0 || 
+                            productCount > 0 || salesPlanCount > 0 || accountLedgerCount > 0;
+            
+            return Map.of(
+                "isUsed", isUsed,
+                "purchaseOrderCount", purchaseOrderCount,
+                "employeeCount", employeeCount,
+                "productCount", productCount,
+                "salesPlanCount", salesPlanCount,
+                "accountLedgerCount", accountLedgerCount,
+                "details", Map.of(
+                    "hasPurchaseOrders", purchaseOrderCount > 0,
+                    "hasEmployees", employeeCount > 0,
+                    "hasProducts", productCount > 0,
+                    "hasSalesPlans", salesPlanCount > 0,
+                    "hasAccountLedgers", accountLedgerCount > 0
+                )
+            );
+            
+        } catch (Exception e) {
+            System.err.println("회사 사용 여부 확인 중 오류: " + e.getMessage());
+            // 오류 시 안전하게 사용 중이 아닌 것으로 처리
+            return Map.of(
+                "isUsed", false,
+                "purchaseOrderCount", 0,
+                "employeeCount", 0,
+                "productCount", 0,
+                "salesPlanCount", 0,
+                "accountLedgerCount", 0,
+                "details", Map.of(
+                    "hasPurchaseOrders", false,
+                    "hasEmployees", false,
+                    "hasProducts", false,
+                    "hasSalesPlans", false,
+                    "hasAccountLedgers", false
+                )
+            );
+        }
     }
 }

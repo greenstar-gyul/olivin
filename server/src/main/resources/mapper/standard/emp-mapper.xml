@@ -1,0 +1,331 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.olivin.app.standard.mapper.EmpMapper">
+    
+    <!-- ✅ ResultMap의 type을 standard 패키지로 수정 -->
+    <resultMap id="EmpResultMap" type="com.olivin.app.standard.service.EmpVO">
+        <id property="employeeId" column="EMPLOYEE_ID"/>
+        <result property="compId" column="COMP_ID"/>
+        <result property="compName" column="COMP_NAME"/>
+        <result property="departmentId" column="DEPARTMENT_ID"/>
+        <result property="deptName" column="DEPT_NAME"/>
+        <result property="empName" column="EMP_NAME"/>
+        <result property="empType" column="EMP_TYPE"/>
+        <result property="email" column="EMAIL"/>
+        <result property="password" column="PASSWORD"/>
+        <result property="phone" column="PHONE"/>
+        <result property="position" column="POSITION"/>
+        <result property="roleId" column="ROLE_ID"/>
+        <result property="createDate" column="CREATE_DATE"/>
+        <result property="hireDate" column="HIRE_DATE"/>
+        <result property="resignDate" column="RESIGN_DATE"/>
+        <result property="updateDate" column="UPDATE_DATE"/>
+        <result property="address" column="ADDRESS"/>
+        <result property="gender" column="GENDER"/>
+        <result property="status" column="STATUS"/>
+    </resultMap>
+
+    <!-- 모든 사원 목록 조회 (회사명, 부서명 포함) -->
+    <select id="selectAllEmps" resultMap="EmpResultMap">
+        SELECT e.EMPLOYEE_ID, e.COMP_ID, c.COMP_NAME, e.DEPARTMENT_ID, d.DEPT_NAME,
+               e.EMP_NAME, e.EMP_TYPE, e.EMAIL, e.PASSWORD, e.PHONE, e.POSITION,
+               e.ROLE_ID, e.CREATE_DATE, e.HIRE_DATE, e.RESIGN_DATE, 
+               e.UPDATE_DATE, e.ADDRESS, 
+               NVL(e.GENDER, 'M') as GENDER, 
+               NVL(e.STATUS, '050001') as STATUS
+        FROM   EMPLOYEES e
+        LEFT JOIN COMPANYS c ON e.COMP_ID = c.COMP_ID
+        LEFT JOIN DEPARTMENTS d ON e.DEPARTMENT_ID = d.DEPARTMENT_ID
+        ORDER BY e.EMPLOYEE_ID ASC
+    </select>
+
+    <!-- ✅ 조건별 사원 목록 조회 - parameterType 수정 -->
+    <select id="selectEmpList" parameterType="com.olivin.app.standard.service.EmpVO" resultMap="EmpResultMap">
+        SELECT e.EMPLOYEE_ID, e.COMP_ID, c.COMP_NAME, e.DEPARTMENT_ID, d.DEPT_NAME,
+               e.EMP_NAME, e.EMP_TYPE, e.EMAIL, e.PASSWORD, e.PHONE, e.POSITION,
+               e.ROLE_ID, e.CREATE_DATE, e.HIRE_DATE, e.RESIGN_DATE, 
+               e.UPDATE_DATE, e.ADDRESS, 
+               NVL(e.GENDER, 'M') as GENDER, 
+               NVL(e.STATUS, '050001') as STATUS
+        FROM   EMPLOYEES e
+        LEFT JOIN COMPANYS c ON e.COMP_ID = c.COMP_ID
+        LEFT JOIN DEPARTMENTS d ON e.DEPARTMENT_ID = d.DEPARTMENT_ID
+        WHERE  1=1
+        <if test="empName != null and empName != ''">
+            AND e.EMP_NAME LIKE '%' || #{empName} || '%'
+        </if>
+        <if test="compId != null and compId != ''">
+            AND e.COMP_ID = #{compId}
+        </if>
+        <if test="departmentId != null and departmentId != ''">
+            AND e.DEPARTMENT_ID = #{departmentId}
+        </if>
+        <if test="status != null and status != ''">
+            AND e.STATUS = #{status}
+        </if>
+        <if test="email != null and email != ''">
+            AND e.EMAIL LIKE '%' || #{email} || '%'
+        </if>
+        <if test="phone != null and phone != ''">
+            AND e.PHONE LIKE '%' || #{phone} || '%'
+        </if>
+        <if test="empType != null and empType != ''">
+            AND e.EMP_TYPE = #{empType}
+        </if>
+        <if test="position != null and position != ''">
+            AND e.POSITION LIKE '%' || #{position} || '%'
+        </if>
+        <if test="gender != null and gender != ''">
+            AND e.GENDER = #{gender}
+        </if>
+        <if test="hireDateFrom != null and hireDateFrom != ''">
+            <![CDATA[
+                AND e.HIRE_DATE >= TO_DATE(#{hireDateFrom}, 'YYYY-MM-DD')
+            ]]>
+        </if>
+        <if test="hireDateTo != null and hireDateTo != ''">
+            <![CDATA[
+                AND e.HIRE_DATE <= TO_DATE(#{hireDateTo}, 'YYYY-MM-DD') + INTERVAL '1' DAY - INTERVAL '1' SECOND
+            ]]>
+        </if>
+        ORDER BY e.EMPLOYEE_ID ASC
+    </select>
+
+    <!-- 검색 조건에 따른 사원 목록 조회 -->
+    <select id="selectEmpsByCondition" parameterType="Map" resultMap="EmpResultMap">
+        SELECT e.EMPLOYEE_ID, e.COMP_ID, c.COMP_NAME, e.DEPARTMENT_ID, d.DEPT_NAME,
+               e.EMP_NAME, e.EMP_TYPE, e.EMAIL, e.PASSWORD, e.PHONE, e.POSITION,
+               e.ROLE_ID, e.CREATE_DATE, e.HIRE_DATE, e.RESIGN_DATE, 
+               e.UPDATE_DATE, e.ADDRESS, 
+               NVL(e.GENDER, 'M') as GENDER, 
+               NVL(e.STATUS, '050001') as STATUS
+        FROM   EMPLOYEES e
+        LEFT JOIN COMPANYS c ON e.COMP_ID = c.COMP_ID
+        LEFT JOIN DEPARTMENTS d ON e.DEPARTMENT_ID = d.DEPARTMENT_ID
+        WHERE  1=1
+        <if test="empName != null and empName != ''">
+            AND e.EMP_NAME LIKE '%' || #{empName} || '%'
+        </if>
+        <if test="compId != null and compId != ''">
+            AND e.COMP_ID = #{compId}
+        </if>
+        <if test="departmentId != null and departmentId != ''">
+            AND e.DEPARTMENT_ID = #{departmentId}
+        </if>
+        <if test="status != null and status != ''">
+            AND e.STATUS = #{status}
+        </if>
+        <if test="email != null and email != ''">
+            AND e.EMAIL LIKE '%' || #{email} || '%'
+        </if>
+        <if test="phone != null and phone != ''">
+            AND e.PHONE LIKE '%' || #{phone} || '%'
+        </if>
+        <if test="empType != null and empType != ''">
+            AND e.EMP_TYPE = #{empType}
+        </if>
+        <if test="position != null and position != ''">
+            AND e.POSITION LIKE '%' || #{position} || '%'
+        </if>
+        <if test="gender != null and gender != ''">
+            AND e.GENDER = #{gender}
+        </if>
+        <if test="hireDateFrom != null and hireDateFrom != ''">
+            <![CDATA[
+                AND e.HIRE_DATE >= TO_DATE(#{hireDateFrom}, 'YYYY-MM-DD')
+            ]]>
+        </if>
+        <if test="hireDateTo != null and hireDateTo != ''">
+            <![CDATA[
+                AND e.HIRE_DATE <= TO_DATE(#{hireDateTo}, 'YYYY-MM-DD') + INTERVAL '1' DAY - INTERVAL '1' SECOND
+            ]]>
+        </if>
+        ORDER BY e.EMPLOYEE_ID ASC
+    </select>
+
+    <!-- 재직중인 사원만 조회 (050001) -->
+    <select id="selectActiveEmps" resultMap="EmpResultMap">
+        SELECT e.EMPLOYEE_ID, e.COMP_ID, c.COMP_NAME, e.DEPARTMENT_ID, d.DEPT_NAME,
+               e.EMP_NAME, e.EMP_TYPE, e.EMAIL, e.PASSWORD, e.PHONE, e.POSITION,
+               e.ROLE_ID, e.CREATE_DATE, e.HIRE_DATE, e.RESIGN_DATE, 
+               e.UPDATE_DATE, e.ADDRESS, 
+               NVL(e.GENDER, 'M') as GENDER, 
+               NVL(e.STATUS, '050001') as STATUS
+        FROM   EMPLOYEES e
+        LEFT JOIN COMPANYS c ON e.COMP_ID = c.COMP_ID
+        LEFT JOIN DEPARTMENTS d ON e.DEPARTMENT_ID = d.DEPARTMENT_ID
+        WHERE  NVL(e.STATUS, '050001') = '050001'
+        ORDER BY e.EMPLOYEE_ID ASC
+    </select>
+
+    <!-- 특정 사원 조회 -->
+    <select id="selectEmp" parameterType="String" resultMap="EmpResultMap">
+        SELECT e.EMPLOYEE_ID, e.COMP_ID, c.COMP_NAME, e.DEPARTMENT_ID, d.DEPT_NAME,
+               e.EMP_NAME, e.EMP_TYPE, e.EMAIL, e.PASSWORD, e.PHONE, e.POSITION,
+               e.ROLE_ID, e.CREATE_DATE, e.HIRE_DATE, e.RESIGN_DATE, 
+               e.UPDATE_DATE, e.ADDRESS, 
+               NVL(e.GENDER, 'M') as GENDER, 
+               NVL(e.STATUS, '050001') as STATUS
+        FROM   EMPLOYEES e
+        LEFT JOIN COMPANYS c ON e.COMP_ID = c.COMP_ID
+        LEFT JOIN DEPARTMENTS d ON e.DEPARTMENT_ID = d.DEPARTMENT_ID
+        WHERE  e.EMPLOYEE_ID = #{employeeId}
+    </select>
+
+    <!-- ✅ 사원 등록 - parameterType 수정 -->
+    <insert id="insertEmp" parameterType="com.olivin.app.standard.service.EmpVO">
+        INSERT INTO EMPLOYEES (
+            EMPLOYEE_ID, COMP_ID, DEPARTMENT_ID, EMP_NAME, EMP_TYPE,
+            EMAIL, PASSWORD, PHONE, POSITION, ROLE_ID,
+            CREATE_DATE, HIRE_DATE, ADDRESS, GENDER, STATUS
+        ) VALUES (
+            #{employeeId}, #{compId}, #{departmentId}, #{empName}, #{empType},
+            #{email}, #{password}, #{phone}, #{position}, #{roleId},
+            #{createDate}, #{hireDate}, #{address}, 
+            NVL(#{gender}, 'M'), 
+            NVL(#{status}, '050001')
+        )
+    </insert>
+
+    <!-- ✅ 사원 정보 수정 - parameterType 수정 -->
+    <update id="updateEmp" parameterType="com.olivin.app.standard.service.EmpVO">
+        UPDATE EMPLOYEES 
+        SET    
+               COMP_ID = NVL(#{compId}, COMP_ID),
+               DEPARTMENT_ID = NVL(#{departmentId}, DEPARTMENT_ID),
+               EMP_NAME = NVL(#{empName}, EMP_NAME),
+               EMP_TYPE = NVL(#{empType}, EMP_TYPE),
+               EMAIL = NVL(#{email}, EMAIL),
+               PASSWORD = NVL(#{password}, PASSWORD),
+               PHONE = NVL(#{phone}, PHONE),
+               POSITION = NVL(#{position}, POSITION),
+               ROLE_ID = NVL(#{roleId}, ROLE_ID),
+               HIRE_DATE = NVL(#{hireDate}, HIRE_DATE),
+               RESIGN_DATE = #{resignDate},
+               UPDATE_DATE = NVL(#{updateDate}, SYSDATE),
+               ADDRESS = NVL(#{address}, ADDRESS),
+               GENDER = NVL(#{gender}, GENDER),
+               STATUS = NVL(#{status}, STATUS)
+        WHERE  EMPLOYEE_ID = #{employeeId}
+    </update>
+
+    <!-- 사원 삭제 (실제 삭제) -->
+    <delete id="deleteEmp" parameterType="String">
+        DELETE FROM EMPLOYEES 
+        WHERE  EMPLOYEE_ID = #{employeeId}
+    </delete>
+
+    <!-- 사원 ID 존재 여부 확인 -->
+    <select id="checkEmpId" parameterType="String" resultType="int">
+        SELECT COUNT(*)
+        FROM   EMPLOYEES
+        WHERE  EMPLOYEE_ID = #{employeeId}
+    </select>
+
+    <!-- 이메일 중복 확인 -->
+    <select id="checkEmail" resultType="int">
+        SELECT COUNT(*)
+        FROM   EMPLOYEES
+        WHERE  EMAIL = #{email}
+        <if test="excludeEmpId != null and excludeEmpId != ''">
+            AND EMPLOYEE_ID != #{excludeEmpId}
+        </if>
+    </select>
+
+    <!-- 마지막 사원 ID 조회 (ID 자동생성용) -->
+    <select id="selectLastEmpId" resultType="String">
+        <![CDATA[
+        SELECT EMPLOYEE_ID
+        FROM   (
+            SELECT EMPLOYEE_ID
+            FROM   EMPLOYEES
+            WHERE  EMPLOYEE_ID LIKE 'olivin%'
+            ORDER BY EMPLOYEE_ID DESC
+        )
+        WHERE ROWNUM = 1
+        ]]>
+    </select>
+
+    <!-- 회사 유형별 사원 ID 생성을 위한 쿼리들 -->
+    
+    <!-- 회사 ID로 회사 유형 조회 -->
+    <select id="selectCompanyType" parameterType="String" resultType="String">
+        SELECT COMP_TYPE
+        FROM   COMPANYS
+        WHERE  COMP_ID = #{compId}
+    </select>
+
+    <!-- 특정 범위에서 마지막 사원 ID 조회 -->
+    <select id="selectLastEmpIdByRange" resultType="String">
+        <![CDATA[
+        SELECT EMPLOYEE_ID
+        FROM   (
+            SELECT EMPLOYEE_ID
+            FROM   EMPLOYEES
+            WHERE  EMPLOYEE_ID LIKE 'olivin%'
+            AND    CAST(SUBSTR(EMPLOYEE_ID, 7) AS NUMBER) >= #{rangeStart}
+            AND    CAST(SUBSTR(EMPLOYEE_ID, 7) AS NUMBER) <= #{rangeEnd}
+            ORDER BY EMPLOYEE_ID DESC
+        )
+        WHERE ROWNUM = 1
+        ]]>
+    </select>
+
+    <!-- 회사별 사원 수 조회 -->
+    <select id="countEmpsByCompId" resultType="int">
+        SELECT COUNT(*)
+        FROM   EMPLOYEES 
+        WHERE  COMP_ID = #{compId}
+    </select>
+
+    <!-- 부서별 사원 수 조회 -->
+    <select id="countEmpsByDeptId" resultType="int">
+        SELECT COUNT(*)
+        FROM   EMPLOYEES 
+        WHERE  DEPARTMENT_ID = #{departmentId}
+    </select>
+
+    <!-- 사원 통계 조회 (상태별) -->
+    <select id="selectEmpStats" resultType="map">
+        SELECT STATUS,
+               COUNT(*) as TOTAL_COUNT,
+               SUM(CASE WHEN STATUS = '050001' THEN 1 ELSE 0 END) as ACTIVE_COUNT,
+               SUM(CASE WHEN STATUS = '050002' THEN 1 ELSE 0 END) as RESIGNED_COUNT
+        FROM   EMPLOYEES
+        GROUP BY STATUS
+        ORDER BY STATUS
+    </select>
+
+    <!-- 최근 등록된 사원 조회 -->
+    <select id="selectRecentEmps" parameterType="int" resultMap="EmpResultMap">
+        SELECT e.EMPLOYEE_ID, e.COMP_ID, c.COMP_NAME, e.DEPARTMENT_ID, d.DEPT_NAME,
+               e.EMP_NAME, e.EMP_TYPE, e.EMAIL, e.PASSWORD, e.PHONE, e.POSITION,
+               e.ROLE_ID, e.CREATE_DATE, e.HIRE_DATE, e.RESIGN_DATE, 
+               e.UPDATE_DATE, e.ADDRESS, 
+               NVL(e.GENDER, 'M') as GENDER, 
+               NVL(e.STATUS, '050001') as STATUS
+        FROM   EMPLOYEES e
+        LEFT JOIN COMPANYS c ON e.COMP_ID = c.COMP_ID
+        LEFT JOIN DEPARTMENTS d ON e.DEPARTMENT_ID = d.DEPARTMENT_ID
+        ORDER BY e.CREATE_DATE DESC
+        FETCH FIRST #{limit} ROWS ONLY
+    </select>
+
+    <!-- 부서에서 사용 중인 재직중 사원이 있는지 확인 -->
+    <select id="countActiveEmpsByDeptId" resultType="int">
+        SELECT COUNT(*)
+        FROM   EMPLOYEES 
+        WHERE  DEPARTMENT_ID = #{departmentId}
+        AND    NVL(STATUS, '050001') = '050001'
+    </select>
+    
+    <!-- 모든 부서 목록 조회 (사원 등록 시 모달용) -->
+    <select id="selectAllDepartments" resultType="map">
+        SELECT DEPARTMENT_ID as departmentId,
+               DEPT_NAME as deptName
+        FROM   DEPARTMENTS
+        WHERE  1=1
+        ORDER BY DEPARTMENT_ID ASC
+    </select>
+
+</mapper>

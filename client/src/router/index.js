@@ -39,18 +39,6 @@ const router = createRouter({
                     meta: { permissions: ['/views/account'] }
                 },
                 {
-                    path: '/views/dept',
-                    name: '부서기준정보',
-                    component: () => import('@/views/dept/DeptManagement.vue'),
-                    meta: { permissions: ['/views/dept'] }
-                },
-                {
-                    path: '/views/emp',
-                    name: '사원기준정보',
-                    component: () => import('@/views/emp/EmpManagement.vue'),
-                    meta: { permissions: ['/views/emp'] }
-                },
-                {
                     path: '/uikit/formlayout',
                     name: 'formlayout',
                     component: () => import('@/views/uikit/FormLayout.vue'),
@@ -234,7 +222,17 @@ const router = createRouter({
                     path: '/standard/productapproval',
                     name: 'productApproval',
                     component: () => import('@/views/standard/ProductApprovalPage.vue'),
-                    meta: { permissions: ['/standard/productapproval'] }
+                    meta: { roles: ['ROLE_SYSTEM_ADMIN'] }
+                },
+                 {
+                    path: '/standard/dept',
+                    name: '부서기준정보',
+                    component: () => import('@/views/standard/DeptStandardPage.vue')
+                },
+                {
+                    path: '/standard/emp',
+                    name: '사원기준정보',
+                    component: () => import('@/views/standard/EmpStandardPage.vue')
                 },
                 /* order */
                 {

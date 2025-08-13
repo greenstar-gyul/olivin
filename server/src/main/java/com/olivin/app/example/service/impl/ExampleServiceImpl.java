@@ -4,7 +4,7 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 
-import com.olivin.app.example.mapper.EmpMapper;
+import com.olivin.app.example.mapper.ExampleMapper;
 import com.olivin.app.example.service.ExampleService;
 import com.olivin.app.example.service.ExampleVO;
 
@@ -23,7 +23,7 @@ import lombok.RequiredArgsConstructor;
 @Service // 서비스 클래스임을 명시합니다. 꼭! 추가해야 합니다.
 @RequiredArgsConstructor
 public class ExampleServiceImpl implements ExampleService {
-    private final EmpMapper empMapper;
+    private final ExampleMapper empMapper;
 
     // 모든 목록을 조회합니다.
     @Override

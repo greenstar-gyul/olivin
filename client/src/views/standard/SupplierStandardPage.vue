@@ -132,6 +132,10 @@ const formatDateForBackend = (dateValue) => {
         if (dateValue instanceof Date) {
             date = dateValue;
         } else if (typeof dateValue === 'string') {
+            // YYYY-MM-DD 형식이면 그대로 사용
+            if (/^\d{4}-\d{2}-\d{2}$/.test(dateValue.trim())) {
+                return dateValue.trim();
+            }
             date = new Date(dateValue);
         } else {
             return null;
@@ -171,7 +175,7 @@ const getStatusColor = (compType) => {
 const getCurrentUser = async () => {
     try {
         const response = await axios.get('/api/auth/me');
-        console.log('사용자 API 전체 응답:', JSON.stringify(response.data, null, 2));
+        console.log('🔍 사용자 API 전체 응답:', JSON.stringify(response.data, null, 2));
 
         if (response.data.success && response.data.data) {
             const userData = response.data.data;
@@ -201,13 +205,13 @@ const getCurrentUser = async () => {
                 empName: empName
             };
 
-            console.log('최종 설정된 사용자 정보:', currentUser.value);
+            console.log('👤 최종 설정된 사용자 정보:', currentUser.value);
             return currentUser.value;
         } else {
             throw new Error('API 응답에 사용자 데이터가 없습니다');
         }
     } catch (error) {
-        console.error('사용자 정보 가져오기 실패:', error);
+        console.error('❌ 사용자 정보 가져오기 실패:', error);
         currentUser.value = { empId: 'admin', employeeId: 'admin', empName: '관리자' };
         return currentUser.value;
     }
@@ -219,12 +223,12 @@ const getCurrentUser = async () => {
 const loadSuppliers = async (searchParams = {}) => {
     try {
         loading.value = true;
-        console.log('공급업체 목록 조회 시작...', searchParams);
+        console.log('🔍 공급업체 목록 조회 시작...', searchParams);
 
         const params = { ...searchParams };
         const response = await axios.get(API_BASE_URL, { params });
 
-        console.log('회사 API 원본 응답:', response.data);
+        console.log('📥 회사 API 원본 응답:', response.data);
 
         let companies = [];
         if (response.data.result_code === 'SUCCESS' && response.data.data) {
@@ -232,7 +236,7 @@ const loadSuppliers = async (searchParams = {}) => {
         } else if (Array.isArray(response.data)) {
             companies = response.data;
         } else {
-            console.error('예상하지 못한 응답 구조:', response.data);
+            console.error('❌ 예상하지 못한 응답 구조:', response.data);
             companies = [];
         }
 
@@ -250,10 +254,10 @@ const loadSuppliers = async (searchParams = {}) => {
             status: '활성' // 활성 공급업체만 표시하므로 항상 활성
         }));
 
-        console.log('최종 공급업체 목록:', items.value);
+        console.log('✅ 최종 공급업체 목록:', items.value);
     } catch (error) {
-        console.error('공급업체 목록 조회 실패:', error);
-        alert('데이터 조회에 실패했습니다.');
+        console.error('❌ 공급업체 목록 조회 실패:', error);
+        alert('데이터 조회에 실패했습니다: ' + (error.response?.data?.message || error.message));
         items.value = [];
     } finally {
         loading.value = false;
@@ -262,7 +266,7 @@ const loadSuppliers = async (searchParams = {}) => {
 
 const checkSupplierUsage = async (compId) => {
     try {
-        console.log('공급업체 사용 여부 확인:', compId);
+        console.log('🔍 공급업체 사용 여부 확인:', compId);
 
         // 백엔드 통합 API 사용
         const response = await axios.get(`${API_BASE_URL}/${compId}/usage`);
@@ -278,7 +282,7 @@ const checkSupplierUsage = async (compId) => {
             return { isUsed: false, purchaseOrderCount: 0, details: {} };
         }
     } catch (error) {
-        console.log('사용 여부 확인 실패:', error.message);
+        console.log('⚠️ 사용 여부 확인 실패:', error.message);
         // API 오류 시 안전하게 사용하지 않는 것으로 처리
         return { isUsed: false, purchaseOrderCount: 0, details: {} };
     }
@@ -288,90 +292,79 @@ const checkSupplierUsage = async (compId) => {
 // 이벤트 핸들러들 - ⭐ 핵심 수정: 날짜 형식 변환 + 폼 리셋 추가
 // ================================
 const searchData = async (searchOptions) => {
-    console.log('공급업체 검색 조건:', searchOptions);
+    console.log('🔍 공급업체 검색 조건:', searchOptions);
 
-    // ✅ 모든 검색 조건이 비어있는지 확인 (초기화 버튼을 눌렀을 때)
-    const hasSearchCondition = Object.values(searchOptions).some((value) => {
-        if (typeof value === 'string') {
-            return value.trim() !== '';
-        }
-        return value !== null && value !== undefined && value !== '';
-    });
-
-    // ✅ 검색 조건이 없으면 입력 폼도 함께 초기화
-    if (!hasSearchCondition) {
-        console.log('검색 조건이 없어서 입력 폼도 초기화합니다.');
-
-        // 1. 전체 공급업체 목록 로드
-        await loadSuppliers();
-
-        // 2. 선택된 공급업체 초기화
-        selectedSupplier.value = null;
-
-        // 3. 입력 폼 초기화 및 기본값 설정
-        if (standardInputRef.value?.inputFormRef) {
-            standardInputRef.value.inputFormRef.resetInputDatas();
-
-            // 등록자, 등록일 다시 설정
-            setTimeout(async () => {
-                await initializeFormData();
-            }, 100);
-        }
-
-        return;
-    }
-
-    // 기존 검색 로직
-    const searchParams = {};
-
-    if (searchOptions.compName?.trim()) searchParams.compName = searchOptions.compName.trim();
-    if (searchOptions.bizNumber?.trim()) searchParams.bizNumber = searchOptions.bizNumber.trim();
-    if (searchOptions.ceoName?.trim()) searchParams.ceoName = searchOptions.ceoName.trim();
-    if (searchOptions.phone?.trim()) searchParams.phone = searchOptions.phone.trim();
-
-    // ⭐ 핵심 수정: 날짜를 YYYY-MM-DD 형식으로 변환
-    if (searchOptions.dateRangeFrom || searchOptions.dateRangeTo) {
-        const fromDate = formatDateForBackend(searchOptions.dateRangeFrom);
-        const toDate = formatDateForBackend(searchOptions.dateRangeTo);
-
-        if (fromDate) searchParams.regDateFrom = fromDate;
-        if (toDate) searchParams.regDateTo = toDate;
-
-        console.log('날짜 변환 결과:', {
-            원본: {
-                from: searchOptions.dateRangeFrom,
-                to: searchOptions.dateRangeTo
-            },
-            변환후: {
-                regDateFrom: fromDate,
-                regDateTo: toDate
+    try {
+        // ✅ 모든 검색 조건이 비어있는지 확인 (초기화 버튼을 눌렀을 때)
+        const hasSearchCondition = Object.values(searchOptions).some((value) => {
+            if (typeof value === 'string') {
+                return value.trim() !== '';
             }
+            return value !== null && value !== undefined && value !== '';
         });
+
+        // ✅ 검색 조건이 없으면 입력 폼도 함께 초기화
+        if (!hasSearchCondition) {
+            console.log('🔄 검색 조건이 없어서 입력 폼도 초기화합니다.');
+
+            // 1. 전체 공급업체 목록 로드
+            await loadSuppliers();
+
+            // 2. 선택된 공급업체 초기화
+            selectedSupplier.value = null;
+
+            // 3. 입력 폼 초기화 및 기본값 설정
+            if (standardInputRef.value?.inputFormRef) {
+                standardInputRef.value.inputFormRef.resetInputDatas();
+
+                // 등록자, 등록일 다시 설정
+                setTimeout(async () => {
+                    await initializeFormData();
+                }, 100);
+            }
+
+            return;
+        }
+
+        // 기존 검색 로직
+        const searchParams = {};
+
+        if (searchOptions.compName?.trim()) searchParams.compName = searchOptions.compName.trim();
+        if (searchOptions.bizNumber?.trim()) searchParams.bizNumber = searchOptions.bizNumber.trim();
+        if (searchOptions.ceoName?.trim()) searchParams.ceoName = searchOptions.ceoName.trim();
+        if (searchOptions.phone?.trim()) searchParams.phone = searchOptions.phone.trim();
+
+        // ⭐ 핵심 수정: 날짜를 YYYY-MM-DD 형식으로 변환
+        if (searchOptions.dateRangeFrom || searchOptions.dateRangeTo) {
+            const fromDate = formatDateForBackend(searchOptions.dateRangeFrom);
+            const toDate = formatDateForBackend(searchOptions.dateRangeTo);
+
+            if (fromDate) searchParams.regDateFrom = fromDate;
+            if (toDate) searchParams.regDateTo = toDate;
+
+            console.log('📅 날짜 변환 결과:', {
+                원본: {
+                    from: searchOptions.dateRangeFrom,
+                    to: searchOptions.dateRangeTo
+                },
+                변환후: {
+                    regDateFrom: fromDate,
+                    regDateTo: toDate
+                }
+            });
+        }
+
+        console.log('📤 최종 검색 파라미터:', searchParams);
+        await loadSuppliers(searchParams);
+
+    } catch (error) {
+        console.error('❌ 검색 중 오류 발생:', error);
+        alert('검색 중 오류가 발생했습니다: ' + (error.response?.data?.message || error.message));
     }
-
-    console.log('최종 검색 파라미터:', searchParams);
-    await loadSuppliers(searchParams);
-};
-
-const resetSearchOptions = async () => {
-    console.log('검색 조건 초기화');
-
-    if (standardInputRef.value?.searchFormRef) {
-        const searchFormRef = standardInputRef.value.searchFormRef;
-        Object.keys(searchFormRef.searchOptions).forEach((key) => {
-            searchFormRef.searchOptions[key] = '';
-        });
-    }
-
-    filters.value.filters.forEach((filter) => {
-        filter.value = '';
-    });
-
-    await loadSuppliers();
 };
 
 const onRowSelect = (supplier) => {
-    console.log('선택된 공급업체:', supplier);
+    console.log('📌 선택된 공급업체:', supplier);
     selectedSupplier.value = supplier;
 
     if (standardInputRef.value?.inputFormRef) {
@@ -397,9 +390,10 @@ const onRowUnselect = () => {
 
 const saveData = async (inputData) => {
     try {
-        console.log('저장할 공급업체 데이터:', inputData);
+        console.log('=== 공급업체 저장 시작 ===');
+        console.log('💾 저장할 공급업체 데이터:', inputData);
 
-        // 필수 필드 검증
+        // ✅ 필수 필드 검증
         const requiredFields = [
             { field: 'compName', label: '업체명' },
             { field: 'bizNumber', label: '사업자번호' },
@@ -413,73 +407,97 @@ const saveData = async (inputData) => {
             }
         }
 
-        // 등록일 처리
-        let regDate = null;
-        if (inputData.regDate?.trim()) {
-            try {
-                const dateStr = inputData.regDate.trim();
-                const [year, month, day] = dateStr.split('-');
-                regDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day), 12, 0, 0);
-
-                if (isNaN(regDate.getTime())) {
-                    throw new Error('유효하지 않은 날짜 형식');
-                }
-            } catch (error) {
-                alert('등록일 형식이 올바르지 않습니다. (예: 2024-01-01)');
-                return;
-            }
-        }
-
         const currentUserData = await getCurrentUser();
         const isUpdateMode = selectedSupplier.value?.compId;
 
+        console.log('🔧 수정 모드 여부:', isUpdateMode);
+        console.log('👤 현재 사용자:', currentUserData);
+
         const supplierData = {
             ...inputData,
-            compType:
-                isUpdateMode && selectedSupplier.value.compType === COMPANY_TYPES.INACTIVE
-                    ? COMPANY_TYPES.INACTIVE // 이미 비활성화된 경우 유지
-                    : COMPANY_TYPES.SUPPLIER // 신규 등록이거나 활성 상태인 경우
+            compType: isUpdateMode && selectedSupplier.value.compType === COMPANY_TYPES.INACTIVE
+                ? COMPANY_TYPES.INACTIVE // 이미 비활성화된 경우 유지
+                : COMPANY_TYPES.SUPPLIER // 신규 등록이거나 활성 상태인 경우
         };
 
         let response;
 
         if (isUpdateMode) {
-            // 수정 모드
+            // ✅ 수정 모드 - 날짜 처리 개선
+            let regDate = null;
+            if (inputData.regDate?.trim()) {
+                regDate = formatDateForBackend(inputData.regDate);
+                if (!regDate) {
+                    alert('등록일 형식이 올바르지 않습니다. (예: 2024-01-01)');
+                    return;
+                }
+            }
+
             supplierData.compId = selectedSupplier.value.compId;
             supplierData.updateUser = currentUserData.employeeId;
-            supplierData.updateDate = new Date();
-            supplierData.regDate = regDate;
+            supplierData.updateDateStr = formatDateForBackend(new Date());
+            supplierData.regDateStr = regDate;
+
+            console.log('📝 수정 데이터:', supplierData);
 
             response = await axios.put(`${API_BASE_URL}/${selectedSupplier.value.compId}`, supplierData);
         } else {
-            // 신규 등록 모드
+            // ✅ 신규 등록 모드 - 날짜 처리 개선
+            let regDate = inputData.regDate?.trim() 
+                ? formatDateForBackend(inputData.regDate) 
+                : formatDateForBackend(new Date());
+
+            if (!regDate) {
+                alert('등록일 형식이 올바르지 않습니다. (예: 2024-01-01)');
+                return;
+            }
+
             supplierData.regUser = currentUserData.employeeId;
-            supplierData.regDate = regDate;
-            delete supplierData.compId;
+            supplierData.regDateStr = regDate;
+            delete supplierData.compId; // 자동생성되도록
+
+            console.log('🆕 신규 등록 데이터:', supplierData);
 
             response = await axios.post(API_BASE_URL, supplierData);
         }
 
-        if (response.data.result_code === 'SUCCESS') {
-            alert(isUpdateMode ? `공급업체가 성공적으로 수정되었습니다. (수정자: ${currentUserData.empName})` : `공급업체가 성공적으로 등록되었습니다. (등록자: ${currentUserData.empName})`);
+        console.log('📥 서버 응답:', response.data);
 
+        if (response.data.result_code === 'SUCCESS') {
+            const successMessage = isUpdateMode 
+                ? `공급업체가 성공적으로 수정되었습니다. (수정자: ${currentUserData.empName})`
+                : `공급업체가 성공적으로 등록되었습니다. (등록자: ${currentUserData.empName})`;
+            
+            alert(successMessage);
+
+            // 폼 초기화
             if (standardInputRef.value?.inputFormRef) {
                 standardInputRef.value.inputFormRef.resetInputDatas();
             }
             selectedSupplier.value = null;
 
+            // 목록 새로고침
             await loadSuppliers();
         } else {
             alert(`저장 실패: ${response.data.message || '알 수 없는 오류'}`);
         }
-    } catch (error) {
-        console.error('공급업체 저장 실패:', error);
 
+        console.log('=== 공급업체 저장 완료 ===');
+
+    } catch (error) {
+        console.error('❌ 공급업체 저장 실패:', error);
+
+        let errorMessage = '저장 중 오류가 발생했습니다.';
+        
         if (error.code === 'ERR_NETWORK') {
-            alert('네트워크 오류: 백엔드 서버가 실행되고 있는지 확인해주세요.');
+            errorMessage = '네트워크 오류: 백엔드 서버가 실행되고 있는지 확인해주세요.';
+        } else if (error.response?.data?.message) {
+            errorMessage = error.response.data.message;
         } else {
-            alert('저장 실패: ' + (error.response?.data?.message || error.message));
+            errorMessage = error.message;
         }
+
+        alert('저장 실패: ' + errorMessage);
     }
 };
 
@@ -490,10 +508,11 @@ const deleteData = async () => {
     }
 
     try {
-        console.log('공급업체 삭제 시작:', selectedSupplier.value.compId);
+        console.log('=== 공급업체 삭제 시작 ===');
+        console.log('🔧 삭제 대상:', selectedSupplier.value.compId);
 
         // 이미 비활성화된 회사인지 확인
-        if (selectedSupplier.value.compType.startsWith('FFFF')) {
+        if (selectedSupplier.value.compType === COMPANY_TYPES.INACTIVE) {
             alert('이미 비활성화된 공급업체입니다.');
             return;
         }
@@ -521,27 +540,36 @@ const deleteData = async () => {
         }
 
         // 실제 삭제 확인
-        const confirmDelete = confirm(`공급업체 "${selectedSupplier.value.compName}"을(를) 정말 삭제하시겠습니까?\n\n이 작업은 되돌릴 수 없습니다.`);
+        const confirmDelete = confirm(
+            `공급업체 "${selectedSupplier.value.compName}"을(를) 정말 삭제하시겠습니까?\n\n이 작업은 되돌릴 수 없습니다.`
+        );
 
         if (!confirmDelete) return;
 
         // 삭제 실행
         const response = await axios.delete(`${API_BASE_URL}/${selectedSupplier.value.compId}`);
 
+        console.log('📥 삭제 응답:', response.data);
+
         if (response.data.result_code === 'SUCCESS') {
             alert(`공급업체 "${selectedSupplier.value.compName}"이(가) 성공적으로 삭제되었습니다.`);
 
+            // 폼 초기화
             if (standardInputRef.value?.inputFormRef) {
                 standardInputRef.value.inputFormRef.resetInputDatas();
             }
             selectedSupplier.value = null;
 
+            // 목록 새로고침
             await loadSuppliers();
         } else {
             alert(`삭제 실패: ${response.data.message || '삭제 중 오류가 발생했습니다.'}`);
         }
+
+        console.log('=== 공급업체 삭제 완료 ===');
+
     } catch (error) {
-        console.error('공급업체 삭제 실패:', error);
+        console.error('❌ 공급업체 삭제 실패:', error);
 
         let errorMessage = '삭제 중 오류가 발생했습니다.';
 
@@ -562,98 +590,146 @@ const deleteData = async () => {
 // 비활성화 처리 함수
 const deactivateSupplier = async () => {
     try {
-        const response = await axios.put(`${API_BASE_URL}/${selectedSupplier.value.compId}/deactivate`);
+        console.log('=== 공급업체 비활성화 시작 ===');
+
+        const currentUserData = await getCurrentUser();
+
+        const response = await axios.put(`${API_BASE_URL}/${selectedSupplier.value.compId}/deactivate`, {
+            updateUser: currentUserData.employeeId,
+            updateDate: formatDateForBackend(new Date())
+        });
+
+        console.log('📥 비활성화 응답:', response.data);
 
         if (response.data.result_code === 'SUCCESS') {
             alert(`공급업체 "${selectedSupplier.value.compName}"이(가) 비활성화되었습니다.`);
 
+            // 폼 초기화
             if (standardInputRef.value?.inputFormRef) {
                 standardInputRef.value.inputFormRef.resetInputDatas();
             }
             selectedSupplier.value = null;
 
+            // 목록 새로고침
             await loadSuppliers();
         } else {
             alert(`비활성화 실패: ${response.data.message || '비활성화 중 오류가 발생했습니다.'}`);
         }
+
+        console.log('=== 공급업체 비활성화 완료 ===');
+
     } catch (error) {
-        console.error('공급업체 비활성화 실패:', error);
-        alert('비활성화 실패: ' + (error.response?.data?.message || error.message));
-    }
-};
+        console.error('❌ 공급업체 비활성화 실패:', error);
+        
+        // ✅ 백엔드에 비활성화 API가 없는 경우 일반 수정 API 사용
+        if (error.response?.status === 404) {
+            try {
+                console.log('🔄 비활성화 전용 API가 없어서 일반 수정 API 사용');
 
-// 재활성화 처리 함수
-const reactivateSupplier = async () => {
-    try {
-        const currentUserData = await getCurrentUser();
+                const currentUserData = await getCurrentUser();
 
-        const supplierData = {
-            ...selectedSupplier.value,
-            compType: COMPANY_TYPES.SUPPLIER, // 공급업체로 다시 활성화
-            updateUser: currentUserData.employeeId,
-            updateDate: new Date()
-        };
+                const updateData = {
+                    ...selectedSupplier.value,
+                    compType: COMPANY_TYPES.INACTIVE, // 비활성화 상태
+                    updateUser: currentUserData.employeeId,
+                    updateDateStr: formatDateForBackend(new Date())
+                };
 
-        const response = await axios.put(`${API_BASE_URL}/${selectedSupplier.value.compId}`, supplierData);
+                const fallbackResponse = await axios.put(`${API_BASE_URL}/${selectedSupplier.value.compId}`, updateData);
 
-        if (response.data.result_code === 'SUCCESS') {
-            alert(`공급업체 "${selectedSupplier.value.compName}"이(가) 다시 활성화되었습니다.`);
+                if (fallbackResponse.data.result_code === 'SUCCESS') {
+                    alert(`공급업체 "${selectedSupplier.value.compName}"이(가) 비활성화되었습니다.`);
 
-            if (standardInputRef.value?.inputFormRef) {
-                standardInputRef.value.inputFormRef.resetInputDatas();
+                    // 폼 초기화
+                    if (standardInputRef.value?.inputFormRef) {
+                        standardInputRef.value.inputFormRef.resetInputDatas();
+                    }
+                    selectedSupplier.value = null;
+
+                    await loadSuppliers();
+                } else {
+                    throw new Error(fallbackResponse.data.message || '공급업체 비활성화에 실패했습니다.');
+                }
+            } catch (fallbackError) {
+                alert('비활성화 실패: ' + (fallbackError.response?.data?.message || fallbackError.message));
             }
-            selectedSupplier.value = null;
-
-            await loadSuppliers();
         } else {
-            alert(`활성화 실패: ${response.data.message || '활성화 중 오류가 발생했습니다.'}`);
+            alert('비활성화 실패: ' + (error.response?.data?.message || error.message));
         }
-    } catch (error) {
-        console.error('공급업체 활성화 실패:', error);
-        alert('활성화 실패: ' + (error.response?.data?.message || error.message));
     }
 };
 
 const openSearchModal = (inputName) => {
-    console.log('모달 열기:', inputName);
+    console.log('🔍 모달 열기:', inputName);
 };
 
 // ================================
 // 초기화 및 라이프사이클
 // ================================
 const initializeFormData = async () => {
-    const user = await getCurrentUser();
-    console.log('폼 초기화 시 사용자 정보:', user);
+    try {
+        const user = await getCurrentUser();
+        console.log('🔧 폼 초기화 시 사용자 정보:', user);
 
-    if (standardInputRef.value?.inputFormRef) {
-        const inputFormRef = standardInputRef.value.inputFormRef;
-        inputFormRef.inputDatas.regUser = user.employeeId;
+        if (standardInputRef.value?.inputFormRef) {
+            const inputFormRef = standardInputRef.value.inputFormRef;
+            inputFormRef.inputDatas.regUser = user.employeeId;
 
-        const now = new Date();
-        const year = now.getFullYear();
-        const month = String(now.getMonth() + 1).padStart(2, '0');
-        const day = String(now.getDate()).padStart(2, '0');
-        inputFormRef.inputDatas.regDate = `${year}-${month}-${day}`;
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            inputFormRef.inputDatas.regDate = `${year}-${month}-${day}`;
+
+            console.log('✅ 폼 초기화 완료:', {
+                regUser: inputFormRef.inputDatas.regUser,
+                regDate: inputFormRef.inputDatas.regDate
+            });
+        }
+    } catch (error) {
+        console.error('❌ 폼 초기화 실패:', error);
     }
 };
 
 onMounted(async () => {
     console.log('=== 공급업체 페이지 마운트 시작 ===');
 
-    await loadSuppliers();
+    try {
+        await loadSuppliers();
 
-    setTimeout(async () => {
-        await initializeFormData();
-    }, 100);
+        setTimeout(async () => {
+            await initializeFormData();
+        }, 100);
 
-    console.log('=== 공급업체 페이지 마운트 완료 ===');
+        console.log('✅ 공급업체 페이지 마운트 완료');
+    } catch (error) {
+        console.error('❌ 공급업체 페이지 마운트 실패:', error);
+    }
 });
 </script>
 
 <template>
-    <StandardInput ref="standardInputRef" :filters="filters" :items="items" :header="header" :inputs="inputs" @searchData="searchData" @saveData="saveData" @openSearchModal="openSearchModal" @rowSelect="onRowSelect" @rowUnselect="onRowUnselect">
+    <StandardInput 
+        ref="standardInputRef" 
+        :filters="filters" 
+        :items="items" 
+        :header="header" 
+        :inputs="inputs" 
+        @searchData="searchData" 
+        @saveData="saveData" 
+        @openSearchModal="openSearchModal" 
+        @rowSelect="onRowSelect" 
+        @rowUnselect="onRowUnselect"
+    >
         <template #btn>
-            <Button label="삭제" severity="danger" class="min-w-fit whitespace-nowrap" outlined :disabled="!selectedSupplier" @click="deleteData" />
+            <Button 
+                label="삭제" 
+                severity="danger" 
+                class="min-w-fit whitespace-nowrap" 
+                outlined 
+                :disabled="!selectedSupplier" 
+                @click="deleteData" 
+            />
         </template>
     </StandardInput>
 </template>
