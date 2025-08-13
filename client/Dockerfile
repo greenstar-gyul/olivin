@@ -4,7 +4,7 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm install
 COPY . .
-ENV VITE_API_URL=http://localhost:80
+ENV VITE_API_URL=http://43.200.191.236:80
 RUN npm run build
 
 # ===== 2단계: Nginx로 서빙 =====
