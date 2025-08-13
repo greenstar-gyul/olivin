@@ -1,18 +1,16 @@
 <script setup>
 import StandardApproval from '@/components/common/StandardApproval.vue';
-import { ref, onMounted, computed, watch } from 'vue';
+import { ref, onMounted, computed, watch, nextTick } from 'vue';
 import axios from '@/service/axios';
 
 const API_BASE_URL = '/api/products';
 
-// 현재 로그인한 사용자 정보
 const currentUser = ref({
     empId: '',
     employeeId: '',
     empName: ''
 });
 
-// ✅ 날짜 포맷 함수 (Oracle 호환)
 const formatDateForOracle = (dateInput) => {
     if (!dateInput) return null;
 
@@ -39,12 +37,10 @@ const formatDateForOracle = (dateInput) => {
 
         return `${year}-${month}-${day}`;
     } catch (error) {
-        console.error('날짜 변환 오류:', error);
         return null;
     }
 };
 
-// 사용자 정보 가져오기 함수 (ProductStandardPage.vue와 동일)
 const getCurrentUser = async () => {
     try {
         const response = await axios.get('/api/auth/me');
@@ -60,7 +56,6 @@ const getCurrentUser = async () => {
             for (const userSource of possibleUserSources) {
                 if (userSource && typeof userSource === 'object') {
                     const possibleEmployeeIds = [userSource.employeeId, userSource.employee_id, userSource.EMPLOYEE_ID];
-
                     const possibleEmpNames = [userSource.empName, userSource.emp_name, userSource.EMP_NAME];
 
                     const foundEmployeeId = possibleEmployeeIds.find((id) => id && String(id).trim() !== '');
@@ -82,7 +77,6 @@ const getCurrentUser = async () => {
             return currentUser.value;
         }
     } catch (error) {
-        console.error('사용자 정보 가져오기 실패:', error);
         currentUser.value = {
             empId: 'olivin10001',
             employeeId: 'olivin10001',
@@ -92,7 +86,6 @@ const getCurrentUser = async () => {
     }
 };
 
-// 카테고리 옵션 (ProductStandardPage.vue와 동일)
 const categoryMainOptions = [
     { name: '스킨케어', value: '110001' },
     { name: '메이크업', value: '110002' },
@@ -170,13 +163,12 @@ const categorySubOptions = {
     110009: [
         { name: '식단관리/이너뷰티', value: '129001' },
         { name: '과자/초콜릿/디저트', value: '129002' },
-        { name: '생수/음료/커피', value: '129003' },
+        { name: '상수/음료/커피', value: '129003' },
         { name: '간편식/요리', value: '129004' },
         { name: '베이비푸드', value: '129005' }
     ]
 };
 
-// ✅ 검색 조건 (원래 구조 복원)
 const filters = ref({
     title: '승인 요청 조회',
     filters: [
@@ -192,7 +184,6 @@ const filters = ref({
 const items = ref([]);
 const selectedProduct = ref(null);
 
-// ✅ 테이블 헤더 (기존과 동일)
 const header = ref({
     title: '제품 승인 요청 목록',
     header: {
@@ -208,7 +199,6 @@ const header = ref({
     rightAligned: ['packQty', 'sellPrice']
 });
 
-// ✅ 입력 폼 (computed로 반응형 처리)
 const inputs = computed(() => ({
     title: '제품 정보 및 승인 처리',
     inputs: [
@@ -230,17 +220,12 @@ const inputs = computed(() => ({
     ]
 }));
 
-// StandardApproval 컴포넌트 ref
 const standardApprovalRef = ref(null);
 
-// ✅ 검색 조건 카테고리 변경 처리 함수
 const handleSearchCategoryMainChange = (categoryMainValue) => {
-    console.log('검색 조건 카테고리 변경됨:', categoryMainValue);
-
     const categorySubFilter = filters.value.filters.find((f) => f.name === 'categorySub');
     if (categorySubFilter) {
         categorySubFilter.options = categorySubOptions[categoryMainValue] || [];
-        console.log('세부카테고리 옵션 업데이트됨:', categorySubFilter.options);
     }
 
     if (standardApprovalRef.value?.searchFormRef) {
@@ -248,7 +233,6 @@ const handleSearchCategoryMainChange = (categoryMainValue) => {
     }
 };
 
-// 코드 변환 함수들 (기존과 동일)
 const getCategoryMainName = (code) => {
     const categoryMap = {
         110001: '스킨케어',
@@ -266,21 +250,18 @@ const getCategoryMainName = (code) => {
 
 const getCategorySubName = (code) => {
     const categorySubMap = {
-        // 스킨케어 (110001)
         121001: '스킨/토너',
         121002: '에센스/세럼/앰플',
         121003: '크림',
         121004: '로션',
         121005: '미스트/오일',
         121006: '스킨케어 디바이스',
-        // 메이크업 (110002)
         122001: '베이스 메이크업',
         122002: '아이 메이크업',
         122003: '치크&컨투어',
         122004: '립 메이크업',
         122005: '피니시&픽서',
         122006: '네일 메이크업',
-        // 클렌징 (110003)
         123001: '클렌징폼/젤',
         123002: '오일/밤',
         123003: '워터/밀크',
@@ -288,7 +269,6 @@ const getCategorySubName = (code) => {
         123005: '티슈/패드',
         123006: '립&아이리무버',
         123007: '클렌징 디바이스',
-        // 헤어케어 (110004)
         124001: '샴푸/린스',
         124002: '트리트먼트/팩',
         124003: '두피앰플/토닉',
@@ -296,33 +276,28 @@ const getCategorySubName = (code) => {
         124005: '염색약/펌',
         124006: '헤어기기/브러시',
         124007: '스타일링',
-        // 구강용품 (110005)
         125001: '칫솔',
         125002: '치약',
         125003: '애프터구강케어',
         125004: '구강가전',
-        // 선케어 (110006)
         126001: '선크림',
         126002: '선스틱',
         126003: '선쿠션',
         126004: '선스프레이/선패치',
         126005: '태닝/애프터선',
-        // 뷰티소품 (110007)
         127001: '메이크업소품',
         127002: '아이소품',
         127003: '스킨케어소품',
         127004: '헤어소품',
         127005: '네일/바디소품',
         127006: '뷰티잡화',
-        // 건강/기능 식품 (110008)
         128001: '비타민',
         128002: '영양제',
         128003: '유산균',
         128004: '슬리밍/이너뷰티',
-        // 푸드 (110009)
         129001: '식단관리/이너뷰티',
         129002: '과자/초콜릿/디저트',
-        129003: '생수/음료/커피',
+        129003: '상수/음료/커피',
         129004: '간편식/요리',
         129005: '베이비푸드'
     };
@@ -340,18 +315,16 @@ const getUnitName = (code) => {
     return unitMap[code] || code;
 };
 
-// ✅ 상태 변환 함수 (중단 상태 추가)
 const getStatusName = (code) => {
     const statusMap = {
         '040001': '완료',
         '040002': '대기',
         '040003': '반려',
-        '040004': '중단' // ✅ 새로 추가된 상태
+        '040004': '중단'
     };
     return statusMap[code] || code;
 };
 
-// 날짜 포맷 함수
 const formatDate = (dateString) => {
     if (!dateString) return '';
     try {
@@ -366,7 +339,6 @@ const formatDate = (dateString) => {
     }
 };
 
-// 제품 데이터 변환 함수
 const filterProductData = (product, index = 0) => {
     return {
         id: product.productId || `temp_product_${Date.now()}_${index}`,
@@ -380,14 +352,12 @@ const filterProductData = (product, index = 0) => {
         purchasePrice: product.purchasePrice,
         sellPrice: product.sellPrice,
         note: product.note,
-        // 표시용 (변환된 값)
         categoryMain: getCategoryMainName(product.categoryMain),
         categorySub: getCategorySubName(product.categorySub),
         unit: getUnitName(product.unit),
         status: getStatusName(product.status),
         regUserName: product.regUserName || product.regUser,
         regDate: product.regDate ? formatDate(product.regDate) : '',
-        // 원본 코드값
         categoryMainCode: product.categoryMain,
         categorySubCode: product.categorySub,
         unitCode: product.unit,
@@ -396,68 +366,73 @@ const filterProductData = (product, index = 0) => {
     };
 };
 
-// 승인 대기 제품 조회 (승인 대기 상태만 필터링)
 const loadPendingProducts = async () => {
     try {
-        console.log('승인 대기 제품 조회 시작...');
-
-        // ✅ 승인 대기 제품 전용 API 호출
         const response = await axios.get(`${API_BASE_URL}/pending`);
 
-        console.log('API 응답:', response.data);
-
-        if (response.data && Array.isArray(response.data)) {
-            items.value = response.data.map((product, index) => filterProductData(product, index));
-
-            console.log('최종 처리된 제품 목록:', items.value);
-            console.log(`총 ${items.value.length}개의 승인 대기 제품이 있습니다.`);
+        let products = [];
+        
+        if (response.data.result_code === 'SUCCESS' && response.data.data) {
+            products = response.data.data;
+        } else if (Array.isArray(response.data)) {
+            products = response.data;
         } else {
-            console.warn('API 응답이 배열이 아닙니다:', response.data);
-            items.value = [];
+            products = [];
         }
-    } catch (error) {
-        console.error('승인 대기 제품 조회 실패:', error);
-        console.error('에러 상세:', {
-            status: error.response?.status,
-            data: error.response?.data,
-            message: error.message
-        });
 
-        // ✅ 대체 방법: 전체 제품을 조회한 후 클라이언트에서 필터링
+        items.value = products.map((product, index) => filterProductData(product, index));
+        
+    } catch (error) {
         try {
-            console.log('대체 방법으로 전체 제품 조회 후 필터링 시도...');
             const fallbackResponse = await axios.get(`${API_BASE_URL}`);
 
-            if (fallbackResponse.data && Array.isArray(fallbackResponse.data)) {
-                const pendingProducts = fallbackResponse.data.filter((product) => product.status === '040002' || product.statusCode === '040002');
+            let allProducts = [];
+            if (fallbackResponse.data.result_code === 'SUCCESS' && fallbackResponse.data.data) {
+                allProducts = fallbackResponse.data.data;
+            } else if (Array.isArray(fallbackResponse.data)) {
+                allProducts = fallbackResponse.data;
+            }
+
+            if (allProducts.length > 0) {
+                const pendingProducts = allProducts.filter((product) => 
+                    product.status === '040002' || product.statusCode === '040002'
+                );
                 items.value = pendingProducts.map((product, index) => filterProductData(product, index));
-                console.log(`대체 방법으로 ${items.value.length}개 제품 로드됨`);
             } else {
                 items.value = [];
             }
         } catch (fallbackError) {
-            console.error('대체 API도 실패:', fallbackError);
             alert('제품 목록을 불러오는데 실패했습니다.');
             items.value = [];
         }
     }
 };
 
-// ✅ 검색 함수 (날짜 형식 수정)
+// ✅ 수정된 검색 함수 - 디버깅 및 응답 구조 처리 개선
 const searchData = async (searchOptions) => {
+    console.log('🔍 검색 조건:', searchOptions);
+    
     try {
         const params = {};
 
-        if (searchOptions.productName?.trim()) params.productName = searchOptions.productName.trim();
-        if (searchOptions.vendorName?.trim()) params.vendorName = searchOptions.vendorName.trim();
-        if (searchOptions.categoryMain?.trim()) params.categoryMain = searchOptions.categoryMain.trim();
-        if (searchOptions.categorySub?.trim()) params.categorySub = searchOptions.categorySub.trim();
-        if (searchOptions.compId?.trim()) params.compId = searchOptions.compId.trim();
-        if (searchOptions.packQty) params.packQty = searchOptions.packQty;
-        if (searchOptions.safetyStock) params.safetyStock = searchOptions.safetyStock;
-        if (searchOptions.regUser?.trim()) params.regUser = searchOptions.regUser.trim();
+        // ✅ 검색 조건 파라미터 구성 - 더 정확한 처리
+        if (searchOptions.productName?.trim()) {
+            params.productName = searchOptions.productName.trim();
+        }
+        if (searchOptions.vendorName?.trim()) {
+            params.vendorName = searchOptions.vendorName.trim();
+        }
+        if (searchOptions.categoryMain?.trim()) {
+            params.categoryMain = searchOptions.categoryMain.trim();
+        }
+        if (searchOptions.categorySub?.trim()) {
+            params.categorySub = searchOptions.categorySub.trim();
+        }
+        if (searchOptions.regUser?.trim()) {
+            params.regUser = searchOptions.regUser.trim();
+        }
 
-        // ✅ 날짜 범위 파라미터 처리 (Oracle 호환)
+        // ✅ 날짜 범위 처리 개선
         if (searchOptions.regDateRangeFrom && searchOptions.regDateRangeTo) {
             try {
                 const fromDate = new Date(searchOptions.regDateRangeFrom);
@@ -466,72 +441,79 @@ const searchData = async (searchOptions) => {
                 if (!isNaN(fromDate.getTime()) && !isNaN(toDate.getTime())) {
                     params.regDateFrom = fromDate.toISOString().split('T')[0];
                     params.regDateTo = toDate.toISOString().split('T')[0];
-
-                    console.log('날짜 범위 설정:', {
-                        original: { from: searchOptions.regDateRangeFrom, to: searchOptions.regDateRangeTo },
-                        converted: { from: params.regDateFrom, to: params.regDateTo }
-                    });
-                } else {
-                    console.warn('유효하지 않은 날짜:', {
-                        from: searchOptions.regDateRangeFrom,
-                        to: searchOptions.regDateRangeTo
-                    });
+                    console.log('📅 날짜 범위:', { from: params.regDateFrom, to: params.regDateTo });
                 }
             } catch (dateError) {
-                console.error('날짜 변환 오류:', dateError);
+                console.warn('⚠️ 날짜 변환 오류:', dateError);
             }
         }
 
-        // 승인 페이지인 경우 상태 제한
-        if (typeof window !== 'undefined' && window.location.pathname.includes('approval')) {
-            params.status = '040002'; // 승인 대기
+        // ✅ 승인 페이지에서는 항상 승인 대기 상태만 조회
+        params.status = '040002';
+
+        console.log('📤 최종 검색 파라미터:', params);
+
+        // ✅ API 호출
+        const response = await axios.get(`${API_BASE_URL}/search`, { params });
+        console.log('📥 API 응답:', response.data);
+
+        // ✅ 응답 데이터 처리 개선
+        let searchResults = [];
+        
+        if (response.data?.result_code === 'SUCCESS' && response.data.data) {
+            searchResults = response.data.data;
+        } else if (response.data?.success && response.data.data) {
+            searchResults = response.data.data;
+        } else if (Array.isArray(response.data)) {
+            searchResults = response.data;
+        } else if (response.data?.products && Array.isArray(response.data.products)) {
+            searchResults = response.data.products;
+        } else {
+            console.warn('⚠️ 예상하지 못한 응답 구조:', response.data);
+            searchResults = [];
         }
 
-        console.log('최종 검색 파라미터:', params);
+        console.log('🔍 검색 결과:', searchResults);
 
-        const response = await axios.get(`${API_BASE_URL}/search`, { params });
-
-        if (response.data && Array.isArray(response.data)) {
-            items.value = response.data.map((product, index) => filterProductData(product, index));
-            console.log(`검색 완료: ${items.value.length}개의 제품이 검색되었습니다.`);
+        // ✅ 검색 결과를 테이블에 표시
+        if (Array.isArray(searchResults)) {
+            items.value = searchResults.map((product, index) => filterProductData(product, index));
+            console.log(`✅ ${items.value.length}개의 제품이 검색되었습니다.`);
         } else {
-            console.warn('검색 응답이 배열이 아님:', response.data);
+            console.warn('⚠️ 검색 결과가 배열이 아닙니다:', searchResults);
             items.value = [];
         }
+
     } catch (error) {
-        console.error('검색 실패:', error);
+        console.error('❌ 검색 실패:', error);
 
         let errorMessage = '검색 중 오류가 발생했습니다.';
         if (error.response?.status === 500) {
             errorMessage = '서버 내부 오류가 발생했습니다. 검색 조건을 확인해주세요.';
         } else if (error.response?.status === 400) {
             errorMessage = '검색 조건이 올바르지 않습니다.';
+        } else if (error.response?.status === 404) {
+            errorMessage = '검색 결과가 없습니다.';
         }
 
-        if (typeof toast !== 'undefined' && toast.add) {
-            toast.add({
-                severity: 'error',
-                summary: '검색 실패',
-                detail: errorMessage,
-                life: 3000
-            });
-        } else {
-            alert(errorMessage);
-        }
+        console.error('❌ 에러 상세:', {
+            status: error.response?.status,
+            data: error.response?.data,
+            message: error.message
+        });
 
+        alert(errorMessage);
         items.value = [];
     }
 
+    // ✅ 선택된 제품 초기화
     selectedProduct.value = null;
 };
 
-// ✅ 행 선택 처리 (간소화)
 const onRowSelect = (row) => {
-    console.log('선택된 제품:', row);
     selectedProduct.value = row;
 };
 
-// ✅ 승인 처리 (날짜 형식 수정)
 const handleApprove = async (approvalData) => {
     const targetProduct = approvalData.selectedItem || selectedProduct.value;
 
@@ -553,25 +535,55 @@ const handleApprove = async (approvalData) => {
             approver: currentUserData.employeeId,
             reason: reason,
             status: '040001',
-            approveDate: formatDateForOracle(new Date()) // ✅ 날짜 형식 수정
+            approveDate: formatDateForOracle(new Date())
         });
 
-        if (response.status === 200 && response.data.success) {
-            alert(`제품 "${targetProduct.productName}"이 승인되었습니다. (승인자: ${currentUserData.empName})`);
+        const isSuccess = response.status === 200 && (
+            response.data?.success === true ||
+            response.data?.result_code === 'SUCCESS' ||
+            response.data?.status === 'success' ||
+            (response.data?.message && response.data.message.includes('승인'))
+        );
+
+        if (isSuccess) {
+            const successMessage = response.data?.message || 
+                                 `제품 "${targetProduct.productName}"이 승인되었습니다. (승인자: ${currentUserData.empName})`;
+            
+            alert(successMessage);
 
             items.value = items.value.filter((item) => item.productId !== targetProduct.productId);
             selectedProduct.value = null;
-            await loadPendingProducts();
+
+            if (standardApprovalRef.value) {
+                await nextTick();
+                
+                if (standardApprovalRef.value.selectedItems) {
+                    standardApprovalRef.value.selectedItems = null;
+                }
+                if (standardApprovalRef.value.selectedProductId) {
+                    standardApprovalRef.value.selectedProductId = null;
+                }
+                
+                if (standardApprovalRef.value.clearAllRadioSelections) {
+                    standardApprovalRef.value.clearAllRadioSelections();
+                }
+            }
+            
         } else {
-            alert('승인에 실패했습니다: ' + (response.data.message || '알 수 없는 오류'));
+            const errorMessage = response.data?.message || 
+                               response.data?.error || 
+                               '알 수 없는 오류가 발생했습니다.';
+            alert('승인에 실패했습니다: ' + errorMessage);
         }
     } catch (error) {
-        console.error('승인 처리 실패:', error);
-        alert(`승인 처리 실패: ${error.response?.data?.message || error.message}`);
+        const errorMessage = error.response?.data?.message || 
+                           error.response?.data?.error || 
+                           error.message || 
+                           '승인 처리 중 오류가 발생했습니다.';
+        alert(`승인 처리 실패: ${errorMessage}`);
     }
 };
 
-// ✅ 반려 처리 (날짜 형식 수정)
 const handleReject = async (rejectionData) => {
     const targetProduct = rejectionData.selectedItem || selectedProduct.value;
 
@@ -598,56 +610,78 @@ const handleReject = async (rejectionData) => {
             approver: currentUserData.employeeId,
             reason: reason,
             status: '040003',
-            rejectDate: formatDateForOracle(new Date()) // ✅ 날짜 형식 수정
+            rejectDate: formatDateForOracle(new Date())
         });
 
-        if (response.status === 200 && response.data.success) {
-            alert(`제품 "${targetProduct.productName}"이 반려되었습니다. (반려자: ${currentUserData.empName})`);
+        const isSuccess = response.status === 200 && (
+            response.data?.success === true ||
+            response.data?.result_code === 'SUCCESS' ||
+            response.data?.status === 'success' ||
+            (response.data?.message && response.data.message.includes('반려'))
+        );
+
+        if (isSuccess) {
+            const successMessage = response.data?.message || 
+                                 `제품 "${targetProduct.productName}"이 반려되었습니다. (반려자: ${currentUserData.empName})`;
+            
+            alert(successMessage);
 
             items.value = items.value.filter((item) => item.productId !== targetProduct.productId);
             selectedProduct.value = null;
-            await loadPendingProducts();
+
+            if (standardApprovalRef.value) {
+                await nextTick();
+                
+                if (standardApprovalRef.value.selectedItems) {
+                    standardApprovalRef.value.selectedItems = null;
+                }
+                if (standardApprovalRef.value.selectedProductId) {
+                    standardApprovalRef.value.selectedProductId = null;
+                }
+                
+                if (standardApprovalRef.value.clearAllRadioSelections) {
+                    standardApprovalRef.value.clearAllRadioSelections();
+                }
+            }
+            
         } else {
-            alert('반려에 실패했습니다: ' + (response.data.message || '알 수 없는 오류'));
+            const errorMessage = response.data?.message || 
+                               response.data?.error || 
+                               '알 수 없는 오류가 발생했습니다.';
+            alert('반려에 실패했습니다: ' + errorMessage);
         }
     } catch (error) {
-        console.error('반려 처리 실패:', error);
-        alert(`반려 처리 실패: ${error.response?.data?.message || error.message}`);
+        const errorMessage = error.response?.data?.message || 
+                           error.response?.data?.error || 
+                           error.message || 
+                           '반려 처리 중 오류가 발생했습니다.';
+        alert(`반려 처리 실패: ${errorMessage}`);
     }
 };
 
-// 데이터 저장 (폼 데이터 동기화)
 const saveData = (inputData) => {
-    console.log('폼 데이터 업데이트:', inputData);
     // 필요한 경우 추가 처리
 };
 
-// ✅ 컴포넌트 마운트 (watch 추가)
 onMounted(async () => {
     try {
         await getCurrentUser();
         await loadPendingProducts();
 
-        // ✅ 검색 조건의 카테고리 변경 감지
         setTimeout(() => {
             if (standardApprovalRef.value?.searchFormRef) {
-                console.log('승인 페이지 - 검색 조건 watch 설정 중...');
-
                 watch(
                     () => {
                         const searchFormRef = standardApprovalRef.value.searchFormRef;
                         return searchFormRef?.searchOptions?.categoryMain;
                     },
                     (newValue, oldValue) => {
-                        console.log('승인 페이지 - 검색 조건 categoryMain 변경 감지:', { oldValue, newValue });
                         if (newValue && newValue !== oldValue) {
                             handleSearchCategoryMainChange(newValue);
                         }
                     },
                     { immediate: false }
                 );
-
-                console.log('승인 페이지 - 검색 조건 watch 설정 완료');
             }
         }, 200);
     } catch (error) {

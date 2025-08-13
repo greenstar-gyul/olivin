@@ -20,7 +20,7 @@ const props = defineProps({
     },
     columns: {
         type: Array,
-        default: []
+        default: () => []
     },
     checked: {
         type: Boolean,
@@ -33,6 +33,10 @@ const props = defineProps({
     scrollHeight: {
         type: String,
         default: '400px'
+    },
+    loading: {
+        type: Boolean,
+        default: false
     },
     // 조건부 스타일링을 위한 새로운 props
     cellClass: {
@@ -136,6 +140,36 @@ const onRowUnselect = (event) => {
     emit('rowUnselect', event.data);
 };
 
+// 숫자 포맷팅 함수 안전하게 개선
+const formatNumber = (value) => {
+    try {
+        // null, undefined, 빈 문자열 체크
+        if (value === null || value === undefined || value === '') {
+            return value;
+        }
+        
+        // 숫자 타입이거나 숫자로 변환 가능한 문자열인지 확인
+        const numValue = Number(value);
+        if (!isNaN(numValue) && isFinite(numValue)) {
+            return numValue.toLocaleString();
+        }
+        
+        // 숫자가 아니면 그대로 반환
+        return value;
+    } catch (error) {
+        return value;
+    }
+};
+
+// 셀 값 안전하게 가져오기
+const getCellValue = (data, field) => {
+    try {
+        return data && typeof data === 'object' ? data[field] : '';
+    } catch (error) {
+        return '';
+    }
+};
+
 // 선택을 해제하는 메서드
 const clearSelection = () => {
     selectedItems.value = props.checkType === 'single' ? null : [];
@@ -149,6 +183,7 @@ defineExpose({
 
 const header = computed(() => props.header);
 </script>
+
 <template>
     <!-- 📋 검색 조회 테이블 영역 -->
     <div class="card flex flex-col gap-4 mt-6 h-full">
@@ -170,6 +205,7 @@ const header = computed(() => props.header);
             v-model:selection="selectedItems"
             :value="props.data"
             :dataKey="props.dataKey"
+            :loading="props.loading"
             showGridlines
             scrollable
             :scrollHeight="props.scrollHeight"
@@ -203,11 +239,11 @@ const header = computed(() => props.header);
                     >
                         <!-- 숫자형 데이터는 3자리 콤마 추가 -->
                         <span v-if="header.rightAligned && header.rightAligned.includes(item)">
-                            {{ slotProps.data[item].toLocaleString() }}
+                            {{ formatNumber(getCellValue(slotProps.data, item)) }}
                         </span>
                         <!-- 일반 텍스트 데이터 -->
                         <span v-else>
-                            {{ slotProps.data[item] }}
+                            {{ getCellValue(slotProps.data, item) }}
                         </span>
                     </span>
                 </template>
@@ -215,6 +251,7 @@ const header = computed(() => props.header);
         </DataTable>
     </div>
 </template>
+
 <style scoped>
 /* 필요시 커스텀 스타일 여기에 추가 */
 </style>

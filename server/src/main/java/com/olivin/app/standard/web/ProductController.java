@@ -48,74 +48,201 @@ public class ProductController {
     }
 
     /**
-     * 서버 연결 확인용 핑 API
+     * ✅ 서버 연결 확인용 핑 API (다른 컨트롤러와 일관성 맞춤)
      */
     @GetMapping("/ping")
-    public String ping() {
-        return "서버 연결 성공!";
+    public ResponseEntity<Map<String, Object>> ping() {
+        Map<String, Object> result = new HashMap<>();
+        result.put("result_code", "SUCCESS");
+        result.put("message", "제품 API 서버 연결 성공!");
+        result.put("data", null);
+        return ResponseEntity.ok(result);
     }
     
     /**
-     * 모든 제품 조회 - 직원 이름 조인 포함
+     * ✅ 모든 제품 조회 - 다른 컨트롤러와 동일한 응답 구조
      */
     @GetMapping
-    public ResponseEntity<List<ProductVO>> getAllProducts() {
-        List<ProductVO> products = productService.getAllProducts();
+    public ResponseEntity<Map<String, Object>> getAllProducts() {
+        Map<String, Object> result = new HashMap<>();
         
-        // 로깅: 조인된 직원 이름 확인
-        if (!products.isEmpty()) {
-            System.out.println("첫 번째 제품의 직원 정보:");
-            ProductVO firstProduct = products.get(0);
-            System.out.println("REG_USER: " + firstProduct.getRegUser());
-            System.out.println("REG_USER_NAME: " + firstProduct.getRegUserName());
-            System.out.println("UPDATE_USER: " + firstProduct.getUpdateUser());
-            System.out.println("UPDATE_USER_NAME: " + firstProduct.getUpdateUserName());
+        try {
+            List<ProductVO> products = productService.getAllProducts();
+            
+            result.put("result_code", "SUCCESS");
+            result.put("message", "성공");
+            result.put("data", products);
+            
+            // 로깅: 조인된 직원 이름 확인
+            if (!products.isEmpty()) {
+                System.out.println("첫 번째 제품의 직원 정보:");
+                ProductVO firstProduct = products.get(0);
+                System.out.println("REG_USER: " + firstProduct.getRegUser());
+                System.out.println("REG_USER_NAME: " + firstProduct.getRegUserName());
+                System.out.println("UPDATE_USER: " + firstProduct.getUpdateUser());
+                System.out.println("UPDATE_USER_NAME: " + firstProduct.getUpdateUserName());
+            }
+            
+        } catch (Exception e) {
+            result.put("result_code", "FAIL");
+            result.put("message", "제품 목록 조회 실패: " + e.getMessage());
+            result.put("data", new ArrayList<>());
         }
         
-        return ResponseEntity.ok(products);
+        return ResponseEntity.ok(result);
     }
     
     /**
-     * 승인된 제품만 조회 - 직원 이름 조인 포함
-     */
+ * ✅ 승인된 제품만 조회 - 상세 로깅 및 디버깅 강화
+    */
     @GetMapping("/approved")
-    public ResponseEntity<List<ProductVO>> getApprovedProducts() {
-        List<ProductVO> products = productService.getApprovedProducts();
-        return ResponseEntity.ok(products);
+    public ResponseEntity<Map<String, Object>> getApprovedProducts() {
+        Map<String, Object> result = new HashMap<>();
+        
+        try {
+            System.out.println("=== 승인된 제품 조회 API 호출 ===");
+            
+            List<ProductVO> products = productService.getApprovedProducts();
+            
+            System.out.println("🔍 조회된 제품 수: " + (products != null ? products.size() : 0));
+            
+            if (products != null && !products.isEmpty()) {
+                // 상세 로깅: 각 제품의 상태 확인
+                System.out.println("📋 승인된 제품 목록:");
+                for (int i = 0; i < Math.min(products.size(), 10); i++) { // 최대 10개만 로깅
+                    ProductVO product = products.get(i);
+                    System.out.println(String.format("  %d. %s (ID: %s, 상태: %s, 등록자: %s)", 
+                        i + 1, 
+                        product.getProductName(), 
+                        product.getProductId(), 
+                        product.getStatus(),
+                        product.getRegUserName()));
+                }
+                if (products.size() > 10) {
+                    System.out.println("  ... 및 " + (products.size() - 10) + "개 더");
+                }
+            } else {
+                System.out.println("⚠️ 승인된 제품이 없습니다.");
+                
+                // 디버깅: 전체 제품 수 확인
+                try {
+                    List<ProductVO> allProducts = productService.getAllProducts();
+                    System.out.println("🔍 전체 제품 수: " + (allProducts != null ? allProducts.size() : 0));
+                    
+                    if (allProducts != null && !allProducts.isEmpty()) {
+                        // 상태별 통계
+                        Map<String, Integer> statusCount = new HashMap<>();
+                        for (ProductVO product : allProducts) {
+                            String status = product.getStatus();
+                            statusCount.put(status, statusCount.getOrDefault(status, 0) + 1);
+                        }
+                        
+                        System.out.println("📊 제품 상태별 통계:");
+                        statusCount.forEach((status, count) -> {
+                            String statusName = switch (status) {
+                                case "040001" -> "승인완료";
+                                case "040002" -> "승인대기";
+                                case "040003" -> "승인반려";
+                                case "040004" -> "제품중단";
+                                default -> "알수없음";
+                            };
+                            System.out.println("  " + status + " (" + statusName + "): " + count + "개");
+                        });
+                    }
+                } catch (Exception debugException) {
+                    System.err.println("🔍 디버깅 중 오류: " + debugException.getMessage());
+                }
+            }
+            
+            result.put("result_code", "SUCCESS");
+            result.put("message", "성공");
+            result.put("data", products != null ? products : new ArrayList<>());
+            
+            // 로깅: 조인된 직원 이름 확인
+            if (products != null && !products.isEmpty()) {
+                ProductVO firstProduct = products.get(0);
+                System.out.println("👥 첫 번째 제품의 직원 정보:");
+                System.out.println("  등록자ID: " + firstProduct.getRegUser());
+                System.out.println("  등록자명: " + firstProduct.getRegUserName());
+                System.out.println("  수정자ID: " + firstProduct.getUpdateUser());
+                System.out.println("  수정자명: " + firstProduct.getUpdateUserName());
+            }
+            
+        } catch (Exception e) {
+            System.err.println("❌ 승인된 제품 목록 조회 실패:");
+            System.err.println("  오류 타입: " + e.getClass().getSimpleName());
+            System.err.println("  오류 메시지: " + e.getMessage());
+            e.printStackTrace();
+            
+            result.put("result_code", "FAIL");
+            result.put("message", "승인된 제품 목록 조회 실패: " + e.getMessage());
+            result.put("data", new ArrayList<>());
+        }
+        
+        System.out.println("=== 승인된 제품 조회 API 응답 완료 ===");
+        return ResponseEntity.ok(result);
     }
-    
     /**
-     * 승인 대기 제품 조회 - 직원 이름 조인 포함
+     * ✅ 승인 대기 제품 조회 - 다른 컨트롤러와 동일한 응답 구조
      */
     @GetMapping("/pending")
-    public ResponseEntity<List<ProductVO>> getPendingProducts() {
-        List<ProductVO> products = productService.getPendingProducts();
+    public ResponseEntity<Map<String, Object>> getPendingProducts() {
+        Map<String, Object> result = new HashMap<>();
         
-        // 로깅: 승인 대기 제품의 직원 정보 확인
-        System.out.println("승인 대기 제품 수: " + products.size());
-        products.forEach(product -> {
-            System.out.println("제품ID: " + product.getProductId() + 
-                             ", 등록자ID: " + product.getRegUser() + 
-                             ", 등록자명: " + product.getRegUserName());
-        });
+        try {
+            List<ProductVO> products = productService.getPendingProducts();
+            
+            result.put("result_code", "SUCCESS");
+            result.put("message", "성공");
+            result.put("data", products);
+            
+            // 로깅: 승인 대기 제품의 직원 정보 확인
+            System.out.println("승인 대기 제품 수: " + products.size());
+            products.forEach(product -> {
+                System.out.println("제품ID: " + product.getProductId() + 
+                                 ", 등록자ID: " + product.getRegUser() + 
+                                 ", 등록자명: " + product.getRegUserName());
+            });
+            
+        } catch (Exception e) {
+            result.put("result_code", "FAIL");
+            result.put("message", "승인 대기 제품 목록 조회 실패: " + e.getMessage());
+            result.put("data", new ArrayList<>());
+        }
         
-        return ResponseEntity.ok(products);
+        return ResponseEntity.ok(result);
     }
     
     /**
-     * 제품 목록 조회 (POST 방식) - 직원 이름 조인 포함
+     * ✅ 제품 목록 조회 (POST 방식) - 다른 컨트롤러와 동일한 응답 구조
      */
     @PostMapping("/search")
-    public ResponseEntity<List<ProductVO>> getProductList(@RequestBody ProductVO productVO) {
-        List<ProductVO> products = productService.getProductList(productVO);
-        return ResponseEntity.ok(products);
+    public ResponseEntity<Map<String, Object>> getProductList(@RequestBody ProductVO productVO) {
+        Map<String, Object> result = new HashMap<>();
+        
+        try {
+            List<ProductVO> products = productService.getProductList(productVO);
+            
+            result.put("result_code", "SUCCESS");
+            result.put("message", "성공");
+            result.put("data", products);
+            
+        } catch (Exception e) {
+            result.put("result_code", "FAIL");
+            result.put("message", "제품 목록 조회 실패: " + e.getMessage());
+            result.put("data", new ArrayList<>());
+        }
+        
+        return ResponseEntity.ok(result);
     }
     
     /**
-     * ✅ 제품 검색 (GET 방식, 파라미터 기반) - 날짜 처리 강화
+     * ✅ 제품 검색 (GET 방식, 파라미터 기반) - 다른 컨트롤러와 동일한 응답 구조
      */
     @GetMapping("/search")
-    public ResponseEntity<List<ProductVO>> searchProducts(@RequestParam Map<String, Object> params) {
+    public ResponseEntity<Map<String, Object>> searchProducts(@RequestParam Map<String, Object> params) {
+        Map<String, Object> result = new HashMap<>();
+        
         try {
             System.out.println("=== 검색 파라미터 처리 시작 ===");
             System.out.println("원본 파라미터: " + params);
@@ -172,33 +299,57 @@ public class ProductController {
             
             List<ProductVO> products = productService.searchProducts(processedParams);
             
+            result.put("result_code", "SUCCESS");
+            result.put("message", "성공");
+            result.put("data", products);
+            
             System.out.println("✅ 검색 완료: " + products.size() + "개 결과");
-            return ResponseEntity.ok(products);
             
         } catch (Exception e) {
             System.err.println("=== 검색 처리 중 오류 ===");
             System.err.println("오류 메시지: " + e.getMessage());
             e.printStackTrace();
-            return ResponseEntity.status(500).body(new ArrayList<>());
+            
+            result.put("result_code", "FAIL");
+            result.put("message", "검색 중 오류가 발생했습니다: " + e.getMessage());
+            result.put("data", new ArrayList<>());
         }
+        
+        return ResponseEntity.ok(result);
     }
     
     /**
-     * 특정 제품 조회 - 직원 이름 조인 포함
+     * ✅ 특정 제품 조회 - 다른 컨트롤러와 동일한 응답 구조
      */
     @GetMapping("/{productId}")
-    public ResponseEntity<ProductVO> getProduct(@PathVariable String productId) {
-        ProductVO product = productService.getProduct(productId);
-        if (product != null) {
-            // 로깅: 조회된 제품의 직원 정보 확인
-            System.out.println("조회된 제품: " + productId);
-            System.out.println("등록자ID: " + product.getRegUser() + ", 등록자명: " + product.getRegUserName());
-            System.out.println("수정자ID: " + product.getUpdateUser() + ", 수정자명: " + product.getUpdateUserName());
+    public ResponseEntity<Map<String, Object>> getProduct(@PathVariable String productId) {
+        Map<String, Object> result = new HashMap<>();
+        
+        try {
+            ProductVO product = productService.getProduct(productId);
             
-            return ResponseEntity.ok(product);
-        } else {
-            return ResponseEntity.notFound().build();
+            if (product != null) {
+                result.put("result_code", "SUCCESS");
+                result.put("message", "성공");
+                result.put("data", product);
+                
+                // 로깅: 조회된 제품의 직원 정보 확인
+                System.out.println("조회된 제품: " + productId);
+                System.out.println("등록자ID: " + product.getRegUser() + ", 등록자명: " + product.getRegUserName());
+                System.out.println("수정자ID: " + product.getUpdateUser() + ", 수정자명: " + product.getUpdateUserName());
+            } else {
+                result.put("result_code", "FAIL");
+                result.put("message", "제품을 찾을 수 없습니다");
+                result.put("data", null);
+            }
+            
+        } catch (Exception e) {
+            result.put("result_code", "FAIL");
+            result.put("message", "제품 조회 실패: " + e.getMessage());
+            result.put("data", null);
         }
+        
+        return ResponseEntity.ok(result);
     }
     
     /**
@@ -331,7 +482,7 @@ public class ProductController {
     }
     
     /**
-     * 제품 등록 - 등록 시점에 제품 ID 자동 생성 (강화된 디버깅 버전)
+     * ✅ 제품 등록 - 다른 컨트롤러와 동일한 응답 구조
      */
     @PostMapping
     public ResponseEntity<Map<String, Object>> createProduct(@RequestBody ProductVO productVO) {
@@ -343,32 +494,37 @@ public class ProductController {
             
             // 필수 필드 검증
             if (productVO.getProductName() == null || productVO.getProductName().trim().isEmpty()) {
-                result.put("success", false);
-                result.put("message", "제품명은 필수입니다.");
+                result.put("result_code", "FAIL");
+                result.put("message", "제품명은 필수입니다");
+                result.put("data", null);
                 return ResponseEntity.badRequest().body(result);
             }
             
             if (productVO.getVendorName() == null || productVO.getVendorName().trim().isEmpty()) {
-                result.put("success", false);
-                result.put("message", "브랜드명은 필수입니다.");
+                result.put("result_code", "FAIL");
+                result.put("message", "브랜드명은 필수입니다");
+                result.put("data", null);
                 return ResponseEntity.badRequest().body(result);
             }
             
             if (productVO.getCategoryMain() == null || productVO.getCategoryMain().trim().isEmpty()) {
-                result.put("success", false);
-                result.put("message", "카테고리는 필수입니다.");
+                result.put("result_code", "FAIL");
+                result.put("message", "카테고리는 필수입니다");
+                result.put("data", null);
                 return ResponseEntity.badRequest().body(result);
             }
             
             if (productVO.getCompId() == null || productVO.getCompId().trim().isEmpty()) {
-                result.put("success", false);
-                result.put("message", "회사코드는 필수입니다.");
+                result.put("result_code", "FAIL");
+                result.put("message", "회사코드는 필수입니다");
+                result.put("data", null);
                 return ResponseEntity.badRequest().body(result);
             }
             
             if (productVO.getUnit() == null || productVO.getUnit().trim().isEmpty()) {
-                result.put("success", false);
-                result.put("message", "단위는 필수입니다.");
+                result.put("result_code", "FAIL");
+                result.put("message", "단위는 필수입니다");
+                result.put("data", null);
                 return ResponseEntity.badRequest().body(result);
             }
             
@@ -418,11 +574,13 @@ public class ProductController {
                     }
                 }
                 
-                result.put("success", true);
+                result.put("result_code", "SUCCESS");
                 result.put("message", "제품이 성공적으로 등록되었습니다. 승인 후 판매 가능합니다.");
-                result.put("productId", generatedProductId);
-                result.put("status", productVO.getStatus());
-                result.put("regUserName", savedProduct != null ? savedProduct.getRegUserName() : null);
+                result.put("data", Map.of(
+                    "productId", generatedProductId,
+                    "status", productVO.getStatus(),
+                    "regUserName", savedProduct != null ? savedProduct.getRegUserName() : null
+                ));
                 
                 // 로깅: 등록된 제품의 직원 정보
                 System.out.println("=== 제품 등록 완료 ===");
@@ -432,8 +590,9 @@ public class ProductController {
                     System.out.println("등록자명: " + savedProduct.getRegUserName());
                 }
             } else {
-                result.put("success", false);
-                result.put("message", "제품 등록에 실패했습니다.");
+                result.put("result_code", "FAIL");
+                result.put("message", "제품 등록에 실패했습니다");
+                result.put("data", null);
                 System.err.println("❌ 제품 저장 실패: saveResult = " + saveResult);
             }
             
@@ -443,8 +602,9 @@ public class ProductController {
             System.err.println("예외 메시지: " + e.getMessage());
             e.printStackTrace();
             
-            result.put("success", false);
+            result.put("result_code", "FAIL");
             result.put("message", "제품 등록 중 오류가 발생했습니다: " + e.getMessage());
+            result.put("data", null);
         }
         
         System.out.println("=== 제품 등록 응답 ===");
@@ -454,7 +614,7 @@ public class ProductController {
     }
     
     /**
-     * 제품 정보 수정
+     * ✅ 제품 정보 수정 - 다른 컨트롤러와 동일한 응답 구조
      */
     @PutMapping("/{productId}")
     public ResponseEntity<Map<String, Object>> updateProduct(
@@ -467,9 +627,10 @@ public class ProductController {
             // 제품 존재 여부 확인
             ProductVO existingProduct = productService.getProduct(productId);
             if (existingProduct == null) {
-                result.put("success", false);
+                result.put("result_code", "FAIL");
                 result.put("message", "존재하지 않는 제품입니다: " + productId);
-                return ResponseEntity.notFound().build();
+                result.put("data", null);
+                return ResponseEntity.badRequest().body(result);
             }
             
             productVO.setProductId(productId);
@@ -479,9 +640,11 @@ public class ProductController {
                 // 수정 후 조인된 데이터로 다시 조회
                 ProductVO updatedProduct = productService.getProduct(productId);
                 
-                result.put("success", true);
-                result.put("message", "제품이 성공적으로 수정되었습니다.");
-                result.put("updateUserName", updatedProduct != null ? updatedProduct.getUpdateUserName() : null);
+                result.put("result_code", "SUCCESS");
+                result.put("message", "제품이 성공적으로 수정되었습니다");
+                result.put("data", Map.of(
+                    "updateUserName", updatedProduct != null ? updatedProduct.getUpdateUserName() : null
+                ));
                 
                 // 로깅: 수정된 제품의 직원 정보
                 System.out.println("제품 수정 완료:");
@@ -491,26 +654,21 @@ public class ProductController {
                     System.out.println("수정자명: " + updatedProduct.getUpdateUserName());
                 }
             } else {
-                result.put("success", false);
-                result.put("message", "제품 수정에 실패했습니다.");
-            }
-        } catch (org.springframework.dao.DataIntegrityViolationException e) {
-            result.put("success", false);
-            if (e.getMessage().contains("unique constraint")) {
-                result.put("message", "중복된 데이터가 존재합니다. 제품명이나 다른 정보를 확인해주세요.");
-            } else {
-                result.put("message", "데이터 무결성 오류가 발생했습니다: " + e.getMessage());
+                result.put("result_code", "FAIL");
+                result.put("message", "제품 수정에 실패했습니다");
+                result.put("data", null);
             }
         } catch (Exception e) {
-            result.put("success", false);
+            result.put("result_code", "FAIL");
             result.put("message", "제품 수정 중 오류가 발생했습니다: " + e.getMessage());
+            result.put("data", null);
         }
         
         return ResponseEntity.ok(result);
     }
     
     /**
-     * ✅ 제품 중단 API - 상태를 중단(040004)으로 변경
+     * ✅ 제품 중단 API - 다른 컨트롤러와 동일한 응답 구조
      */
     @PutMapping("/{productId}/stop")
     public ResponseEntity<Map<String, Object>> stopProduct(
@@ -523,9 +681,10 @@ public class ProductController {
             // 제품 존재 여부 확인
             ProductVO existingProduct = productService.getProduct(productId);
             if (existingProduct == null) {
-                result.put("success", false);
+                result.put("result_code", "FAIL");
                 result.put("message", "존재하지 않는 제품입니다: " + productId);
-                return ResponseEntity.notFound().build();
+                result.put("data", null);
+                return ResponseEntity.badRequest().body(result);
             }
             
             String updateUser = (String) requestData.getOrDefault("updateUser", "SYSTEM");
@@ -543,9 +702,11 @@ public class ProductController {
                 // 중단 후 제품 정보 조회 (처리자 이름 포함)
                 ProductVO afterProduct = productService.getProduct(productId);
                 
-                result.put("success", true);
-                result.put("message", "제품이 중단 상태로 변경되었습니다.");
-                result.put("stopperName", afterProduct != null ? afterProduct.getUpdateUserName() : null);
+                result.put("result_code", "SUCCESS");
+                result.put("message", "제품이 중단 상태로 변경되었습니다");
+                result.put("data", Map.of(
+                    "stopperName", afterProduct != null ? afterProduct.getUpdateUserName() : null
+                ));
                 
                 // 로깅: 중단 처리 결과
                 System.out.println("제품 중단 완료:");
@@ -556,12 +717,14 @@ public class ProductController {
                     System.out.println("변경후상태: " + afterProduct.getStatus());
                 }
             } else {
-                result.put("success", false);
-                result.put("message", "제품 중단 처리에 실패했습니다.");
+                result.put("result_code", "FAIL");
+                result.put("message", "제품 중단 처리에 실패했습니다");
+                result.put("data", null);
             }
         } catch (Exception e) {
-            result.put("success", false);
+            result.put("result_code", "FAIL");
             result.put("message", "제품 중단 처리 중 오류가 발생했습니다: " + e.getMessage());
+            result.put("data", null);
             System.err.println("제품 중단 처리 오류: " + e.getMessage());
             e.printStackTrace();
         }
@@ -570,7 +733,7 @@ public class ProductController {
     }
     
     /**
-     * 제품 삭제 (기존 유지 - 실제 삭제용)
+     * ✅ 제품 삭제 - 다른 컨트롤러와 동일한 응답 구조
      */
     @DeleteMapping("/{productId}")
     public ResponseEntity<Map<String, Object>> deleteProduct(@PathVariable String productId) {
@@ -580,36 +743,51 @@ public class ProductController {
             int deleteResult = productService.removeProduct(productId);
             
             if (deleteResult > 0) {
-                result.put("success", true);
-                result.put("message", "제품이 성공적으로 삭제되었습니다.");
+                result.put("result_code", "SUCCESS");
+                result.put("message", "제품이 성공적으로 삭제되었습니다");
+                result.put("data", null);
             } else {
-                result.put("success", false);
-                result.put("message", "제품 삭제에 실패했습니다.");
+                result.put("result_code", "FAIL");
+                result.put("message", "제품 삭제에 실패했습니다");
+                result.put("data", null);
             }
         } catch (Exception e) {
-            result.put("success", false);
+            result.put("result_code", "FAIL");
             result.put("message", "제품 삭제 중 오류가 발생했습니다: " + e.getMessage());
+            result.put("data", null);
         }
         
         return ResponseEntity.ok(result);
     }
     
     /**
-     * 제품 ID 중복 확인
+     * ✅ 제품 ID 중복 확인 - 다른 컨트롤러와 동일한 응답 구조
      */
     @GetMapping("/check/{productId}")
     public ResponseEntity<Map<String, Object>> checkProductId(@PathVariable String productId) {
         Map<String, Object> result = new HashMap<>();
-        boolean exists = productService.isProductIdExists(productId);
         
-        result.put("exists", exists);
-        result.put("message", exists ? "이미 존재하는 제품ID입니다." : "사용 가능한 제품ID입니다.");
+        try {
+            boolean exists = productService.isProductIdExists(productId);
+            
+            result.put("result_code", "SUCCESS");
+            result.put("message", "성공");
+            result.put("data", Map.of(
+                "exists", exists,
+                "message", exists ? "이미 존재하는 제품ID입니다" : "사용 가능한 제품ID입니다"
+            ));
+            
+        } catch (Exception e) {
+            result.put("result_code", "FAIL");
+            result.put("message", "제품 ID 확인 중 오류가 발생했습니다: " + e.getMessage());
+            result.put("data", null);
+        }
         
         return ResponseEntity.ok(result);
     }
     
     /**
-     * 제품 승인 API
+     * ✅ 제품 승인 API - 다른 컨트롤러와 동일한 응답 구조
      */
     @PostMapping("/{productId}/approve")
     public ResponseEntity<Map<String, Object>> approveProduct(
@@ -633,9 +811,11 @@ public class ProductController {
                 // 승인 후 제품 정보 조회 (수정자 이름 포함)
                 ProductVO afterProduct = productService.getProduct(productId);
                 
-                result.put("success", true);
-                result.put("message", "제품이 승인되었습니다. 이제 판매 가능합니다.");
-                result.put("approverName", afterProduct != null ? afterProduct.getUpdateUserName() : null);
+                result.put("result_code", "SUCCESS");
+                result.put("message", "제품이 승인되었습니다. 이제 판매 가능합니다");
+                result.put("data", Map.of(
+                    "approverName", afterProduct != null ? afterProduct.getUpdateUserName() : null
+                ));
                 
                 // 로깅: 승인 처리 결과
                 System.out.println("제품 승인 완료:");
@@ -645,19 +825,21 @@ public class ProductController {
                     System.out.println("승인자명: " + afterProduct.getUpdateUserName());
                 }
             } else {
-                result.put("success", false);
-                result.put("message", "제품 승인에 실패했습니다.");
+                result.put("result_code", "FAIL");
+                result.put("message", "제품 승인에 실패했습니다");
+                result.put("data", null);
             }
         } catch (Exception e) {
-            result.put("success", false);
+            result.put("result_code", "FAIL");
             result.put("message", "제품 승인 중 오류가 발생했습니다: " + e.getMessage());
+            result.put("data", null);
         }
         
         return ResponseEntity.ok(result);
     }
     
     /**
-     * 제품 반려 API
+     * ✅ 제품 반려 API - 다른 컨트롤러와 동일한 응답 구조
      */
     @PostMapping("/{productId}/reject")
     public ResponseEntity<Map<String, Object>> rejectProduct(
@@ -682,9 +864,11 @@ public class ProductController {
                 // 반려 후 제품 정보 조회 (반려자 이름 포함)
                 ProductVO afterProduct = productService.getProduct(productId);
                 
-                result.put("success", true);
-                result.put("message", "제품 승인이 거부되었습니다.");
-                result.put("rejecterName", afterProduct != null ? afterProduct.getUpdateUserName() : null);
+                result.put("result_code", "SUCCESS");
+                result.put("message", "제품 승인이 거부되었습니다");
+                result.put("data", Map.of(
+                    "rejecterName", afterProduct != null ? afterProduct.getUpdateUserName() : null
+                ));
                 
                 // 로깅: 반려 처리 결과
                 System.out.println("제품 반려 완료:");
@@ -695,12 +879,14 @@ public class ProductController {
                     System.out.println("반려자명: " + afterProduct.getUpdateUserName());
                 }
             } else {
-                result.put("success", false);
-                result.put("message", "제품 승인 거부에 실패했습니다.");
+                result.put("result_code", "FAIL");
+                result.put("message", "제품 승인 거부에 실패했습니다");
+                result.put("data", null);
             }
         } catch (Exception e) {
-            result.put("success", false);
+            result.put("result_code", "FAIL");
             result.put("message", "제품 승인 거부 중 오류가 발생했습니다: " + e.getMessage());
+            result.put("data", null);
         }
         
         return ResponseEntity.ok(result);

@@ -7,9 +7,11 @@ import BasicTable from '../table/BasicTable.vue';
 
 // ✅ formReset 이벤트 추가
 const emit = defineEmits(['searchData', 'saveData', 'openSearchModal', 'rowSelect', 'rowUnselect', 'formReset']);
+
+// ✅ loading prop 추가
 const props = defineProps({
     filters: {
-        type: Array,
+        type: Object, // ✅ Array에서 Object로 변경
         required: true
     },
     items: {
@@ -24,9 +26,17 @@ const props = defineProps({
         type: Object,
         required: true
     },
+    loading: {
+        type: Boolean,
+        default: false
+    },
     scrollHeight: {
         type: String,
         default: '400px'
+    },
+    checkType: {
+        type: String,
+        default: 'single'
     }
 });
 
@@ -34,7 +44,7 @@ const selectedItems = ref(null);
 
 const searchFormRef = ref(null);
 const inputFormRef = ref(null);
-const basicTableRef = ref(null); // ✅ BasicTable ref 추가
+const basicTableRef = ref(null);
 
 const searchData = (searchOptions) => {
     emit('searchData', searchOptions);
@@ -54,7 +64,6 @@ const onRowSelect = (data) => {
         selectedItems.value.push(data);
     }
 
-    // ✅ 부모 컴포넌트로 이벤트 전달
     emit('rowSelect', data);
 };
 
@@ -65,7 +74,6 @@ const onRowUnselect = (data) => {
         selectedItems.value = null;
     }
 
-    // ✅ 부모 컴포넌트로 이벤트 전달
     emit('rowUnselect', data);
 };
 
@@ -185,17 +193,25 @@ defineExpose({
     basicTableRef,
     handleResetClick,
     clearAllSelections,
-    resetAll // ✅ 외부에서 전체 초기화 가능
+    resetAll
 });
 </script>
+
 <template>
-    <SearchForm ref="searchFormRef" :filters="props.filters" @searchData="searchData" @openSearchModal="openSearchModal" />
+    <SearchForm 
+        ref="searchFormRef" 
+        :filters="props.filters" 
+        @searchData="searchData" 
+        @openSearchModal="openSearchModal" 
+    />
+    
     <div class="grid grid-cols-7 gap-4 mb-4 items-stretch">
         <BasicTable 
             ref="basicTableRef"
             :data="props.items" 
             :header="props.header" 
             :checked="true" 
+            :loading="props.loading"
             :scrollHeight="props.scrollHeight" 
             v-model:selection="selectedItems"
             @rowSelect="onRowSelect" 
@@ -206,9 +222,11 @@ defineExpose({
                 <slot name="btn"></slot>
             </template>
         </BasicTable>
+        
         <InputForm 
             ref="inputFormRef" 
             :inputs="props.inputs" 
+            :loading="props.loading"
             @saveData="saveData" 
             @openSearchModal="openSearchModal" 
             @resetClick="handleResetClick"
@@ -216,4 +234,5 @@ defineExpose({
         />
     </div>
 </template>
+
 <style scoped></style>
