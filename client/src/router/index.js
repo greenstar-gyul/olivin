@@ -225,12 +225,12 @@ const router = createRouter({
                     meta: { roles: ['ROLE_SYSTEM_ADMIN'] }
                 },
                  {
-                    path: '/standard/dept',
+                    path: '/views/dept',
                     name: '부서기준정보',
                     component: () => import('@/views/standard/DeptStandardPage.vue')
                 },
                 {
-                    path: '/standard/emp',
+                    path: '/views/emp',
                     name: '사원기준정보',
                     component: () => import('@/views/standard/EmpStandardPage.vue')
                 },
