@@ -46,6 +46,15 @@ public class InbndServiceImpl implements InbndService{
     } // end of processBROutbnd
     
     /**
+     * 지점 입고처리 디버그 프로시저 호출
+     * param_orderId_발주 ID
+     */
+    @Override
+    public void processBrInbndDebug(String orderId) {
+        inbndMapper.callProcBrInbndProcess(orderId);
+    } // end of processBROutbnd
+
+    /**
      * 본사 입고처리 프로시저 호출
      * param_orderId_발주 ID
      */

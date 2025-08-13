@@ -57,6 +57,9 @@
     <update id="callProcBrInbndProcess" parameterType="string" statementType="CALLABLE">
         {CALL proc_br_inbnd_process(#{orderId, mode=IN, jdbcType=VARCHAR})}
     </update>
+    <update id="callProcBrInbndProcessDebug" parameterType="string" statementType="CALLABLE">
+        {CALL proc_br_inbnd_process_debug(#{orderId, mode=IN, jdbcType=VARCHAR})}
+    </update>
     <update id="callProcHqInbndProcess" parameterType="string" statementType="CALLABLE">
         {CALL proc_hq_inbnd_process(#{orderId, mode=IN, jdbcType=VARCHAR})}
     </update>

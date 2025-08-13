@@ -15,5 +15,6 @@ public interface InbndMapper {
     List<InbndProdDVO> test(@Param("productId") String productId);
 
     void callProcBrInbndProcess(String orderId); // 지점제품입고용 프로시저 생성
+    void callProcBrInbndProcessDebug(String orderId); // 지점제품입고용 프로시저 디버그용
     void callProcHqInbndProcess(String orderId); // 본사입고용 프로시저 생성
 }
