@@ -48,7 +48,7 @@ public class InbndController {
      * 지점 입고 처리 프로시저 호출
      */
     @PostMapping("/inbnd/brProcess")
-    public void processHqOutbnd(@RequestParam String orderId) {
+    public void processBrInbnd(@RequestParam String orderId) {
         inbndService.processBrInbnd(orderId);
     } // end of processHqOutbnd
     

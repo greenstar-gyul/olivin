@@ -184,7 +184,7 @@ const getOrderData = async () => {
 };
 
 /**
- * 제품등록처리 진행 함수
+ * 제품출고처리 진행 함수 
  */
 async function callOutbndProcess(orderId) {
     try {
