@@ -9,7 +9,8 @@ defineProps({
     headerInfo: { type: Object, default: () => ({ title: 'Data Table' }) },
     columns: { type: Array, required: true },
     checked: { type: Boolean, default: false },
-    checkType: { type: String, default: 'single' }
+    checkType: { type: String, default: 'single' },
+    loading: { type: Boolean, default: false }
 });
 
 const emit = defineEmits(['rowSelect', 'rowUnselect']);
@@ -28,16 +29,47 @@ const onRowUnselect = (event) => emit('rowUnselect', event.data);
             </div>
         </div>
 
-        <DataTable v-model:selection="selectedItems" :value="data" :dataKey="dataKey" showGridlines scrollable scrollHeight="400px" tableStyle="min-width: 50rem" @rowSelect="onRowSelect" @rowUnselect="onRowUnselect">
+        <DataTable 
+            v-model:selection="selectedItems" 
+            :value="data" 
+            :dataKey="dataKey" 
+            :loading="loading"
+            showGridlines 
+            scrollable 
+            scrollHeight="400px" 
+            tableStyle="min-width: 50rem"
+            responsiveLayout="scroll"
+            stripedRows
+            @rowSelect="onRowSelect" 
+            @rowUnselect="onRowUnselect"
+        >
             <Column v-if="checked" :selectionMode="checkType" headerStyle="width: 3rem"></Column>
 
-            <Column v-for="col in columns" :key="col.field" :field="col.field" :header="col.header" :style="col.style" :class="col.class" :frozen="col.frozen" :alignFrozen="col.alignFrozen">
+            <Column 
+                v-for="col in columns" 
+                :key="col.field" 
+                :field="col.field" 
+                :header="col.header" 
+                :style="col.style" 
+                :class="col.class" 
+                :frozen="col.frozen" 
+                :alignFrozen="col.alignFrozen"
+                sortable
+            >
                 <template #body="slotProps">
                     <slot :name="`body-${col.field}`" :data="slotProps.data">
-                        {{ slotProps.data[col.field] }}
+                        {{ slotProps.data[col.field] || '' }}
                     </slot>
                 </template>
             </Column>
+
+            <!-- 데이터가 없을 때 표시할 메시지 -->
+            <template #empty>
+                <div class="text-center py-4">
+                    <i class="pi pi-info-circle mr-2"></i>
+                    조회된 데이터가 없습니다.
+                </div>
+            </template>
         </DataTable>
     </div>
 </template>

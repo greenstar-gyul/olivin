@@ -1,23 +1,68 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.olivin.app.mapper.AccountLederMapper">
-    <!-- Interface의 메서드를 통해 실행할 쿼리 정의 -->
-    <select id="selectAllList" resultType="AccountLederVO">
-    SELECT al.account_leder_id,
-       al.increase,
-       al.decrease,
-       al.balance,
-       al.detail,
-       al.write_date,
-       al.comp_id,
-       c.comp_name,
-       al.product_id,
-       p.product_name,
-       al.account_id,
-       a.account_name
-       FROM   account_leder al
-       JOIN accounts a ON al.account_id = a.account_id
-       JOIN companys c ON al.comp_id = c.comp_id
-       JOIN products p ON al.product_id = p.product_id
+
+<mapper namespace="com.olivin.app.example.mapper.AccountLederMapper">
+
+    <!-- 전체 조회 -->
+    <select id="selectAllList" resultType="com.olivin.app.example.service.AccountLederVO">
+        SELECT 
+            al.account_leder_id AS accountLederId,
+            al.increase,
+            al.decrease,
+            al.balance,
+            al.detail,
+            al.write_date AS writeDate,
+            al.comp_id AS compId,
+            c.comp_name AS compName,
+            al.account_id AS accountId,
+            a.account_name AS accountName
+        FROM account_leder al
+        LEFT JOIN accounts a ON al.account_id = a.account_id
+        LEFT JOIN companys c ON al.comp_id = c.comp_id
+        ORDER BY al.write_date DESC
     </select>
+    
+    <!-- 조건 검색 -->
+    <select id="selectByCondition" resultType="com.olivin.app.example.service.AccountLederVO" parameterType="map">
+        SELECT 
+            al.account_leder_id AS accountLederId,
+            al.increase,
+            al.decrease,
+            al.balance,
+            al.detail,
+            al.write_date AS writeDate,
+            al.comp_id AS compId,
+            c.comp_name AS compName,
+            al.account_id AS accountId,
+            a.account_name AS accountName
+        FROM account_leder al
+        LEFT JOIN accounts a ON al.account_id = a.account_id
+        LEFT JOIN companys c ON al.comp_id = c.comp_id
+        <where>
+            <if test="accountId != null and accountId != ''">
+                AND al.account_id LIKE '%' || #{accountId} || '%'
+            </if>
+            <if test="accountName != null and accountName != ''">
+                AND a.account_name LIKE '%' || #{accountName} || '%'
+            </if>
+            <if test="compId != null and compId != ''">
+                AND al.comp_id LIKE '%' || #{compId} || '%'
+            </if>
+            <if test="compName != null and compName != ''">
+                AND c.comp_name LIKE '%' || #{compName} || '%'
+            </if>
+            <if test="startDate != null and startDate != ''">
+                <![CDATA[
+                    AND al.write_date >= #{startDate}
+                ]]>
+            </if>
+            <if test="endDate != null and endDate != ''">
+                <![CDATA[
+                    AND al.write_date <= #{endDate}
+                ]]>
+            </if>
+        </where>
+        ORDER BY al.write_date DESC
+    </select>
+
 </mapper>
