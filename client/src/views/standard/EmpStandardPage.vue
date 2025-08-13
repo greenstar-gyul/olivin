@@ -319,6 +319,16 @@ const onRowUnselect = () => {
   selectedEmp.value = null;
 };
 
+// ✅ 폼 초기화 이벤트 핸들러 추가
+const onFormReset = () => {
+  console.log('EmpStandardPage - 폼 초기화 이벤트 받음');
+  
+  // 선택된 사원 데이터 초기화
+  selectedEmp.value = null;
+  
+  console.log('EmpStandardPage - 선택된 사원 초기화 완료');
+};
+
 // ✅ 저장 처리
 const saveData = async (inputData) => {
   try {
@@ -482,7 +492,7 @@ const openSearchModal = async (inputName) => {
           
           // ✅ 핵심 수정: 가능한 모든 필드명 케이스 처리
           departmentModalItems.value = response.data.data.map((dept, index) => {
-            console.log(`🔄 처리 중인 부서 #${index}:`, dept);
+            console.log(`📄 처리 중인 부서 #${index}:`, dept);
             
             // 다양한 케이스의 필드명을 모두 확인
             let departmentId = null;
@@ -687,6 +697,7 @@ onMounted(async () => {
     @openSearchModal="openSearchModal"
     @rowSelect="onRowSelect"
     @rowUnselect="onRowUnselect"
+    @formReset="onFormReset"
   >
     <!-- 퇴사처리 버튼 -->
     <template #btn>
@@ -712,7 +723,7 @@ onMounted(async () => {
     @confirm="confirmCompany"
   />
 
-  <!-- 부서 선택 모달 - 데이터 매핑 문제 완전 해결 -->
+  <!-- 부서 선택 모달 -->
   <DialogModal 
     :display="departmentModalVisible"
     title="부서 선택"

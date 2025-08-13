@@ -12,7 +12,8 @@ const props = defineProps({
     }
 });
 
-const emit = defineEmits(['saveData', 'openSearchModal', 'fileSelected', 'fileUploaded', 'fileRemoved']);
+// ✅ resetClick 이벤트 추가
+const emit = defineEmits(['saveData', 'openSearchModal', 'fileSelected', 'fileUploaded', 'fileRemoved', 'resetClick']);
 
 // 검색 조건을 담을 객체
 const inputDatas = ref({});
@@ -102,6 +103,17 @@ const resetInputDatas = () => {
     initializeInputDatas();
 };
 
+// ✅ 새로운 초기화 핸들러 - 부모에게 이벤트 전송
+const handleReset = () => {
+    console.log('InputForm - 초기화 버튼 클릭');
+    
+    // 1. 기존 초기화 실행
+    resetInputDatas();
+    
+    // 2. 부모(StandardInput)에게 알림
+    emit('resetClick');
+};
+
 const confirm = () => {
     emit('saveData', inputDatas.value);
 };
@@ -124,7 +136,8 @@ defineExpose({
                     <div class="font-semibold text-2xl">{{ inputs.title }}</div>
                 </div>
                 <div class="flex items-center gap-2 flex-nowrap">
-                    <Button label="초기화" severity="secondary" @click="resetInputDatas" outlined />
+                    <!-- ✅ 초기화 버튼에 새로운 핸들러 연결 -->
+                    <Button label="초기화" severity="secondary" @click="handleReset" outlined />
                     <Button label="등록" @click="confirm" outlined />
                     <!-- <Button label="엑셀 다운로드" severity="success" class="min-w-fit whitespace-nowrap" outlined /> -->
                 </div>

@@ -30,12 +30,12 @@ export const useAuthStore = defineStore(
             });
         };
 
-        const hasAnyPermission = (permissionNames) => {
-            return permissionNames.some((permName) => hasPermission(permName));
+        const hasAnyPermission = (permissionIds) => {
+            return permissionIds.some((permId) => hasPermission(permId));
         };
 
-        const hasAllPermissions = (permissionNames) => {
-            return permissionNames.every((permName) => hasPermission(permName));
+        const hasAllPermissions = (permissionIds) => {
+            return permissionIds.every((permId) => hasPermission(permId));
         };
 
         const hasRole = (roleNameToCheck) => {

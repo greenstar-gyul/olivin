@@ -38,29 +38,29 @@ const closeModal = () => {
 // 모달창 확인 버튼 클릭 시 호출되는 함수
 // 필요한 로직 작성
 const confirmModal = async (selectedItems) => {
-    // console.log('Selected items from modal:', selectedItems);
-    // console.log('확인용:', selectedItems.orderTitle);
+  // console.log('선택 발주서 정보 확인:', selectedItems);
+  // console.log('확인용:', selectedItems.orderTitle);
 
-    /* 입고 기본키 생성 */
-    const inbndCode = await axios.get('/api/inbnd/getCode');
-    /* 입고일 : 오늘 날짜로 설정 */
-    const today = moment().format('YY/MM/DD');
-
-    // 선택한 발주정보를 formData로 전달
-    formData.value.orderId = selectedItems.orderId;
-    formData.value.inbndNo = inbndCode.data;
-    formData.value.orderTitle = selectedItems.orderTitle;
-    formData.value.outbndFrom = selectedItems.orderTo;
-    formData.value.inbndTo = selectedItems.orderFrom;
-    formData.value.inbndDate = today;
-    // console.log('테에스으트', formData.value);
-
-    /* 제품 상세정보 불러오기 */
-    const selOrderId = formData.value.orderId;
-    // console.log('id값 확인', selOrderId);
-    const res = await axios.get(`/api/orders/${selOrderId}`);
-    // console.log('상세값확인', res.data.detail);
-    const details = res.data.detail;
+  /* 입고 기본키 생성 */
+  const inbndCode = await axios.get('/api/inbnd/getCode');
+  /* 입고일 : 오늘 날짜로 설정 */ 
+  const today = moment().format("YY/MM/DD");
+  
+  // 선택한 발주정보를 formData로 전달
+  formData.value.orderId = selectedItems.orderId;
+  formData.value.inbndNo = inbndCode.data;
+  formData.value.orderTitle = selectedItems.orderTitle;
+  formData.value.outbndFrom = selectedItems.orderTo;
+  formData.value.inbndTo = selectedItems.orderFrom;
+  formData.value.inbndDate = today;
+  // console.log('테에스으트', formData.value);
+  
+  /* 제품 상세정보 불러오기 */
+  const selOrderId = formData.value.orderId;
+  console.log('id값 확인', selOrderId);
+  const res = await axios.get(`/api/orders/${selOrderId}`);
+  // console.log('상세값확인', res.data.detail);
+  const details = res.data.detail;
 
     for (let id = 0; id < details.length; id++) {
         details[id].id = id;
