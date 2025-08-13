@@ -147,6 +147,7 @@ const getOrderData = async () => {
 async function callInbndProcess(orderId) {
     try {
         const response = await axios.post('/api/inbnd/brProcess', null, {
+        // const response = await axios.post('/api/inbnd/brProcessDebug', null, {
             params: {
                 orderId: orderId
             }
