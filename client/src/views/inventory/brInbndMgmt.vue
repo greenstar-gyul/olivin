@@ -39,7 +39,7 @@ const closeModal = () => {
 // 모달창 확인 버튼 클릭 시 호출되는 함수
 // 필요한 로직 작성
 const confirmModal = async (selectedItems) => {
-  // console.log('Selected items from modal:', selectedItems);
+  // console.log('선택 발주서 정보 확인:', selectedItems);
   // console.log('확인용:', selectedItems.orderTitle);
 
   /* 입고 기본키 생성 */
@@ -58,7 +58,7 @@ const confirmModal = async (selectedItems) => {
   
   /* 제품 상세정보 불러오기 */
   const selOrderId = formData.value.orderId;
-  // console.log('id값 확인', selOrderId);
+  console.log('id값 확인', selOrderId);
   const res = await axios.get(`/api/orders/${selOrderId}`);
   // console.log('상세값확인', res.data.detail);
   const details = res.data.detail;
