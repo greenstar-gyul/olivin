@@ -286,13 +286,9 @@ public class BranchDashboardService {
     private String formatCurrency(BigDecimal amount) {
         if (amount == null) return "0원";
         
-        if (amount.compareTo(new BigDecimal("100000000")) >= 0) {
-            return amount.divide(new BigDecimal("100000000"), 1, RoundingMode.HALF_UP) + "억원";
-        } else if (amount.compareTo(new BigDecimal("10000")) >= 0) {
-            return amount.divide(new BigDecimal("10000"), 1, RoundingMode.HALF_UP) + "만원";
-        } else {
-            return amount.intValue() + "원";
-        }
+        // 천 단위 구분 콤마를 사용한 원 단위 표시
+        java.text.DecimalFormat df = new java.text.DecimalFormat("#,###");
+        return df.format(amount) + "원";
     }
 
     private String formatPercentage(BigDecimal percentage) {

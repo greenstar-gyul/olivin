@@ -39,9 +39,9 @@ const fetchData = async (url, dataName) => {
     try {
         console.log(`Fetching ${dataName} from:`, url);
 
-        // 시스템 관리자인 경우 공급업체 ID를 쿼리 파라미터로 추가
+        // 공급업체 ID를 쿼리 파라미터로 추가 (시스템 관리자이거나 공급업체 사용자 모두)
         let finalUrl = url;
-        if (isSystemAdmin.value && selectedSupplierId.value) {
+        if (selectedSupplierId.value) {
             const separator = url.includes('?') ? '&' : '?';
             finalUrl = `${url}${separator}supplierId=${selectedSupplierId.value}`;
         }
@@ -166,10 +166,11 @@ const fetchActiveOrders = async () => {
 
         if (data && Array.isArray(data) && data.length > 0) {
             activeOrders.value = data.map((order) => ({
-                orderId: order.ORDER_ID || order.orderId || '알 수 없음',
+                orderId: order.ORDER_ID || order.orderId || 'N/A',
                 orderDate: order.ORDER_DATE || order.orderDate || '',
                 totalAmount: order.TOTAL_AMOUNT || order.totalAmount || '0원',
-                status: order.STATUS || order.status || 'UNKNOWN'
+                status: order.STATUS || order.status || 'UNKNOWN',
+                statusName: order.STATUS_NAME || order.statusName || '알 수 없음'
             }));
 
             console.log('처리된 진행 중인 발주 데이터:', activeOrders.value);
@@ -279,7 +280,7 @@ const createOrderTrendChart = async () => {
                 labels: recentMonths,
                 datasets: [
                     {
-                        label: '월간 발주 수량',
+                        label: '월간 발주 건수',
                         data: orderCounts,
                         borderColor: '#48bb78',
                         backgroundColor: '#48bb78' + '20',
@@ -300,7 +301,7 @@ const createOrderTrendChart = async () => {
                     tooltip: {
                         callbacks: {
                             label: function (context) {
-                                return context.dataset.label + ': ' + context.parsed.y + '개';
+                                return context.dataset.label + ': ' + context.parsed.y + '건';
                             }
                         }
                     }
@@ -313,12 +314,12 @@ const createOrderTrendChart = async () => {
                     },
                     y: {
                         display: true,
-                        title: { display: true, text: '발주 수량 (개)' },
+                        title: { display: true, text: '발주 건수 (건)' },
                         beginAtZero: true,
                         grid: { color: '#e2e8f0' },
                         ticks: {
                             callback: function (value) {
-                                return value + '개';
+                                return value + '건';
                             }
                         }
                     }
@@ -343,7 +344,7 @@ const createEmptyOrderTrendChart = (ctx) => {
             labels: ['데이터 없음'],
             datasets: [
                 {
-                    label: '월간 수주량',
+                    label: '월간 발주 건수',
                     data: [0],
                     borderColor: '#a0aec0',
                     backgroundColor: '#a0aec0' + '20',
@@ -358,7 +359,7 @@ const createEmptyOrderTrendChart = (ctx) => {
             plugins: { legend: { display: false } },
             scales: {
                 x: { display: true, title: { display: true, text: '월' } },
-                y: { display: true, title: { display: true, text: '수주량 (건)' }, beginAtZero: true }
+                y: { display: true, title: { display: true, text: '발주 건수 (건)' }, beginAtZero: true }
             }
         }
     });
@@ -456,9 +457,11 @@ const createEmptyCategorySupplyChart = (ctx) => {
 
 // 전체 데이터 로딩
 const loadAllData = async () => {
-    if (isSystemAdmin.value && !selectedSupplierId.value) {
-        console.log('공급업체가 선택되지 않음');
-        errorMessage.value = '본사 계정으로 접속했으나 공급업체가 선택되지 않았습니다. 공급업체를 선택해주세요.';
+    if (!selectedSupplierId.value) {
+        console.log('공급업체 ID가 없음');
+        errorMessage.value = isSystemAdmin.value 
+            ? '본사 계정으로 접속했으나 공급업체가 선택되지 않았습니다. 공급업체를 선택해주세요.'
+            : '공급업체 정보를 확인할 수 없습니다. 다시 로그인해주세요.';
         return;
     }
 
@@ -655,74 +658,54 @@ onUnmounted(() => {
 
         <!-- KPI 카드들 -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <!-- 1. 월간 발주 수량 -->
+            <!-- 1. 이번 달 발주 건수 -->
             <div class="card">
-                <div class="flex justify-between items-start mb-4">
-                    <div>
-                        <div class="text-muted-color text-sm font-medium mb-2 uppercase tracking-wide">월간 발주 수량</div>
-                        <div class="text-surface-900 dark:text-surface-0 text-2xl font-bold">
-                            {{ kpiData.monthlyOrders || '로딩 중...' }}
-                        </div>
-                        <div :class="['text-sm font-medium mt-1', getChangeClass(kpiData.ordersGrowth)]">
-                            {{ kpiData.ordersGrowth || '계산 중...' }}
-                        </div>
+                <div class="mb-4">
+                    <div class="text-muted-color text-sm font-medium mb-2 uppercase tracking-wide">이번 달 발주 건수</div>
+                    <div class="text-surface-900 dark:text-surface-0 text-2xl font-bold">
+                        {{ kpiData.qualityScore || '로딩 중...' }}
                     </div>
-                    <div class="flex items-center justify-center bg-green-100 dark:bg-green-400/10 rounded-lg w-12 h-12">
-                        <i class="pi pi-shopping-bag text-green-500 text-xl"></i>
+                    <div :class="['text-sm font-medium mt-1', getChangeClass(kpiData.qualityScoreChange)]">
+                        {{ kpiData.qualityScoreChange || '계산 중...' }}
                     </div>
                 </div>
             </div>
 
-            <!-- 2. 발주 완료율 -->
+            <!-- 2. 월간 수주 금액 -->
             <div class="card">
-                <div class="flex justify-between items-start mb-4">
-                    <div>
-                        <div class="text-muted-color text-sm font-medium mb-2 uppercase tracking-wide">발주 완료율</div>
-                        <div class="text-surface-900 dark:text-surface-0 text-2xl font-bold">
-                            {{ kpiData.completionRate || '로딩 중...' }}
-                        </div>
-                        <div :class="['text-sm font-medium mt-1', getChangeClass(kpiData.completionRateChange)]">
-                            {{ kpiData.completionRateChange || '계산 중...' }}
-                        </div>
+                <div class="mb-4">
+                    <div class="text-muted-color text-sm font-medium mb-2 uppercase tracking-wide">월간 수주 금액</div>
+                    <div class="text-surface-900 dark:text-surface-0 text-2xl font-bold">
+                        {{ kpiData.monthlyOrders || '로딩 중...' }}
                     </div>
-                    <div class="flex items-center justify-center bg-blue-100 dark:bg-blue-400/10 rounded-lg w-12 h-12">
-                        <i class="pi pi-check-circle text-blue-500 text-xl"></i>
+                    <div :class="['text-sm font-medium mt-1', getChangeClass(kpiData.ordersGrowth)]">
+                        {{ kpiData.ordersGrowth || '계산 중...' }}
                     </div>
                 </div>
             </div>
 
-            <!-- 3. 평균 납기일 -->
+            <!-- 3. 발주 완료율 -->
             <div class="card">
-                <div class="flex justify-between items-start mb-4">
-                    <div>
-                        <div class="text-muted-color text-sm font-medium mb-2 uppercase tracking-wide">평균 납기일</div>
-                        <div class="text-surface-900 dark:text-surface-0 text-2xl font-bold">
-                            {{ kpiData.avgDeliveryTime || '로딩 중...' }}
-                        </div>
-                        <div :class="['text-sm font-medium mt-1', getChangeClass(kpiData.deliveryTimeChange, true)]">
-                            {{ kpiData.deliveryTimeChange || '계산 중...' }}
-                        </div>
+                <div class="mb-4">
+                    <div class="text-muted-color text-sm font-medium mb-2 uppercase tracking-wide">발주 완료율</div>
+                    <div class="text-surface-900 dark:text-surface-0 text-2xl font-bold">
+                        {{ kpiData.completionRate || '로딩 중...' }}
                     </div>
-                    <div class="flex items-center justify-center bg-orange-100 dark:bg-orange-400/10 rounded-lg w-12 h-12">
-                        <i class="pi pi-clock text-orange-500 text-xl"></i>
+                    <div :class="['text-sm font-medium mt-1', getChangeClass(kpiData.completionRateChange)]">
+                        {{ kpiData.completionRateChange || '계산 중...' }}
                     </div>
                 </div>
             </div>
 
-            <!-- 4. 월간 발주 건수 -->
+            <!-- 4. 평균 납기일 -->
             <div class="card">
-                <div class="flex justify-between items-start mb-4">
-                    <div>
-                        <div class="text-muted-color text-sm font-medium mb-2 uppercase tracking-wide">월간 발주 건수</div>
-                        <div class="text-surface-900 dark:text-surface-0 text-2xl font-bold">
-                            {{ kpiData.qualityScore || '로딩 중...' }}
-                        </div>
-                        <div :class="['text-sm font-medium mt-1', getChangeClass(kpiData.qualityScoreChange)]">
-                            {{ kpiData.qualityScoreChange || '계산 중...' }}
-                        </div>
+                <div class="mb-4">
+                    <div class="text-muted-color text-sm font-medium mb-2 uppercase tracking-wide">평균 납기일</div>
+                    <div class="text-surface-900 dark:text-surface-0 text-2xl font-bold">
+                        {{ kpiData.avgDeliveryTime || '로딩 중...' }}
                     </div>
-                    <div class="flex items-center justify-center bg-purple-100 dark:bg-purple-400/10 rounded-lg w-12 h-12">
-                        <i class="pi pi-file-o text-purple-500 text-xl"></i>
+                    <div :class="['text-sm font-medium mt-1', getChangeClass(kpiData.deliveryTimeChange, true)]">
+                        {{ kpiData.deliveryTimeChange || '계산 중...' }}
                     </div>
                 </div>
             </div>
@@ -732,7 +715,7 @@ onUnmounted(() => {
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
             <!-- 발주 수량 트렌드 차트 -->
             <div class="card">
-                <div class="text-surface-900 dark:text-surface-0 text-xl font-semibold mb-6">월간 발주 수량 트렌드</div>
+                <div class="text-surface-900 dark:text-surface-0 text-xl font-semibold mb-6">월간 발주 건수 트렌드</div>
                 <div class="h-80">
                     <canvas ref="orderTrendChart"></canvas>
                 </div>
@@ -760,7 +743,7 @@ onUnmounted(() => {
                             <div class="text-muted-color text-sm">{{ order.orderDate }} | {{ order.totalAmount }}</div>
                         </div>
                         <div :class="['px-3 py-1 rounded-full text-xs font-semibold', getStatusClass(order.status)]">
-                            {{ getStatusText(order.status) }}
+                            {{ order.statusName }}
                         </div>
                     </div>
                 </div>

@@ -81,17 +81,18 @@ public class SupplierDashboardService {
             DecimalFormat df = new DecimalFormat("#,###");
             DecimalFormat percentFormat = new DecimalFormat("0.0");
 
-            // 1. 월간 발주량
-            Integer monthlyOrders = supplierDashboardMapper.getMonthlyOrderCount(targetSupplierId);
-            Integer lastMonthOrders = supplierDashboardMapper.getLastMonthOrderCount(targetSupplierId);
-            log.info("발주량 데이터 - supplierId: {}, current: {}, previous: {}", targetSupplierId, monthlyOrders, lastMonthOrders);
+            // 1. 월간 수주 금액
+            Long monthlyAmount = supplierDashboardMapper.getMonthlyOrderAmount(targetSupplierId);
+            Long lastMonthAmount = supplierDashboardMapper.getLastMonthOrderAmount(targetSupplierId);
+            log.info("수주 금액 데이터 - supplierId: {}, current: {}, previous: {}", targetSupplierId, monthlyAmount, lastMonthAmount);
             
-            result.put("monthlyOrders", monthlyOrders + "개");
+            String formattedAmount = formatAmountValue(monthlyAmount != null ? monthlyAmount : 0L);
+            result.put("monthlyOrders", formattedAmount);
 
-            // 발주량 증감 계산
-            Integer ordersChange = monthlyOrders - (lastMonthOrders != null ? lastMonthOrders : 0);
-            String growthStr = (ordersChange >= 0 ? "+" : "") + ordersChange + "개";
-            result.put("ordersGrowth", growthStr);
+            // 수주 금액 증감 계산
+            Long amountChange = (monthlyAmount != null ? monthlyAmount : 0L) - (lastMonthAmount != null ? lastMonthAmount : 0L);
+            String amountChangeStr = (amountChange >= 0 ? "+" : "") + formatAmountValue(amountChange);
+            result.put("ordersGrowth", amountChangeStr);
 
             // 2. 발주 완료율
             Map<String, Object> completionData = supplierDashboardMapper.getOrderCompletionRate(targetSupplierId);
@@ -150,15 +151,15 @@ public class SupplierDashboardService {
                 result.put("deliveryTimeChange", "0일");
             }
 
-            // 4. 월간 발주 건수
-            Double qualityScore = supplierDashboardMapper.getQualityScore(targetSupplierId);
-            Double lastMonthQualityScore = supplierDashboardMapper.getLastMonthQualityScore(targetSupplierId);
+            // 4. 이번 달 발주 건수 (본사→공급업체 + 공급업체→본사 승인건수)
+            Double monthlyOrderCount = supplierDashboardMapper.getQualityScore(targetSupplierId);
+            Double lastMonthOrderCount = supplierDashboardMapper.getLastMonthQualityScore(targetSupplierId);
 
-            result.put("qualityScore", Math.round(qualityScore != null ? qualityScore : 0) + "건");
+            result.put("qualityScore", Math.round(monthlyOrderCount != null ? monthlyOrderCount : 0) + "건");
 
-            if (lastMonthQualityScore != null) {
-                double qualityChange = (qualityScore != null ? qualityScore : 0) - lastMonthQualityScore;
-                String changeStr = (qualityChange >= 0 ? "+" : "") + Math.round(qualityChange) + "건";
+            if (lastMonthOrderCount != null) {
+                double orderCountChange = (monthlyOrderCount != null ? monthlyOrderCount : 0) - lastMonthOrderCount;
+                String changeStr = (orderCountChange >= 0 ? "+" : "") + Math.round(orderCountChange) + "건";
                 result.put("qualityScoreChange", changeStr);
             } else {
                 result.put("qualityScoreChange", "+0건");
@@ -274,11 +275,13 @@ public class SupplierDashboardService {
                 return new ArrayList<>();
             }
 
+            // 임시로 단순화된 쿼리 시도
             List<Map<String, Object>> alerts = supplierDashboardMapper.getAlerts(targetSupplierId);
             log.info("공급업체 알림 {} 건 조회 완료", alerts.size());
             return alerts;
         } catch (Exception e) {
-            log.error("공급업체 알림 조회 중 오류 발생", e);
+            log.error("공급업체 알림 조회 중 오류 발생: {}", e.getMessage(), e);
+            // 오류 발생 시 빈 목록 반환
             return new ArrayList<>();
         }
     }
@@ -306,12 +309,34 @@ public class SupplierDashboardService {
     }
 
     /**
+     * 공급업체별 발주 데이터 디버깅 정보 조회
+     */
+    public List<Map<String, Object>> getSupplierOrderDebugInfo(String supplierId) {
+        log.info("공급업체 발주 데이터 디버깅 조회 시작 - supplierId: {}", supplierId);
+
+        try {
+            String targetSupplierId = validateSupplierId(supplierId);
+            if (targetSupplierId == null) {
+                log.warn("공급업체 ID를 확인할 수 없습니다.");
+                return new ArrayList<>();
+            }
+
+            List<Map<String, Object>> debugInfo = supplierDashboardMapper.getSupplierOrderDebugInfo(targetSupplierId);
+            log.info("공급업체 발주 데이터 디버깅 정보 조회 완료 - supplierId: {}, result: {}", targetSupplierId, debugInfo);
+            return debugInfo;
+        } catch (Exception e) {
+            log.error("공급업체 발주 데이터 디버깅 조회 중 오류 발생", e);
+            return new ArrayList<>();
+        }
+    }
+
+    /**
      * 기본 KPI 데이터 생성
      */
     private Map<String, Object> createEmptyKpiData() {
         Map<String, Object> emptyData = new HashMap<>();
-        emptyData.put("monthlyOrders", "0개");
-        emptyData.put("ordersGrowth", "+0개");
+        emptyData.put("monthlyOrders", "0원");
+        emptyData.put("ordersGrowth", "+0원");
         emptyData.put("completionRate", "0%");
         emptyData.put("completionRateChange", "+0.0%");
         emptyData.put("avgDeliveryTime", "0일");
@@ -319,5 +344,15 @@ public class SupplierDashboardService {
         emptyData.put("qualityScore", "0건");
         emptyData.put("qualityScoreChange", "+0건");
         return emptyData;
+    }
+
+    /**
+     * 금액 포맷팅 유틸리티 메서드
+     */
+    private String formatAmountValue(Long amount) {
+        if (amount == null || amount == 0) return "0원";
+        
+        DecimalFormat df = new DecimalFormat("#,###");
+        return df.format(amount) + "원";
     }
 }
