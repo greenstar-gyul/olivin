@@ -38,16 +38,6 @@ const router = createRouter({
                     component: () => import('@/views/account/AccountLeder.vue')
                 },
                 {
-                    path: '/views/dept',
-                    name: '부서기준정보',
-                    component: () => import('@/views/dept/DeptManagement.vue')
-                },
-                {
-                    path: '/views/emp',
-                    name: '사원기준정보',
-                    component: () => import('@/views/emp/EmpManagement.vue')
-                },
-                {
                     path: '/uikit/formlayout',
                     name: 'formlayout',
                     component: () => import('@/views/uikit/FormLayout.vue'),
@@ -225,6 +215,16 @@ const router = createRouter({
                     name: 'productApproval',
                     component: () => import('@/views/standard/ProductApprovalPage.vue'),
                     meta: { roles: ['ROLE_SYSTEM_ADMIN'] }
+                },
+                 {
+                    path: '/standard/dept',
+                    name: '부서기준정보',
+                    component: () => import('@/views/standard/DeptStandardPage.vue')
+                },
+                {
+                    path: '/standard/emp',
+                    name: '사원기준정보',
+                    component: () => import('@/views/standard/EmpStandardPage.vue')
                 },
                 /* order */
                 {
