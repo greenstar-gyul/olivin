@@ -22,9 +22,9 @@ filters.value.filters = [
     // },
     { type: 'text', label: '계정코드', value: '', placeholder: '계정코드를 입력하세요', name: 'accountId' },
     { type: 'text', label: '계정과목', value: '', placeholder: '계정과목을 입력하세요', name: 'accountName' },
-    // { type: 'dateRange', label: '회계기간', value: '', fromPlaceholder: '시작일', toPlaceholder: '종료일', name: 'dateRange' },
-    { type: 'text', label: '거래처코드', value: '', placeholder: '거래처코드를 입력하세요', name: 'compId' },
-    { type: 'text', label: '거래처명', value: '', placeholder: '거래처명을 입력하세요', name: 'compName' }
+    { type: 'dateRange', label: '회계기간', value: '', fromPlaceholder: '시작일', toPlaceholder: '종료일', name: 'dateRange' },
+    // { type: 'text', label: '거래처코드', value: '', placeholder: '거래처코드를 입력하세요', name: 'compId' },
+    { type: 'text', label: '회사명', value: '', placeholder: '회사명을 입력하세요', name: 'compName' }
 ];
 
 // 테이블에 표시할 데이터를 담을 ref
