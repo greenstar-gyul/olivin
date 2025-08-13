@@ -5,6 +5,8 @@ import Button from 'primevue/button';
 import Checkbox from 'primevue/checkbox';
 import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
+import InputText from 'primevue/inputtext';
+import Textarea from 'primevue/textarea';
 
 // API 기본 URL
 const ROLES_API_URL = '/api/roles';
@@ -35,7 +37,6 @@ const getCurrentUser = async () => {
                 if (userSource) {
                     if (typeof userSource === 'object' && userSource !== null) {
                         const possibleEmployeeIds = [userSource.employeeId, userSource.employee_id, userSource.EMPLOYEE_ID];
-
                         const possibleEmpNames = [userSource.empName, userSource.emp_name, userSource.EMP_NAME];
 
                         const foundEmployeeId = possibleEmployeeIds.find((id) => id && id !== 'admin' && String(id).trim() !== '');
@@ -105,31 +106,33 @@ const header = ref({
     rightAligned: ['employeeCount', 'permissionCount']
 });
 
-// 입력 폼 (권한 체크박스를 포함하도록 수정)
-const inputs = ref({
-    title: '역할 권한 설정',
-    inputs: [
-        { type: 'text', label: '역할ID', placeholder: '역할ID', name: 'roleId', readonly: true },
-        { type: 'text', label: '역할명', placeholder: '역할명', name: 'roleName', readonly: true },
-        { type: 'text', label: '역할설명', placeholder: '역할설명', name: 'roleDesc', readonly: true },
-        { type: 'text', label: '현재권한수', placeholder: '현재 권한 수', name: 'currentPermissionCount', readonly: true }
-    ]
-});
-
-// StandardInput 컴포넌트 ref
-const standardInputRef = ref(null);
-
-// 선택된 역할 정보
+// ✅ 선택된 역할 정보
 const selectedRole = ref(null);
 
-// 모든 권한 목록
+// ✅ 모든 권한 목록
 const allPermissions = ref([]);
 
-// 선택된 역할의 권한 목록
+// ✅ 선택된 역할의 권한 목록
 const rolePermissions = ref([]);
 
-// ✅ 선택된 권한들 (체크박스용) - String 타입으로 변경
+// ✅ 선택된 권한들 (체크박스용)
 const selectedPermissions = ref([]);
+
+// ✅ 역할 입력 폼 데이터
+const roleFormData = ref({
+    roleId: '',
+    roleName: '',
+    roleDesc: ''
+});
+
+// ✅ 편집 모드 (신규/수정 구분)
+const isEditMode = ref(false);
+
+// ✅ 폼 유효성 검사
+const formErrors = ref({
+    roleName: '',
+    roleDesc: ''
+});
 
 // 역할 목록 조회
 const loadRoles = async (searchParams = {}) => {
@@ -138,7 +141,6 @@ const loadRoles = async (searchParams = {}) => {
         console.log('역할 목록 조회 시작...');
 
         const response = await axios.get(ROLES_API_URL, { params: searchParams });
-
         console.log('역할 API 원본 응답:', response.data);
 
         let roles = [];
@@ -150,8 +152,6 @@ const loadRoles = async (searchParams = {}) => {
             console.error('예상하지 못한 응답 구조:', response.data);
             roles = [];
         }
-
-        console.log('역할 데이터:', roles);
 
         // 데이터 가공
         items.value = roles.map((item, index) => ({
@@ -167,7 +167,6 @@ const loadRoles = async (searchParams = {}) => {
         console.log('최종 역할 목록:', items.value);
     } catch (error) {
         console.error('역할 목록 조회 실패:', error);
-        console.error('에러 응답:', error.response);
         alert('데이터 조회에 실패했습니다.');
         items.value = [];
     } finally {
@@ -177,41 +176,199 @@ const loadRoles = async (searchParams = {}) => {
 
 // 모든 권한 목록 조회
 const loadAllPermissions = async () => {
-  try {
-    const response = await axios.get(PERMISSIONS_API_URL);
-    
-    if (response.data.result_code === 'SUCCESS' && response.data.data) {
-      // ✅ PERM_ID를 String으로 처리하도록 수정
-      allPermissions.value = response.data.data.map(perm => ({
-        id: String(perm.PERM_ID || perm.permId), // String으로 변환
-        name: perm.PERM_NAME || perm.permName,
-        description: perm.PERM_DESCRIPTION || perm.permDescription,
-        icon: perm.ICON || perm.icon,
-        parentTo: perm.PARENT_TO || perm.parentTo
-      }));
-      
-      console.log('모든 권한 목록:', allPermissions.value);
+    try {
+        const response = await axios.get(PERMISSIONS_API_URL);
+        
+        if (response.data.result_code === 'SUCCESS' && response.data.data) {
+            allPermissions.value = response.data.data.map(perm => ({
+                id: String(perm.PERM_ID || perm.permId),
+                name: perm.PERM_NAME || perm.permName,
+                description: perm.PERM_DESCRIPTION || perm.permDescription,
+                icon: perm.ICON || perm.icon,
+                parentTo: perm.PARENT_TO || perm.parentTo
+            }));
+            
+            console.log('모든 권한 목록:', allPermissions.value);
+        }
+    } catch (error) {
+        console.error('권한 목록 조회 실패:', error);
+        allPermissions.value = [];
     }
-  } catch (error) {
-    console.error('권한 목록 조회 실패:', error);
-    allPermissions.value = [];
-  }
 };
 
 // 특정 역할의 권한 목록 조회
 const loadRolePermissions = async (roleId) => {
-  try {
-    const response = await axios.get(`${ROLES_API_URL}/${roleId}/permissions`);
-    
-    if (response.data.result_code === 'SUCCESS' && response.data.data) {
-      // ✅ 응답 데이터를 String 배열로 처리
-      rolePermissions.value = response.data.data.map(permId => String(permId));
-      console.log('역할별 권한 목록:', rolePermissions.value);
+    try {
+        const response = await axios.get(`${ROLES_API_URL}/${roleId}/permissions`);
+        
+        if (response.data.result_code === 'SUCCESS' && response.data.data) {
+            rolePermissions.value = response.data.data.map(permId => String(permId));
+            console.log('역할별 권한 목록:', rolePermissions.value);
+        }
+    } catch (error) {
+        console.error('역할별 권한 조회 실패:', error);
+        rolePermissions.value = [];
     }
-  } catch (error) {
-    console.error('역할별 권한 조회 실패:', error);
+};
+
+// ✅ 폼 유효성 검사
+const validateForm = () => {
+    formErrors.value = {
+        roleName: '',
+        roleDesc: ''
+    };
+
+    let isValid = true;
+
+    if (!roleFormData.value.roleName || roleFormData.value.roleName.trim() === '') {
+        formErrors.value.roleName = '역할명은 필수입니다.';
+        isValid = false;
+    } else if (roleFormData.value.roleName.length > 50) {
+        formErrors.value.roleName = '역할명은 50자 이내로 입력하세요.';
+        isValid = false;
+    }
+
+    if (!roleFormData.value.roleDesc || roleFormData.value.roleDesc.trim() === '') {
+        formErrors.value.roleDesc = '역할설명은 필수입니다.';
+        isValid = false;
+    } else if (roleFormData.value.roleDesc.length > 200) {
+        formErrors.value.roleDesc = '역할설명은 200자 이내로 입력하세요.';
+        isValid = false;
+    }
+
+    return isValid;
+};
+
+// ✅ 새 역할 등록
+const createRole = async () => {
+    try {
+        if (!validateForm()) {
+            return;
+        }
+
+        const roleData = {
+            roleName: roleFormData.value.roleName.trim(),
+            roleDesc: roleFormData.value.roleDesc.trim(),
+            permissionIds: selectedPermissions.value // 권한도 함께 등록
+        };
+
+        console.log('등록할 역할 데이터:', roleData);
+
+        const response = await axios.post(ROLES_API_URL, roleData);
+
+        if (response.data.result_code === 'SUCCESS') {
+            const user = await getCurrentUser();
+            alert(`역할 "${roleData.roleName}"이(가) 성공적으로 등록되었습니다. (등록자: ${user.empName})`);
+
+            // 폼 초기화 및 목록 새로고침
+            resetForm();
+            await loadRoles();
+        } else {
+            alert(`역할 등록 실패: ${response.data.message || '알 수 없는 오류'}`);
+        }
+    } catch (error) {
+        console.error('역할 등록 실패:', error);
+        alert('역할 등록 실패: ' + (error.response?.data?.message || error.message));
+    }
+};
+
+// ✅ 역할 정보 수정
+const updateRole = async () => {
+    try {
+        if (!selectedRole.value || !selectedRole.value.roleId) {
+            alert('수정할 역할을 선택해주세요.');
+            return;
+        }
+
+        if (!validateForm()) {
+            return;
+        }
+
+        const roleData = {
+            roleName: roleFormData.value.roleName.trim(),
+            roleDesc: roleFormData.value.roleDesc.trim(),
+            permissionIds: selectedPermissions.value // 권한도 함께 수정
+        };
+
+        console.log('수정할 역할 데이터:', roleData);
+
+        const response = await axios.put(`${ROLES_API_URL}/${selectedRole.value.roleId}`, roleData);
+
+        if (response.data.result_code === 'SUCCESS') {
+            const user = await getCurrentUser();
+            alert(`역할 "${roleData.roleName}"이(가) 성공적으로 수정되었습니다. (수정자: ${user.empName})`);
+
+            // 권한도 별도로 업데이트
+            await savePermissions();
+
+            // 폼 초기화 및 목록 새로고침
+            resetForm();
+            await loadRoles();
+        } else {
+            alert(`역할 수정 실패: ${response.data.message || '알 수 없는 오류'}`);
+        }
+    } catch (error) {
+        console.error('역할 수정 실패:', error);
+        alert('역할 수정 실패: ' + (error.response?.data?.message || error.message));
+    }
+};
+
+// ✅ 역할 삭제
+const deleteRole = async () => {
+    try {
+        if (!selectedRole.value || !selectedRole.value.roleId) {
+            alert('삭제할 역할을 선택해주세요.');
+            return;
+        }
+
+        // 사원이 사용 중인지 확인
+        if (selectedRole.value.employeeCount > 0) {
+            alert(`해당 역할을 사용 중인 사원이 ${selectedRole.value.employeeCount}명 있어 삭제할 수 없습니다.`);
+            return;
+        }
+
+        const confirmDelete = confirm(
+            `역할 "${selectedRole.value.roleName}"을(를) 삭제하시겠습니까?\n\n` +
+            `- 역할ID: ${selectedRole.value.roleId}\n` +
+            `- 할당된 권한: ${selectedRole.value.permissionCount}개\n\n` +
+            `삭제된 역할은 복구할 수 없습니다.`
+        );
+
+        if (!confirmDelete) return;
+
+        const response = await axios.delete(`${ROLES_API_URL}/${selectedRole.value.roleId}`);
+
+        if (response.data.result_code === 'SUCCESS') {
+            const user = await getCurrentUser();
+            alert(`역할 "${selectedRole.value.roleName}"이(가) 성공적으로 삭제되었습니다. (삭제자: ${user.empName})`);
+
+            // 폼 초기화 및 목록 새로고침
+            resetForm();
+            await loadRoles();
+        } else {
+            alert(`역할 삭제 실패: ${response.data.message || '알 수 없는 오류'}`);
+        }
+    } catch (error) {
+        console.error('역할 삭제 실패:', error);
+        alert('역할 삭제 실패: ' + (error.response?.data?.message || error.message));
+    }
+};
+
+// ✅ 폼 초기화
+const resetForm = () => {
+    selectedRole.value = null;
+    roleFormData.value = {
+        roleId: '',
+        roleName: '',
+        roleDesc: ''
+    };
+    selectedPermissions.value = [];
     rolePermissions.value = [];
-  }
+    isEditMode.value = false;
+    formErrors.value = {
+        roleName: '',
+        roleDesc: ''
+    };
 };
 
 // 검색 실행
@@ -233,27 +390,33 @@ const searchData = async (searchOptions) => {
     await loadRoles(searchParams);
 };
 
-// 행 선택 처리 (PrimeVue DataTable 이벤트 형식에 맞게 수정)
+// 행 선택 처리
 const onRowSelect = async (event) => {
-  const role = event.data;
-  console.log('선택된 역할:', role);
-  selectedRole.value = role;
-  
-  // 역할의 권한 목록 조회
-  await loadRolePermissions(role.roleId);
-  
-  // ✅ 현재 역할의 권한을 체크박스에 반영 (String 배열로 처리)
-  selectedPermissions.value = [...rolePermissions.value];
+    const role = event.data;
+    console.log('선택된 역할:', role);
+    selectedRole.value = role;
+    
+    // 역할의 권한 목록 조회
+    await loadRolePermissions(role.roleId);
+    
+    // 현재 역할의 권한을 체크박스에 반영
+    selectedPermissions.value = [...rolePermissions.value];
+
+    // ✅ 수정 모드로 자동 전환하고 폼에 데이터 로드
+    isEditMode.value = true;
+    roleFormData.value = {
+        roleId: role.roleId,
+        roleName: role.roleName,
+        roleDesc: role.roleDesc
+    };
 };
 
-// 행 선택 해제 처리 (PrimeVue DataTable 이벤트 형식에 맞게 수정)
+// 행 선택 해제 처리
 const onRowUnselect = (event) => {
-    selectedRole.value = null;
-    rolePermissions.value = [];
-    selectedPermissions.value = []; // 권한 체크박스도 초기화
+    resetForm();
 };
 
-// 권한 설정 저장 (모달 없이 직접 저장)
+// 권한 설정 저장
 const savePermissions = async () => {
     try {
         if (!selectedRole.value) {
@@ -273,12 +436,6 @@ const savePermissions = async () => {
             // 데이터 새로고침
             await loadRolePermissions(selectedRole.value.roleId);
             await loadRoles();
-
-            // 폼 업데이트
-            if (standardInputRef.value && standardInputRef.value.inputFormRef) {
-                const inputFormRef = standardInputRef.value.inputFormRef;
-                inputFormRef.inputDatas.currentPermissionCount = selectedPermissions.value.length;
-            }
         } else {
             alert(`권한 설정 실패: ${response.data.message || '알 수 없는 오류'}`);
         }
@@ -288,39 +445,22 @@ const savePermissions = async () => {
     }
 };
 
-// ✅ 수정된 검색 조건 초기화 함수 - 초기화 후 전체 목록 자동 조회
+// 검색 조건 초기화 함수
 const handleResetSearchOptions = async () => {
-  console.log('검색 조건 초기화');
-  
-  // 검색 조건 초기화
-  filters.value.filters.forEach(filter => {
-    filter.value = '';
-  });
-  
-  // 선택된 역할 및 권한 초기화
-  selectedRole.value = null;
-  rolePermissions.value = [];
-  selectedPermissions.value = [];
-  
-  // 우측 폼 초기화
-  if (standardInputRef.value && standardInputRef.value.inputFormRef) {
-    standardInputRef.value.inputFormRef.resetInputDatas();
-  }
-  
-  // ✅ 초기화 후 전체 목록 자동 조회
-  await loadRoles(); // 빈 객체 전달로 전체 목록 조회
-  
-  console.log('검색 조건 초기화 및 전체 목록 조회 완료');
-};
-
-// 모달 처리 함수
-const openSearchModal = (inputName) => {
-    console.log('모달 열기:', inputName);
-};
-
-// 저장 처리 (권한 설정 직접 저장)
-const saveData = async (inputData) => {
-    await savePermissions();
+    console.log('검색 조건 초기화');
+    
+    // 검색 조건 초기화
+    filters.value.filters.forEach(filter => {
+        filter.value = '';
+    });
+    
+    // 폼 초기화
+    resetForm();
+    
+    // 전체 목록 조회
+    await loadRoles();
+    
+    console.log('검색 조건 초기화 및 전체 목록 조회 완료');
 };
 
 // 초기화 함수
@@ -346,7 +486,6 @@ onMounted(async () => {
 </script>
 
 <template>
-  <!-- StandardInput 대신 커스텀 레이아웃 사용 -->
   <div class="space-y-6">
     <!-- 상단: 검색 조건 -->
     <div class="card p-6">
@@ -369,7 +508,6 @@ onMounted(async () => {
           @click="handleResetSearchOptions"
           severity="secondary"
         />
-        <!-- ✅ 조회 버튼 색상을 다른 페이지와 일치시킴 (severity 제거) -->
         <Button 
           label="조회" 
           @click="() => {
@@ -387,7 +525,20 @@ onMounted(async () => {
     <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
       <!-- 좌측: 역할 목록 -->
       <div class="card p-6">
-        <div class="font-semibold text-xl mb-4">{{ header.title }}</div>
+        <div class="font-semibold text-xl mb-4 flex justify-between">
+          <div>{{ header.title }}</div>
+          <div class="flex items-center gap-2 flex-nowrap">
+            <!-- ✅ 삭제 버튼만 좌측에 유지 (다른 페이지와 동일한 패턴) -->
+            <Button 
+              label="삭제" 
+              severity="danger" 
+              class="min-w-fit whitespace-nowrap" 
+              outlined 
+              :disabled="!selectedRole || selectedRole.employeeCount > 0"
+              @click="deleteRole"
+            />
+          </div>
+        </div>
         <DataTable 
           v-model:selection="selectedRole" 
           :value="items" 
@@ -422,55 +573,97 @@ onMounted(async () => {
       
       <!-- 우측: 역할 정보 및 권한 설정 -->
       <div class="card p-6">
-        <div class="font-semibold text-xl mb-4">역할 권한 설정</div>
-        
-        <div v-if="!selectedRole" class="text-center text-gray-500 py-8">
-          역할을 선택하면 정보가 표시됩니다.
+        <div class="font-semibold text-xl mb-4 flex justify-between">
+          <div>{{ isEditMode ? '역할 수정' : '역할 등록/권한 설정' }}</div>
+          <div class="flex items-center gap-2 flex-nowrap">
+            <Button 
+              label="초기화" 
+              severity="secondary" 
+              class="min-w-fit whitespace-nowrap" 
+              outlined
+              @click="resetForm"
+            />
+            <Button 
+              v-if="isEditMode"
+              label="수정" 
+              class="min-w-fit whitespace-nowrap"
+              @click="updateRole"
+            />
+            <Button 
+              v-else
+              label="등록" 
+              class="min-w-fit whitespace-nowrap"
+              @click="createRole"
+            />
+          </div>
         </div>
         
-        <div v-else class="space-y-6">
-          <!-- 역할 기본 정보 -->
-          <div class="grid grid-cols-2 gap-4">
+        <div class="space-y-6">
+          <!-- ✅ 역할 기본 정보 입력/표시 -->
+          <div class="grid grid-cols-1 gap-4">
+            <!-- 역할ID (읽기 전용) -->
             <div class="grid grid-cols-12 gap-2">
               <label class="flex items-center col-span-3">역할ID</label>
               <div class="col-span-9">
-                <input type="text" :value="selectedRole.roleId" readonly 
-                       class="w-full p-2 border border-gray-300 rounded bg-gray-50" />
+                <InputText 
+                  v-model="roleFormData.roleId" 
+                  readonly 
+                  placeholder="등록 시 자동생성"
+                  class="w-full bg-gray-50" 
+                />
               </div>
             </div>
             
+            <!-- 역할명 (입력 가능) -->
             <div class="grid grid-cols-12 gap-2">
-              <label class="flex items-center col-span-3">역할명</label>
+              <label class="flex items-center col-span-3">
+                역할명 <span class="text-red-500">*</span>
+              </label>
               <div class="col-span-9">
-                <input type="text" :value="selectedRole.roleName" readonly 
-                       class="w-full p-2 border border-gray-300 rounded bg-gray-50" />
+                <InputText 
+                  v-model="roleFormData.roleName" 
+                  placeholder="역할명을 입력하세요"
+                  class="w-full" 
+                />
+                <small v-if="formErrors.roleName" class="text-red-500">{{ formErrors.roleName }}</small>
               </div>
             </div>
             
+            <!-- 역할설명 (입력 가능) -->
             <div class="grid grid-cols-12 gap-2">
-              <label class="flex items-center col-span-3">역할설명</label>
+              <label class="flex items-center col-span-3">
+                역할설명 <span class="text-red-500">*</span>
+              </label>
               <div class="col-span-9">
-                <input type="text" :value="selectedRole.roleDesc" readonly 
-                       class="w-full p-2 border border-gray-300 rounded bg-gray-50" />
+                <Textarea 
+                  v-model="roleFormData.roleDesc" 
+                  placeholder="역할설명을 입력하세요"
+                  class="w-full" 
+                  rows="2"
+                />
+                <small v-if="formErrors.roleDesc" class="text-red-500">{{ formErrors.roleDesc }}</small>
               </div>
             </div>
             
+            <!-- 현재권한수 (표시용) -->
             <div class="grid grid-cols-12 gap-2">
               <label class="flex items-center col-span-3">현재권한수</label>
               <div class="col-span-9">
-                <input type="text" :value="selectedPermissions.length" readonly 
-                       class="w-full p-2 border border-gray-300 rounded bg-gray-50" />
+                <InputText 
+                  :value="selectedPermissions.length" 
+                  readonly 
+                  class="w-full bg-gray-50" 
+                />
               </div>
             </div>
           </div>
           
-          <!-- 권한 설정 영역 -->
-          <div class="border-t pt-4">
+          <!-- ✅ 권한 설정 영역 -->
+          <div class="border-t pt-4 mt-4">
             <h5 class="font-semibold mb-3">권한 목록 (체크박스로 선택/해제)</h5>
             <div class="grid grid-cols-1 gap-3 max-h-96 overflow-y-auto border rounded p-3">
               <div v-for="permission in allPermissions" :key="permission.id" 
                    class="flex items-center space-x-2 p-2 border rounded hover:bg-gray-50">
-                <!-- ✅ Checkbox의 value를 String으로 처리 -->
                 <Checkbox 
                   v-model="selectedPermissions" 
                   :value="permission.id" 
@@ -479,7 +672,6 @@ onMounted(async () => {
                 <label :for="`perm-${permission.id}`" class="flex-1 cursor-pointer">
                   <div class="font-medium text-sm">{{ permission.name }}</div>
                   <div class="text-xs text-gray-500">{{ permission.description }}</div>
-                  <!-- ✅ 추가 권한 정보 표시 (있는 경우) -->
                   <div v-if="permission.icon || permission.parentTo" class="text-xs text-gray-400 mt-1">
                     <span v-if="permission.icon">아이콘: {{ permission.icon }}</span>
                     <span v-if="permission.parentTo"> | 상위: {{ permission.parentTo }}</span>
@@ -488,17 +680,31 @@ onMounted(async () => {
               </div>
             </div>
           
-          <!-- 저장 버튼 -->
-          <div class="flex justify-between items-center pt-4 border-t">
-            <div class="text-sm text-gray-600">선택된 권한: {{ selectedPermissions.length }}개 / 전체: {{ allPermissions.length }}개</div>
-            <div class="flex gap-2">
-              <Button label="초기화" severity="secondary" outlined @click="onRowUnselect" />
-              <Button label="저장" severity="success" @click="savePermissions" />
+            <!-- ✅ 권한 관련 정보 표시 -->
+            <div class="flex justify-between items-center pt-4 border-t">
+              <div class="text-sm text-gray-600">
+                선택된 권한: {{ selectedPermissions.length }}개 / 전체: {{ allPermissions.length }}개
+              </div>
+              <div class="flex gap-2">
+                <Button 
+                  label="전체선택" 
+                  severity="secondary" 
+                  outlined 
+                  size="small"
+                  @click="selectedPermissions = allPermissions.map(p => p.id)" 
+                />
+                <Button 
+                  label="권한초기화" 
+                  severity="secondary" 
+                  outlined 
+                  size="small"
+                  @click="selectedPermissions = []" 
+                />
+              </div>
             </div>
           </div>
         </div>
       </div>
     </div>
-  </div>
   </div>
 </template>

@@ -1,9 +1,12 @@
-package com.olivin.app.example.service;
+package com.olivin.app.standard.service;
 
 import java.util.Date;
 
 import org.apache.ibatis.type.Alias;
 import org.springframework.format.annotation.DateTimeFormat;
+
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonInclude;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -15,6 +18,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @Alias("EmpVO")
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class EmpVO {
     
     private String employeeId;       // EMPLOYEE_ID (PK)
@@ -31,35 +35,39 @@ public class EmpVO {
     private Integer roleId;          // ROLE_ID
     
     @DateTimeFormat(pattern = "yyyy-MM-dd")
+    @JsonFormat(pattern = "yyyy-MM-dd", timezone = "Asia/Seoul")
     private Date createDate;         // CREATE_DATE
     
     @DateTimeFormat(pattern = "yyyy-MM-dd")
+    @JsonFormat(pattern = "yyyy-MM-dd", timezone = "Asia/Seoul")
     private Date hireDate;           // HIRE_DATE
     
     @DateTimeFormat(pattern = "yyyy-MM-dd")
+    @JsonFormat(pattern = "yyyy-MM-dd", timezone = "Asia/Seoul")
     private Date resignDate;         // RESIGN_DATE
     
     @DateTimeFormat(pattern = "yyyy-MM-dd")
+    @JsonFormat(pattern = "yyyy-MM-dd", timezone = "Asia/Seoul")
     private Date updateDate;         // UPDATE_DATE
     
     private String address;          // ADDRESS
     private String gender;           // GENDER
-    private String status;           // STATUS (ACTIVE/INACTIVE)
+    private String status;           // STATUS (050001=재직중, 050002=퇴사)
     
     /**
-     * 사원이 활성 상태인지 확인
-     * @return STATUS가 ACTIVE이면 활성 상태
+     * 사원이 재직중인지 확인
+     * @return STATUS가 050001이면 재직중
      */
     public boolean isActive() {
-        return "ACTIVE".equals(this.status);
+        return "050001".equals(this.status);
     }
     
     /**
-     * 사원이 비활성 상태인지 확인
-     * @return STATUS가 INACTIVE이면 비활성 상태
+     * 사원이 퇴사했는지 확인
+     * @return STATUS가 050002이면 퇴사
      */
-    public boolean isInactive() {
-        return "INACTIVE".equals(this.status);
+    public boolean isResigned() {
+        return "050002".equals(this.status);
     }
     
     /**
@@ -68,14 +76,14 @@ public class EmpVO {
      */
     public String getEmpTypeName() {
         switch (this.empType) {
-            case "FULL_TIME":
+            case "정규직":
                 return "정규직";
-            case "PART_TIME":
-                return "비정규직";
-            case "CONTRACT":
+            case "계약직":
                 return "계약직";
-            case "INTERN":
+            case "인턴":
                 return "인턴";
+            case "파트타임":
+                return "파트타임";
             default:
                 return this.empType;
         }
@@ -86,6 +94,9 @@ public class EmpVO {
      * @return 성별에 따른 한글명
      */
     public String getGenderName() {
+        if (this.gender == null) {
+            return "미지정";
+        }
         switch (this.gender) {
             case "M":
                 return "남성";
@@ -101,13 +112,14 @@ public class EmpVO {
      * @return 상태에 따른 한글명
      */
     public String getStatusName() {
+        if (this.status == null) {
+            return "재직중"; // 기본값
+        }
         switch (this.status) {
-            case "ACTIVE":
-                return "재직";
-            case "INACTIVE":
+            case "050001":
+                return "재직중";
+            case "050002":
                 return "퇴사";
-            case "LEAVE":
-                return "휴직";
             default:
                 return this.status;
         }
@@ -126,7 +138,8 @@ public class EmpVO {
                 ", email='" + email + '\'' +
                 ", phone='" + phone + '\'' +
                 ", position='" + position + '\'' +
-                ", status='" + status + '\'' +
+                ", gender='" + (gender != null ? gender : "null") + '\'' +
+                ", status='" + (status != null ? status : "null") + '\'' +
                 ", isActive=" + isActive() +
                 '}';
     }
