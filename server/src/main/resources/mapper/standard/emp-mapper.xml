@@ -2,7 +2,7 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.olivin.app.standard.mapper.EmpMapper">
     
-    <!-- ✅ ResultMap의 type을 standard 패키지로 수정 -->
+    <!-- ResultMap의 type을 standard 패키지로 수정 -->
     <resultMap id="EmpResultMap" type="com.olivin.app.standard.service.EmpVO">
         <id property="employeeId" column="EMPLOYEE_ID"/>
         <result property="compId" column="COMP_ID"/>
@@ -39,7 +39,7 @@
         ORDER BY e.EMPLOYEE_ID ASC
     </select>
 
-    <!-- ✅ 조건별 사원 목록 조회 - parameterType 수정 -->
+    <!-- 조건별 사원 목록 조회 - parameterType 수정 -->
     <select id="selectEmpList" parameterType="com.olivin.app.standard.service.EmpVO" resultMap="EmpResultMap">
         SELECT e.EMPLOYEE_ID, e.COMP_ID, c.COMP_NAME, e.DEPARTMENT_ID, d.DEPT_NAME,
                e.EMP_NAME, e.EMP_TYPE, e.EMAIL, e.PASSWORD, e.PHONE, e.POSITION,
@@ -172,7 +172,7 @@
         WHERE  e.EMPLOYEE_ID = #{employeeId}
     </select>
 
-    <!-- ✅ 사원 등록 - parameterType 수정 -->
+    <!-- 사원 등록 - parameterType 수정 -->
     <insert id="insertEmp" parameterType="com.olivin.app.standard.service.EmpVO">
         INSERT INTO EMPLOYEES (
             EMPLOYEE_ID, COMP_ID, DEPARTMENT_ID, EMP_NAME, EMP_TYPE,
@@ -187,7 +187,7 @@
         )
     </insert>
 
-    <!-- ✅ 사원 정보 수정 - parameterType 수정 -->
+    <!-- 사원 정보 수정 - parameterType 수정 -->
     <update id="updateEmp" parameterType="com.olivin.app.standard.service.EmpVO">
         UPDATE EMPLOYEES 
         SET    
