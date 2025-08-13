@@ -13,7 +13,7 @@
         WITH branch_stocks AS (
         SELECT   inp.product_id,
                  inp.product_name,
-                 NVL(SUM(inp.total_inbnd_quantity) * prd.pack_qty, 0) as total_inbnd_quantity,
+                 NVL(SUM(inp.total_inbnd_quantity), 0) as total_inbnd_quantity,
                  0 AS total_outbnd_quantity,
                  comp.comp_name
         FROM     inbnd_product inp JOIN inbnd inb ON inb.inbnd_no = inp.inbnd_no
@@ -21,7 +21,7 @@
                                     JOIN products prd ON prd.product_id = inp.product_id
         WHERE    inb.outbnd_from = 'COM10001'
           AND    inp.inbnd_status = '000001'
-        GROUP BY inp.product_id, inp.product_name, comp.comp_name, prd.pack_qty
+        GROUP BY inp.product_id, inp.product_name, comp.comp_name
 
         UNION ALL
 
@@ -54,7 +54,7 @@
         WITH branch_stocks AS (
         SELECT   inp.product_id,
                 inp.product_name,
-                NVL(SUM(inp.total_inbnd_quantity) * prd.pack_qty, 0) as total_inbnd_quantity,
+                NVL(SUM(inp.total_inbnd_quantity), 0) as total_inbnd_quantity,
                 0 AS total_outbnd_quantity,
                 comp.comp_name
         FROM     inbnd_product inp JOIN inbnd inb ON inb.inbnd_no = inp.inbnd_no
@@ -62,7 +62,7 @@
                                     JOIN products prd ON prd.product_id = inp.product_id
         WHERE    inb.outbnd_from = 'COM10001'
             AND    inp.inbnd_status = '000001'
-        GROUP BY inp.product_id, inp.product_name, comp.comp_name, prd.pack_qty
+        GROUP BY inp.product_id, inp.product_name, comp.comp_name
 
         UNION ALL
 
