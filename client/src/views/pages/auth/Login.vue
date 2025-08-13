@@ -16,6 +16,31 @@ const router = useRouter();
 const loginError = ref('');
 const isLoggingIn = ref(false);
 
+// 🔥 ROLE 기반 리다이렉트 경로 결정 함수
+const getRedirectPathByRole = (roleName) => {
+    if (!roleName) return '/main';
+    
+    // 본사 대시보드로 이동할 역할들
+    const hqRoles = ['ROLE_SYSTEM_ADMIN', 'ROLE_MANAGER', 'ROLE_EMPLOYEE'];
+    
+    // 지점 대시보드로 이동할 역할들
+    const branchRoles = ['ROLE_STORE_MANAGER'];
+    
+    // 공급업체 대시보드로 이동할 역할들
+    const supplierRoles = ['ROLE_SUPPLIER'];
+    
+    if (hqRoles.includes(roleName)) {
+        return '/dashboard/hq';  // 본사 대시보드
+    } else if (branchRoles.includes(roleName)) {
+        return '/dashboard/branch';  // 지점 대시보드
+    } else if (supplierRoles.includes(roleName)) {
+        return '/dashboard/supplier';  // 공급업체 대시보드
+    } else {
+        // 새로운 역할이 추가되었을 때 기본값
+        return '/main';
+    }
+};
+
 // 🔥 로그인 처리 함수
 const handleLogin = async () => {
     console.log('🔥 로그인 버튼 클릭됨!', { employeeId: employeeId.value, password: password.value });
@@ -50,9 +75,13 @@ const handleLogin = async () => {
                 localStorage.removeItem('savedEmployeeId');
             }
 
-            // 대시보드로 리다이렉트
-            console.log('🚀 대시보드로 이동 시도...');
-            router.push('/');
+            // ROLE 기반 대시보드로 리다이렉트
+            const redirectPath = getRedirectPathByRole(authStore.roleName);
+            console.log('🚀 대시보드로 이동 시도...', { 
+                roleName: authStore.roleName,
+                path: redirectPath 
+            });
+            router.push(redirectPath);
         } else {
             // 로그인 실패 처리
             loginError.value = result.error || '로그인에 실패했습니다.';

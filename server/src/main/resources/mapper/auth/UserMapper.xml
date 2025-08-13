@@ -19,6 +19,7 @@
         <result property="departmentId" column="DEPARTMENT_ID"/>
         <result property="roleName" column="ROLE_NAME"/>
         <result property="deptName" column="DEPT_NAME"/>
+        <result property="compType" column="COMP_TYPE"/>
     </resultMap>
 
     <!-- 사원번호로 사용자 조회 (활성 사용자만) -->
@@ -36,7 +37,8 @@
             e.STATUS,
             e.DEPARTMENT_ID,
             NVL(r.ROLE_NAME, 'USER') AS ROLE_NAME,
-            NVL(d.DEPT_NAME, '') AS DEPT_NAME
+            NVL(d.DEPT_NAME, '') AS DEPT_NAME,
+            c.COMP_TYPE AS COMP_TYPE
         FROM EMPLOYEES e
         LEFT JOIN ROLES r ON e.ROLE_ID = r.ROLE_ID
         LEFT JOIN DEPARTMENTS d ON e.DEPARTMENT_ID = d.DEPARTMENT_ID
@@ -60,7 +62,8 @@
             e.STATUS,
             e.DEPARTMENT_ID,
             NVL(r.ROLE_NAME, 'USER') AS ROLE_NAME,
-            NVL(d.DEPT_NAME, '') AS DEPT_NAME
+            NVL(d.DEPT_NAME, '') AS DEPT_NAME,
+            c.COMP_TYPE AS COMP_TYPE
         FROM EMPLOYEES e
         LEFT JOIN ROLES r ON e.ROLE_ID = r.ROLE_ID
         LEFT JOIN DEPARTMENTS d ON e.DEPARTMENT_ID = d.DEPARTMENT_ID
@@ -73,7 +76,9 @@
         SELECT 
             p.PERM_ID as permId,
             p.PERM_NAME as permName,
-            NVL(p.PERM_DESCRIPTION, '') as permDescription
+            NVL(p.PERM_DESCRIPTION, '') as permDescription,
+            NVL(p.ICON, '') as icon,
+            p.PARENT_TO as parentTo
         FROM PERMISSIONS p
         WHERE p.PERM_ID IN (
             SELECT DISTINCT rp.PERM_ID 
@@ -84,7 +89,9 @@
             AND rp.ROLE_ID IS NOT NULL
             AND rp.PERM_ID IS NOT NULL
         )
-        ORDER BY p.PERM_ID
+        ORDER BY 
+            CASE WHEN p.PARENT_TO IS NULL THEN 0 ELSE 1 END,
+            p.PERM_ID
     </select>
 
     <!-- 사용자 정보 수정 -->

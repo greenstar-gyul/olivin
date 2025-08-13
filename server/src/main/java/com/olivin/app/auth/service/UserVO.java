@@ -23,6 +23,7 @@ public class UserVO {
     // 조인으로 가져올 추가 정보 (로그인 응답용)
     private String roleName;      // roles.role_name
     private String deptName;      // departments.dept_name
+    private String compType;      // companys.comp_type (본사/지점/공급업체 구분)
     
     // 권한 정보
     private List<PermissionVO> permissions;

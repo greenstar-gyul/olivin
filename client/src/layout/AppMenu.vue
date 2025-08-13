@@ -1,232 +1,73 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
+import { useAuthStore } from '@/stores/auth';
 
 import AppMenuItem from './AppMenuItem.vue';
 
-const model = ref([
-    {   
-        label: '대시보드',
-        to: '/main',
-        items: [
-            { label: '본사 대시보드', icon: 'pi pi-fw pi-chart-line', to: '/dashboard/hq' },
-            { label: '지점 대시보드', icon: 'pi pi-fw pi-chart-line', to: '/dashboard/branch' },
-            { label: '공급업체 대시보드', icon: 'pi pi-fw pi-chart-pie', to: '/dashboard/supplier' }
-        ]
-    },
-    {   
-        label: '기준정보',
-        to: '/standard',
-        items: [
-            { label: '공급업체 기준정보', icon: 'pi pi-fw pi-pen-to-square', to: '/standard/supplier' },
-            { label: '지점 기준정보', icon: 'pi pi-fw pi-pen-to-square', to: '/standard/branch' },
-            { label: '제품 기준정보', icon: 'pi pi-fw pi-pen-to-square', to: '/standard/product' },
-            { label: '제품 승인 정보', icon: 'pi pi-fw pi-pen-to-square', to: '/standard/productapproval' },
-            { label: '부서 기준정보', icon: 'pi pi-fw pi-pen-to-square', to: '/standard/dept' },
-            { label: '사원 기준정보', icon: 'pi pi-fw pi-pen-to-square', to: '/standard/emp' },
-        ]
-    },
-    /* inventory */ 
-    {   
-        label: '재고 / 물류',
-        to: '/inventory',
-        items: [
-            // made by hdu
-            { label: '본사 재고 현황', icon: 'pi pi-fw pi-box', to: '/inventory/stock/head'},
-            { label: '지점 재고 현황', icon: 'pi pi-fw pi-box', to: '/inventory/stock/branch'},
+const authStore = useAuthStore();
 
-            // made by kms
-            { label: '본사출고관리', icon: 'pi pi-fw pi-book', to: '/hqOutbndMgmt' },
-            { label: '지점입고관리', icon: 'pi pi-fw pi-book', to: '/brInbndMgmt' },
-
-            // made by lch
-            { label: '공급업체 출고관리', icon: 'pi pi-fw pi-book', to: '/supOutbndMgmt' },
-            { label: '본사입고관리', icon: 'pi pi-fw pi-book', to: '/hqInbndMgmt' },
-        ]
-    },
-    /* end of inventory */
-    {   
-        label: '구매',
-        to: '/purchase',
-        items: [
-            // made by lch
-            { label: '본사발주서관리', icon: 'pi pi-fw pi-book', to: '/orders/head'},
-            { label: '본사발주서조회', icon: 'pi pi-fw pi-book', to: '/orders/head/view'},
-            { label: '지점발주서관리', icon: 'pi pi-fw pi-book', to: '/orders/branch'},
-            { label: '지점발주서조회', icon: 'pi pi-fw pi-book', to: '/orders/branch/view'},
-            { label: '발주제안관리', icon: 'pi pi-fw pi-book', to: '/orders/supplier'},
-            { label: '발주제안조회', icon: 'pi pi-fw pi-book', to: '/orders/supplier/view'},
-        ]
-    },
-    {   
-        label: '판매',
-        to: '/sales',
-        items: [
-            { label: '매출 계획 조회', icon: 'pi pi-fw pi-book', to: '/sales/plan' },
-            { label: '주문 등록', icon: 'pi pi-fw pi-book', to: '/sales/orders' },
-            { label: '주문 조회 및 정산', icon: 'pi pi-fw pi-book', to: '/sales/orders/view' },
-            { label: '판매 이력 조회', icon: 'pi pi-fw pi-book', to: '/sales/history' },
-            { label: '매출 실적 조회', icon: 'pi pi-fw pi-chart-line', to: '/sales/performance' },
-        ]
-    },
-    {   
-        label: '매출 / 회계',
-        to: '/account',
-        items: [
-            { label: '거래처원장', icon: 'pi pi-fw pi-book', to: '/views/account' },
-        ]
-    },
-    {
-        label: '권한',
-        to: '/roles',
-        items: [
-            { label: '사원 권한 관리', icon: 'pi pi-fw pi-users', to: '/roles/empmanage' },
-            { label: '역할 권한 관리', icon: 'pi pi-fw pi-users', to: '/roles/rolemanage' },
-        ]
-    },
-    {   
-        label: '컴포넌트 테스트',
-        to: '/test',
-        items: [
-            { label: '공통 조회 컴포넌트', icon: 'pi pi-fw pi-book', to: '/test' },
-            { label: '공통 입력 컴포넌트', icon: 'pi pi-fw pi-file-edit', to: '/test2' },
-            { label: '기준정보 컴포넌트', icon: 'pi pi-fw pi-pen-to-square', to: '/test3' },
-        ]
-    },
-    {
-        label: '기존 템플릿',
-        to: '/old',
-        items: [
-            {
-                label: 'UI Components',
-                items: [
-                    { label: 'Form Layout', icon: 'pi pi-fw pi-id-card', to: '/uikit/formlayout' },
-                    { label: 'Input', icon: 'pi pi-fw pi-check-square', to: '/uikit/input' },
-                    { label: 'Button', icon: 'pi pi-fw pi-mobile', to: '/uikit/button', class: 'rotated-icon' },
-                    { label: 'Table', icon: 'pi pi-fw pi-table', to: '/uikit/table' },
-                    { label: 'List', icon: 'pi pi-fw pi-list', to: '/uikit/list' },
-                    { label: 'Tree', icon: 'pi pi-fw pi-share-alt', to: '/uikit/tree' },
-                    { label: 'Panel', icon: 'pi pi-fw pi-tablet', to: '/uikit/panel' },
-                    { label: 'Overlay', icon: 'pi pi-fw pi-clone', to: '/uikit/overlay' },
-                    { label: 'Media', icon: 'pi pi-fw pi-image', to: '/uikit/media' },
-                    { label: 'Menu', icon: 'pi pi-fw pi-bars', to: '/uikit/menu' },
-                    { label: 'Message', icon: 'pi pi-fw pi-comment', to: '/uikit/message' },
-                    { label: 'File', icon: 'pi pi-fw pi-file', to: '/uikit/file' },
-                    { label: 'Chart', icon: 'pi pi-fw pi-chart-bar', to: '/uikit/charts' },
-                    { label: 'Timeline', icon: 'pi pi-fw pi-calendar', to: '/uikit/timeline' },
-                    { label: 'Misc', icon: 'pi pi-fw pi-circle', to: '/uikit/misc' }
-                ]
-            },
-            {
-                label: 'Pages',
-                icon: 'pi pi-fw pi-briefcase',
-                to: '/pages',
-                items: [
-                    {
-                        label: 'Landing',
-                        icon: 'pi pi-fw pi-globe',
-                        to: '/landing'
-                    },
-                    {
-                        label: 'Auth',
-                        icon: 'pi pi-fw pi-user',
-                        items: [
-                            {
-                                label: 'Login',
-                                icon: 'pi pi-fw pi-sign-in',
-                                to: '/auth/login'
-                            },
-                            {
-                                label: 'Error',
-                                icon: 'pi pi-fw pi-times-circle',
-                                to: '/auth/error'
-                            },
-                            {
-                                label: 'Access Denied',
-                                icon: 'pi pi-fw pi-lock',
-                                to: '/auth/access'
-                            }
-                        ]
-                    },
-                    {
-                        label: 'Crud',
-                        icon: 'pi pi-fw pi-pencil',
-                        to: '/pages/crud'
-                    },
-                    {
-                        label: 'Not Found',
-                        icon: 'pi pi-fw pi-exclamation-circle',
-                        to: '/pages/notfound'
-                    },
-                    {
-                        label: 'Empty',
-                        icon: 'pi pi-fw pi-circle-off',
-                        to: '/pages/empty'
-                    }
-                ]
-            },
-            {
-                label: 'Hierarchy',
-                items: [
-                    {
-                        label: 'Submenu 1',
-                        icon: 'pi pi-fw pi-bookmark',
-                        items: [
-                            {
-                                label: 'Submenu 1.1',
-                                icon: 'pi pi-fw pi-bookmark',
-                                items: [
-                                    { label: 'Submenu 1.1.1', icon: 'pi pi-fw pi-bookmark' },
-                                    { label: 'Submenu 1.1.2', icon: 'pi pi-fw pi-bookmark' },
-                                    { label: 'Submenu 1.1.3', icon: 'pi pi-fw pi-bookmark' }
-                                ]
-                            },
-                            {
-                                label: 'Submenu 1.2',
-                                icon: 'pi pi-fw pi-bookmark',
-                                items: [{ label: 'Submenu 1.2.1', icon: 'pi pi-fw pi-bookmark' }]
-                            }
-                        ]
-                    },
-                    {
-                        label: 'Submenu 2',
-                        icon: 'pi pi-fw pi-bookmark',
-                        items: [
-                            {
-                                label: 'Submenu 2.1',
-                                icon: 'pi pi-fw pi-bookmark',
-                                items: [
-                                    { label: 'Submenu 2.1.1', icon: 'pi pi-fw pi-bookmark' },
-                                    { label: 'Submenu 2.1.2', icon: 'pi pi-fw pi-bookmark' }
-                                ]
-                            },
-                            {
-                                label: 'Submenu 2.2',
-                                icon: 'pi pi-fw pi-bookmark',
-                                items: [{ label: 'Submenu 2.2.1', icon: 'pi pi-fw pi-bookmark' }]
-                            }
-                        ]
-                    }
-                ]
-            },
-            {
-                label: 'Get Started',
-                items: [
-                    {
-                        label: 'Documentation',
-                        icon: 'pi pi-fw pi-book',
-                        to: '/documentation'
-                    },
-                    {
-                        label: 'View Source',
-                        icon: 'pi pi-fw pi-github',
-                        url: 'https://github.com/primefaces/sakai-vue',
-                        target: '_blank'
-                    }
-                ]
-            }
-        ]
+// PERMISSIONS 테이블 데이터를 기반으로 메뉴 트리 구조 생성
+const buildMenuFromPermissions = (permissions) => {
+    if (!permissions || permissions.length === 0) {
+        return [];
     }
-]);
+    
+    const menuMap = new Map();
+    const rootMenus = [];
+    
+    // 1. 모든 권한을 메뉴 아이템으로 변환
+    permissions.forEach((perm) => {
+        const menuItem = {
+            label: perm.permName,
+            icon: perm.icon || '',
+            to: perm.permId,
+            parentTo: perm.parentTo || null,
+            items: []
+        };
+        menuMap.set(perm.permId, menuItem);
+    });
+    
+    // 2. 부모-자식 관계 설정
+    menuMap.forEach((menu, permId) => {
+        if (!menu.parentTo) {
+            // 최상위 메뉴
+            rootMenus.push(menu);
+        } else {
+            // 하위 메뉴
+            const parent = menuMap.get(menu.parentTo);
+            if (parent) {
+                parent.items.push(menu);
+            }
+        }
+    });
+    
+    // 3. parentTo 속성 제거 및 빈 items 정리
+    const cleanMenu = (menuItems) => {
+        return menuItems.map(item => {
+            const cleanItem = { ...item };
+            delete cleanItem.parentTo;
+            
+            if (cleanItem.items && cleanItem.items.length > 0) {
+                cleanItem.items = cleanMenu(cleanItem.items);
+            } else {
+                delete cleanItem.items;
+            }
+            
+            return cleanItem;
+        });
+    };
+    
+    return cleanMenu(rootMenus);
+};
+
+const model = computed(() => {
+    if (!authStore.isAuthenticated) {
+        return [];
+    }
+    
+    // userPermissions에서 메뉴 구조 생성
+    return buildMenuFromPermissions(authStore.userPermissions);
+});
 </script>
 
 <template>
@@ -239,3 +80,4 @@ const model = ref([
 </template>
 
 <style lang="scss" scoped></style>
+

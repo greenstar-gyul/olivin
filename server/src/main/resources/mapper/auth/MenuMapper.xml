@@ -14,17 +14,20 @@
 
     <!-- 사용자의 권한(메뉴) 목록 조회 -->
     <select id="getUserPermissions" resultType="Map">
-        SELECT 
-            TO_CHAR(p.PERM_ID) AS PERM_ID,
+        SELECT DISTINCT
+            p.PERM_ID AS MENU_PATH,
             p.PERM_NAME AS MENU_NAME,
-            p.PERM_DESCRIPTION AS MENU_PATH,
+            p.PERM_DESCRIPTION AS MENU_DESCRIPTION,
             p.ICON AS MENU_ICON,
             p.PARENT_TO AS PARENT_MENU_PATH
-        FROM EMPLOYEES u
-        INNER JOIN ROLES r ON u.ROLE_ID = r.ROLE_ID
-        INNER JOIN ROLE_PERMISSION rp ON r.ROLE_ID = rp.ROLE_ID
-        INNER JOIN PERMISSIONS p ON rp.PERM_ID = p.PERM_ID
-        WHERE u.EMPLOYEE_ID = #{userId}
+        FROM PERMISSIONS p
+        WHERE p.PERM_ID IN (
+            SELECT DISTINCT rp.PERM_ID 
+            FROM ROLE_PERMISSION rp
+            INNER JOIN EMPLOYEES e ON rp.ROLE_ID = e.ROLE_ID
+            WHERE e.EMPLOYEE_ID = #{userId}
+            AND e.STATUS = '050001'
+        )
         ORDER BY 
             CASE 
                 WHEN p.PARENT_TO IS NULL THEN 0 
@@ -36,9 +39,9 @@
     <!-- 모든 권한(메뉴) 목록 조회 (관리자용) -->
     <select id="getAllPermissions" resultType="Map">
         SELECT 
-            TO_CHAR(p.PERM_ID) AS PERM_ID,
+            p.PERM_ID AS MENU_PATH,
             p.PERM_NAME AS MENU_NAME,
-            p.PERM_DESCRIPTION AS MENU_PATH,
+            p.PERM_DESCRIPTION AS MENU_DESCRIPTION,
             p.ICON AS MENU_ICON,
             p.PARENT_TO AS PARENT_MENU_PATH
         FROM PERMISSIONS p
