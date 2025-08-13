@@ -59,7 +59,7 @@
         ORDER BY p.PRODUCT_ID ASC
     </select>
 
-    <!-- 승인된 제품만 조회 - 직원 이름 조인 포함 -->
+    <!-- ✅ 승인된 제품만 조회 - 개선된 버전 -->
     <select id="selectApprovedProducts" resultMap="ProductResultMap">
         SELECT 
             p.PRODUCT_ID,
@@ -81,13 +81,56 @@
             p.STATUS,
             p.PRODUCT_IMAGE,
             p.NOTE,
-            reg_emp.EMP_NAME as REG_USER_NAME,
-            upd_emp.EMP_NAME as UPDATE_USER_NAME
+            NVL(reg_emp.EMP_NAME, p.REG_USER) as REG_USER_NAME,
+            NVL(upd_emp.EMP_NAME, p.UPDATE_USER) as UPDATE_USER_NAME
         FROM PRODUCTS p
         LEFT JOIN EMPLOYEES reg_emp ON p.REG_USER = reg_emp.EMPLOYEE_ID
         LEFT JOIN EMPLOYEES upd_emp ON p.UPDATE_USER = upd_emp.EMPLOYEE_ID
-        WHERE p.STATUS = '040001'
-        ORDER BY p.PRODUCT_ID ASC
+        WHERE p.STATUS = '040001'  -- 승인완료 상태만
+        AND p.PRODUCT_ID IS NOT NULL  -- NULL 체크
+        AND p.PRODUCT_NAME IS NOT NULL  -- 제품명 필수
+        ORDER BY p.REG_DATE DESC, p.PRODUCT_ID ASC  -- 최신 등록순으로 정렬
+    </select>
+
+    <!-- ✅ 상태별 제품 수 조회 (디버깅용) -->
+    <select id="selectProductCountByStatus" resultType="map">
+        SELECT 
+            p.STATUS,
+            COUNT(*) as PRODUCT_COUNT,
+            CASE p.STATUS
+                WHEN '040001' THEN '승인완료'
+                WHEN '040002' THEN '승인대기'
+                WHEN '040003' THEN '승인반려'
+                WHEN '040004' THEN '제품중단'
+                ELSE '알수없음'
+            END as STATUS_NAME
+        FROM PRODUCTS p
+        WHERE p.PRODUCT_ID IS NOT NULL
+        GROUP BY p.STATUS
+        ORDER BY p.STATUS
+    </select>
+
+    <!-- ✅ 제품 상태 검증 쿼리 (특정 제품 ID들의 상태 확인) -->
+    <select id="selectProductStatusList" parameterType="list" resultType="map">
+        SELECT 
+            p.PRODUCT_ID,
+            p.PRODUCT_NAME,
+            p.STATUS,
+            CASE p.STATUS
+                WHEN '040001' THEN '승인완료'
+                WHEN '040002' THEN '승인대기'
+                WHEN '040003' THEN '승인반려'
+                WHEN '040004' THEN '제품중단'
+                ELSE '알수없음'
+            END as STATUS_NAME,
+            p.REG_DATE,
+            p.UPDATE_DATE
+        FROM PRODUCTS p
+        WHERE p.PRODUCT_ID IN
+        <foreach collection="list" item="productId" open="(" separator="," close=")">
+            #{productId}
+        </foreach>
+        ORDER BY p.PRODUCT_ID
     </select>
 
     <!-- 승인 대기 제품 조회 - 직원 이름 조인 포함 -->
