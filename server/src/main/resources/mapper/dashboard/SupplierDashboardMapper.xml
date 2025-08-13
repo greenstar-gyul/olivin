@@ -52,91 +52,111 @@
           AND po.ORDER_STATUS != '030003'
     </select>
 
-    <!-- 발주 완료율 조회 (최근 6개월) -->
+    <!-- 월간 수주 금액 조회 (이번 달) -->
+    <select id="getMonthlyOrderAmount" resultType="Long">
+        SELECT NVL(SUM(pod.QUANTITY * pod.PRICE), 0) AS order_amount
+        FROM PURCHASE_ORDERS po
+        INNER JOIN PURCHASE_ORDERS_D pod ON po.ORDER_ID = pod.ORDER_ID
+        WHERE TO_CHAR(po.ORDER_DATE, 'YYYY-MM') = TO_CHAR(SYSDATE, 'YYYY-MM')
+          AND po.ORDER_TO_ID = #{supplierId}
+          AND po.ORDER_STATUS != '030003'
+    </select>
+
+    <!-- 월간 수주 금액 조회 (지난 달) -->
+    <select id="getLastMonthOrderAmount" resultType="Long">
+        SELECT NVL(SUM(pod.QUANTITY * pod.PRICE), 0) AS order_amount
+        FROM PURCHASE_ORDERS po
+        INNER JOIN PURCHASE_ORDERS_D pod ON po.ORDER_ID = pod.ORDER_ID
+        WHERE TO_CHAR(po.ORDER_DATE, 'YYYY-MM') = TO_CHAR(ADD_MONTHS(SYSDATE, -1), 'YYYY-MM')
+          AND po.ORDER_TO_ID = #{supplierId}
+          AND po.ORDER_STATUS != '030003'
+    </select>
+
+    <!-- 발주 완료율 조회 (이번 달) -->
     <select id="getOrderCompletionRate" resultType="Map">
         SELECT 
             COUNT(DISTINCT po.ORDER_ID) AS TOTAL_ORDERS,
-            COUNT(DISTINCT CASE WHEN po.ORDER_STATUS = '030002' THEN po.ORDER_ID END) AS COMPLETED_ORDERS
+            COUNT(DISTINCT CASE WHEN po.ORDER_STATUS = '030005' THEN po.ORDER_ID END) AS COMPLETED_ORDERS
         FROM PURCHASE_ORDERS po
         INNER JOIN PURCHASE_ORDERS_D pod ON po.ORDER_ID = pod.ORDER_ID
-        WHERE po.ORDER_DATE >= ADD_MONTHS(SYSDATE, -6)
+        WHERE TO_CHAR(po.ORDER_DATE, 'YYYY-MM') = TO_CHAR(SYSDATE, 'YYYY-MM')
           AND po.ORDER_TO_ID = #{supplierId}
           AND po.ORDER_STATUS != '030003'
     </select>
 
-    <!-- 발주 완료율 조회 (이전 6-12개월) -->
+    <!-- 발주 완료율 조회 (지난 달) -->
     <select id="getLastMonthCompletionRate" resultType="Map">
         SELECT 
             COUNT(DISTINCT po.ORDER_ID) AS TOTAL_ORDERS,
-            COUNT(DISTINCT CASE WHEN po.ORDER_STATUS = '030002' THEN po.ORDER_ID END) AS COMPLETED_ORDERS
+            COUNT(DISTINCT CASE WHEN po.ORDER_STATUS = '030005' THEN po.ORDER_ID END) AS COMPLETED_ORDERS
         FROM PURCHASE_ORDERS po
         INNER JOIN PURCHASE_ORDERS_D pod ON po.ORDER_ID = pod.ORDER_ID
-        WHERE po.ORDER_DATE >= ADD_MONTHS(SYSDATE, -12)
-          AND po.ORDER_DATE &lt; ADD_MONTHS(SYSDATE, -6)
+        WHERE TO_CHAR(po.ORDER_DATE, 'YYYY-MM') = TO_CHAR(ADD_MONTHS(SYSDATE, -1), 'YYYY-MM')
           AND po.ORDER_TO_ID = #{supplierId}
           AND po.ORDER_STATUS != '030003'
     </select>
 
-    <!-- 평균 납기일 차이 조회 (최근 6개월) -->
+    <!-- 평균 납기일 차이 조회 (이번 달 완료 발주만) -->
     <select id="getAverageDeliveryTime" resultType="Double">
         SELECT NVL(AVG(po.DUE_DATE - TRUNC(po.ORDER_DATE)), 0) AS avg_delivery_time
         FROM PURCHASE_ORDERS po
         INNER JOIN PURCHASE_ORDERS_D pod ON po.ORDER_ID = pod.ORDER_ID
-        WHERE po.ORDER_DATE >= ADD_MONTHS(SYSDATE, -6)
+        WHERE TO_CHAR(po.ORDER_DATE, 'YYYY-MM') = TO_CHAR(SYSDATE, 'YYYY-MM')
           AND po.ORDER_TO_ID = #{supplierId}
-          AND po.ORDER_STATUS = '030002'
+          AND po.ORDER_STATUS = '030005'
           AND po.DUE_DATE IS NOT NULL
     </select>
 
-    <!-- 평균 납기일 차이 조회 (이전 6-12개월) -->
+    <!-- 평균 납기일 차이 조회 (지난 달 완료 발주만) -->
     <select id="getLastMonthAverageDeliveryTime" resultType="Double">
         SELECT NVL(AVG(po.DUE_DATE - TRUNC(po.ORDER_DATE)), 0) AS avg_delivery_time
         FROM PURCHASE_ORDERS po
         INNER JOIN PURCHASE_ORDERS_D pod ON po.ORDER_ID = pod.ORDER_ID
-        WHERE po.ORDER_DATE >= ADD_MONTHS(SYSDATE, -12)
-          AND po.ORDER_DATE &lt; ADD_MONTHS(SYSDATE, -6)
+        WHERE TO_CHAR(po.ORDER_DATE, 'YYYY-MM') = TO_CHAR(ADD_MONTHS(SYSDATE, -1), 'YYYY-MM')
           AND po.ORDER_TO_ID = #{supplierId}
-          AND po.ORDER_STATUS = '030002'
+          AND po.ORDER_STATUS = '030005'
           AND po.DUE_DATE IS NOT NULL
     </select>
 
-    <!-- 발주 건수 조회 (최근 6개월) -->
+    <!-- 이번 달 발주 건수 조회 - 본사→공급업체 발주 + 공급업체→본사 발주제안(승인됨) -->
     <select id="getQualityScore" resultType="Double">
-        SELECT NVL(COUNT(DISTINCT po.ORDER_ID), 0) AS order_count
+        SELECT NVL(
+            COUNT(DISTINCT po.ORDER_ID), 0
+        ) AS order_count
         FROM PURCHASE_ORDERS po
         INNER JOIN PURCHASE_ORDERS_D pod ON po.ORDER_ID = pod.ORDER_ID
-        WHERE po.ORDER_DATE >= ADD_MONTHS(SYSDATE, -6)
-          AND po.ORDER_TO_ID = #{supplierId}
+        WHERE TO_CHAR(po.ORDER_DATE, 'YYYY-MM') = TO_CHAR(SYSDATE, 'YYYY-MM')
+          AND (po.ORDER_TO_ID = #{supplierId} OR po.ORDER_FROM_ID = #{supplierId})
           AND po.ORDER_STATUS != '030003'
     </select>
 
-    <!-- 발주 건수 조회 (이전 6-12개월) -->
+    <!-- 지난 달 발주 건수 조회 - 본사→공급업체 발주 + 공급업체→본사 발주제안(승인됨) -->
     <select id="getLastMonthQualityScore" resultType="Double">
-        SELECT NVL(COUNT(DISTINCT po.ORDER_ID), 0) AS order_count
+        SELECT NVL(
+            COUNT(DISTINCT po.ORDER_ID), 0
+        ) AS order_count
         FROM PURCHASE_ORDERS po
         INNER JOIN PURCHASE_ORDERS_D pod ON po.ORDER_ID = pod.ORDER_ID
-        WHERE po.ORDER_DATE >= ADD_MONTHS(SYSDATE, -12)
-          AND po.ORDER_DATE &lt; ADD_MONTHS(SYSDATE, -6)
-          AND po.ORDER_TO_ID = #{supplierId}
+        WHERE TO_CHAR(po.ORDER_DATE, 'YYYY-MM') = TO_CHAR(ADD_MONTHS(SYSDATE, -1), 'YYYY-MM')
+          AND (po.ORDER_TO_ID = #{supplierId} OR po.ORDER_FROM_ID = #{supplierId})
           AND po.ORDER_STATUS != '030003'
     </select>
 
-    <!-- 진행 중인 발주 현황 조회 (최근 10건) -->
+    <!-- 진행 중인 발주 현황 조회 (최근 4건) -->
     <select id="getActiveOrders" resultType="Map">
         SELECT * FROM (
             SELECT 
                 po.ORDER_ID AS ORDER_ID,
                 TO_CHAR(po.ORDER_DATE, 'YYYY-MM-DD') AS ORDER_DATE,
-                TO_CHAR(po.TOTAL_AMOUNT, 'FM999,999,999') || '원' AS TOTAL_AMOUNT,
+                TO_CHAR(po.TOTAL_AMOUNT, 'FM999,999,999,999') || '원' AS TOTAL_AMOUNT,
                 po.ORDER_STATUS AS STATUS,
                 dc.CODE_NAME AS STATUS_NAME
             FROM PURCHASE_ORDERS po
-            INNER JOIN PURCHASE_ORDERS_D pod ON po.ORDER_ID = pod.ORDER_ID
             LEFT JOIN DATA_CODES dc ON po.ORDER_STATUS = dc.CODE_VALUE AND dc.CODE_GROUP = '03'
             WHERE po.ORDER_TO_ID = #{supplierId}
-              AND po.ORDER_STATUS IN ('030001', '030002')
-            ORDER BY po.ORDER_DATE DESC
-        ) WHERE ROWNUM &lt;= 10
+              AND po.ORDER_STATUS != '030003'
+            ORDER BY po.ORDER_DATE DESC, po.ORDER_ID DESC
+        ) WHERE ROWNUM &lt;= 4
     </select>
 
     <!-- 상위 공급 상품 조회 (TOP 10) -->
@@ -157,15 +177,15 @@
         ) WHERE ROWNUM &lt;= 10
     </select>
 
-    <!-- 월간 발주 트렌드 조회 (최근 6개월) -->
+    <!-- 월간 발주 트렌드 조회 (최근 6개월) - 발주 건수 기준 -->
     <select id="getOrderTrend" resultType="Map">
         SELECT 
             TO_CHAR(po.ORDER_DATE, 'YYYY-MM') AS MONTH,
-            SUM(pod.QUANTITY) AS ORDER_COUNT
+            COUNT(DISTINCT po.ORDER_ID) AS ORDER_COUNT
         FROM PURCHASE_ORDERS po
         INNER JOIN PURCHASE_ORDERS_D pod ON po.ORDER_ID = pod.ORDER_ID
         WHERE po.ORDER_DATE >= ADD_MONTHS(SYSDATE, -6)
-          AND po.ORDER_TO_ID = #{supplierId}
+          AND (po.ORDER_TO_ID = #{supplierId} OR po.ORDER_FROM_ID = #{supplierId})
           AND po.ORDER_STATUS != '030003'
         GROUP BY TO_CHAR(po.ORDER_DATE, 'YYYY-MM')
         ORDER BY MONTH ASC
@@ -174,15 +194,16 @@
     <!-- 카테고리별 공급 비중 조회 (최근 6개월) -->
     <select id="getCategorySupply" resultType="Map">
         SELECT 
-            pod.CATEGORY AS CATEGORY,
+            NVL(dc.CODE_NAME, pod.CATEGORY) AS CATEGORY,
             SUM(pod.QUANTITY * pod.PRICE) AS SUPPLY_AMOUNT,
             COUNT(pod.PO_ID) AS ITEM_COUNT
         FROM PURCHASE_ORDERS po
         INNER JOIN PURCHASE_ORDERS_D pod ON po.ORDER_ID = pod.ORDER_ID
+        LEFT JOIN DATA_CODES dc ON pod.CATEGORY = dc.CODE_VALUE AND dc.CODE_GROUP = '11'
         WHERE po.ORDER_DATE >= ADD_MONTHS(SYSDATE, -6)
           AND po.ORDER_TO_ID = #{supplierId}
           AND po.ORDER_STATUS != '030003'
-        GROUP BY pod.CATEGORY
+        GROUP BY NVL(dc.CODE_NAME, pod.CATEGORY)
         ORDER BY SUPPLY_AMOUNT DESC
     </select>
 
@@ -195,64 +216,87 @@
                 po.ORDER_STATUS AS STATUS,
                 dc.CODE_NAME AS STATUS_NAME,
                 po.DUE_DATE AS DUE_DATE,
-                TO_CHAR(po.TOTAL_AMOUNT, 'FM999,999,999') || '원' AS TOTAL_AMOUNT
+                TO_CHAR(po.TOTAL_AMOUNT, 'FM999,999,999') || '원' AS TOTAL_AMOUNT,
+                po.ORDER_FROM_ID AS ORDER_FROM_ID,
+                po.ORDER_TO_ID AS ORDER_TO_ID
             FROM PURCHASE_ORDERS po
             INNER JOIN PURCHASE_ORDERS_D pod ON po.ORDER_ID = pod.ORDER_ID
             LEFT JOIN DATA_CODES dc ON po.ORDER_STATUS = dc.CODE_VALUE AND dc.CODE_GROUP = '03'
-            WHERE po.ORDER_TO_ID = #{supplierId}
+            WHERE (po.ORDER_TO_ID = #{supplierId} OR po.ORDER_FROM_ID = #{supplierId})
               AND po.ORDER_DATE >= ADD_MONTHS(SYSDATE, -6)
             ORDER BY po.ORDER_DATE DESC
         ) WHERE ROWNUM &lt;= 10
     </select>
 
+    <!-- 공급업체별 전체 발주 데이터 조회 (디버깅용) -->
+    <select id="getSupplierOrderDebugInfo" resultType="Map">
+        SELECT 
+            'TO_SUPPLIER' AS ORDER_TYPE,
+            COUNT(DISTINCT po.ORDER_ID) AS ORDER_COUNT,
+            COUNT(DISTINCT CASE WHEN TO_CHAR(po.ORDER_DATE, 'YYYY-MM') = TO_CHAR(SYSDATE, 'YYYY-MM') THEN po.ORDER_ID END) AS THIS_MONTH_COUNT
+        FROM PURCHASE_ORDERS po
+        INNER JOIN PURCHASE_ORDERS_D pod ON po.ORDER_ID = pod.ORDER_ID
+        WHERE po.ORDER_TO_ID = #{supplierId}
+          AND po.ORDER_STATUS != '030003'
+          AND po.ORDER_DATE >= ADD_MONTHS(SYSDATE, -3)
+        UNION ALL
+        SELECT 
+            'FROM_SUPPLIER' AS ORDER_TYPE,
+            COUNT(DISTINCT po.ORDER_ID) AS ORDER_COUNT,
+            COUNT(DISTINCT CASE WHEN TO_CHAR(po.ORDER_DATE, 'YYYY-MM') = TO_CHAR(SYSDATE, 'YYYY-MM') THEN po.ORDER_ID END) AS THIS_MONTH_COUNT
+        FROM PURCHASE_ORDERS po
+        INNER JOIN PURCHASE_ORDERS_D pod ON po.ORDER_ID = pod.ORDER_ID
+        WHERE po.ORDER_FROM_ID = #{supplierId}
+          AND po.ORDER_STATUS = '030002'
+          AND po.ORDER_DATE >= ADD_MONTHS(SYSDATE, -3)
+        UNION ALL
+        SELECT 
+            'COMPANY_CHECK' AS ORDER_TYPE,
+            1 AS ORDER_COUNT,
+            1 AS THIS_MONTH_COUNT
+        FROM COMPANYS c
+        WHERE c.COMP_ID = #{supplierId}
+          AND c.COMP_TYPE = '100003'
+    </select>
+
     <!-- 발주 관련 알림 조회 -->
     <select id="getAlerts" resultType="Map">
-        SELECT * FROM (
-            SELECT 
-                'ALERT_' || ROWNUM AS ID,
-                CASE 
-                    WHEN po.DUE_DATE &lt; SYSDATE THEN '납기일 지연 알림'
-                    WHEN (po.DUE_DATE - SYSDATE) &lt;= 2 AND po.ORDER_STATUS = '030001' THEN '긴급 발주 처리 필요'
-                    WHEN po.ORDER_STATUS = '030003' THEN '발주 취소 알림'
-                    ELSE '일반 알림'
-                END AS TITLE,
-                CASE 
-                    WHEN po.DUE_DATE &lt; SYSDATE THEN '발주번호 ' || po.ORDER_ID || '의 납기일이 ' || TRUNC(SYSDATE - po.DUE_DATE) || '일 지연되었습니다.'
-                    WHEN (po.DUE_DATE - SYSDATE) &lt;= 2 AND po.ORDER_STATUS = '030001' THEN '발주번호 ' || po.ORDER_ID || '의 처리가 시급합니다.'
-                    WHEN po.ORDER_STATUS = '030003' THEN '발주번호 ' || po.ORDER_ID || '가 취소되었습니다.'
-                    ELSE '발주번호 ' || po.ORDER_ID || ' 관련 알림입니다.'
-                END AS MESSAGE,
-                po.ORDER_DATE AS CREATED_AT,
-                CASE 
-                    WHEN po.DUE_DATE &lt; SYSDATE THEN 'HIGH'
-                    WHEN (po.DUE_DATE - SYSDATE) &lt;= 2 AND po.ORDER_STATUS = '030001' THEN 'HIGH'
-                    WHEN po.ORDER_STATUS = '030003' THEN 'MEDIUM'
-                    ELSE 'LOW'
-                END AS PRIORITY,
-                CASE 
-                    WHEN po.DUE_DATE &lt; SYSDATE THEN 'DELIVERY_DELAY'
-                    WHEN (po.DUE_DATE - SYSDATE) &lt;= 2 AND po.ORDER_STATUS = '030001' THEN 'ORDER_URGENT'
-                    WHEN po.ORDER_STATUS = '030003' THEN 'ORDER_CANCELLED'
-                    ELSE 'INFO'
-                END AS ALERT_TYPE
-            FROM PURCHASE_ORDERS po
-            INNER JOIN PURCHASE_ORDERS_D pod ON po.ORDER_ID = pod.ORDER_ID
-            WHERE po.ORDER_TO_ID = #{supplierId}
-              AND (
-                  po.DUE_DATE &lt; SYSDATE 
-                  OR ((po.DUE_DATE - SYSDATE) &lt;= 2 AND po.ORDER_STATUS = '030001')
-                  OR po.ORDER_STATUS = '030003'
-              )
-              AND po.ORDER_DATE >= SYSDATE - 30
-            ORDER BY 
-                CASE 
-                    WHEN po.DUE_DATE &lt; SYSDATE THEN 1
-                    WHEN (po.DUE_DATE - SYSDATE) &lt;= 2 AND po.ORDER_STATUS = '030001' THEN 2
-                    WHEN po.ORDER_STATUS = '030003' THEN 3
-                    ELSE 4
-                END,
-                po.ORDER_DATE DESC
-        ) WHERE ROWNUM &lt;= 20
+        SELECT 
+            po.ORDER_ID AS ID,
+            CASE 
+                WHEN po.ORDER_STATUS = '030001' THEN '발주 대기'
+                WHEN po.ORDER_STATUS = '030002' THEN '발주 승인'
+                WHEN po.ORDER_STATUS = '030004' THEN '발주 반려'
+                WHEN po.ORDER_STATUS = '030005' THEN '입고 완료'
+                WHEN po.DUE_DATE &lt; SYSDATE AND po.ORDER_STATUS NOT IN ('030005', '030003') THEN '납기일 경과'
+                ELSE '발주 알림'
+            END AS TITLE,
+            CASE 
+                WHEN po.ORDER_STATUS = '030001' THEN '발주번호 ' || po.ORDER_ID || '이(가) 승인 대기중입니다'
+                WHEN po.ORDER_STATUS = '030002' THEN '발주번호 ' || po.ORDER_ID || '이(가) 승인되었습니다'
+                WHEN po.ORDER_STATUS = '030004' THEN '발주번호 ' || po.ORDER_ID || '이(가) 반려되었습니다'
+                WHEN po.ORDER_STATUS = '030005' THEN '발주번호 ' || po.ORDER_ID || '의 입고가 완료되었습니다'
+                WHEN po.DUE_DATE &lt; SYSDATE AND po.ORDER_STATUS NOT IN ('030005', '030003') THEN '발주번호 ' || po.ORDER_ID || '의 납기일이 ' || TO_CHAR(po.DUE_DATE, 'MM/DD') || '로 경과되었습니다'
+                ELSE '발주번호 ' || po.ORDER_ID || ' 관련 알림'
+            END AS MESSAGE,
+            TO_CHAR(po.ORDER_DATE, 'YYYY-MM-DD HH24:MI:SS') AS CREATED_AT,
+            CASE 
+                WHEN po.ORDER_STATUS = '030004' THEN 'high'
+                WHEN po.DUE_DATE &lt; SYSDATE AND po.ORDER_STATUS NOT IN ('030005', '030003') THEN 'high'
+                WHEN po.ORDER_STATUS = '030005' THEN 'low'
+                ELSE 'medium'
+            END AS PRIORITY,
+            CASE 
+                WHEN po.ORDER_STATUS = '030004' THEN 'ORDER_REJECTED'
+                WHEN po.DUE_DATE &lt; SYSDATE AND po.ORDER_STATUS NOT IN ('030005', '030003') THEN 'DELIVERY_DELAY'
+                WHEN po.ORDER_STATUS = '030005' THEN 'ORDER_COMPLETED'
+                ELSE 'ORDER_UPDATE'
+            END AS ALERT_TYPE
+        FROM PURCHASE_ORDERS po
+        WHERE (po.ORDER_TO_ID = #{supplierId} OR po.ORDER_FROM_ID = #{supplierId})
+          AND po.ORDER_DATE >= SYSDATE - 30
+          AND ROWNUM &lt;= 3
+        ORDER BY po.ORDER_DATE DESC
     </select>
 
 </mapper>

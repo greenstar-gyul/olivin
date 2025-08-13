@@ -29,6 +29,16 @@ public interface SupplierDashboardMapper {
     Integer getLastMonthOrderCount(String supplierId);
 
     /**
+     * 월간 수주 금액 조회 (이번 달)
+     */
+    Long getMonthlyOrderAmount(String supplierId);
+
+    /**
+     * 월간 수주 금액 조회 (지난 달)
+     */
+    Long getLastMonthOrderAmount(String supplierId);
+
+    /**
      * 주문 처리율 데이터 조회 (현재 월)
      */
     Map<String, Object> getOrderCompletionRate(String supplierId);
@@ -49,12 +59,12 @@ public interface SupplierDashboardMapper {
     Double getLastMonthAverageDeliveryTime(String supplierId);
 
     /**
-     * 품질 점수 조회 (현재 월)
+     * 이번 달 발주 건수 조회 - 본사→공급업체 + 공급업체→본사 승인건수
      */
     Double getQualityScore(String supplierId);
 
     /**
-     * 품질 점수 조회 (지난 월)
+     * 지난 달 발주 건수 조회 - 본사→공급업체 + 공급업체→본사 승인건수
      */
     Double getLastMonthQualityScore(String supplierId);
 
@@ -87,4 +97,9 @@ public interface SupplierDashboardMapper {
      * 모든 주문 상태 조회 (디버깅용)
      */
     List<Map<String, Object>> getAllOrderStatus(String supplierId);
+
+    /**
+     * 공급업체별 발주 데이터 디버깅 정보 조회
+     */
+    List<Map<String, Object>> getSupplierOrderDebugInfo(String supplierId);
 }

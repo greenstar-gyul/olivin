@@ -95,4 +95,12 @@ public class SupplierDashboardController {
     public List<Map<String, Object>> getDebugOrders(@RequestParam String supplierId) {
         return supplierDashboardService.getAllOrderStatus(supplierId);
     }
+
+    /**
+     * 디버깅용 - 공급업체별 발주 데이터 상세 정보
+     */
+    @GetMapping("/debug-info")
+    public List<Map<String, Object>> getDebugInfo(@RequestParam String supplierId) {
+        return supplierDashboardService.getSupplierOrderDebugInfo(supplierId);
+    }
 }

@@ -31,6 +31,7 @@ public class LoginResponseVO {
         private String deptName;        // 부서명
         private String compId;         // 회사ID
         private String compName;       // 회사명
+        private String compType;       // 회사타입 (100001:본사, 100002:지점, 100003:공급업체)
     }
     
     @Data
@@ -45,8 +46,10 @@ public class LoginResponseVO {
     @AllArgsConstructor
     @NoArgsConstructor
     public static class PermissionInfoVO {
-        private String permId;          // 권한ID (VARCHAR2)
+        private String permId;          // 권한ID (URL 경로)
         private String permName;        // 권한명
         private String permDescription; // 권한 설명
+        private String icon;            // 아이콘
+        private String parentTo;        // 부모 경로
     }
 }

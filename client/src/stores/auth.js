@@ -20,8 +20,14 @@ export const useAuthStore = defineStore(
         const userId = computed(() => user.value?.id || null);
 
         // 📍 DB 기반 권한 체크 함수들
-        const hasPermission = (permissionId) => {
-            return userPermissions.value.some((perm) => perm.permId === permissionId);
+        const hasPermission = (permissionPath) => {
+            if (!userPermissions.value || userPermissions.value.length === 0) {
+                return false;
+            }
+            return userPermissions.value.some((perm) => {
+                // PERM_ID가 URL 경로와 일치하는지 확인
+                return perm.permId === permissionPath || perm.perm_id === permissionPath;
+            });
         };
 
         const hasAnyPermission = (permissionIds) => {

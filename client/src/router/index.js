@@ -411,7 +411,9 @@ router.beforeEach(async (to, from, next) => {
 
             // 📍 역할 기반 접근 제어 (하위 호환성)
             if (to.meta?.roles && to.meta.roles.length > 0) {
+                console.log(`🔍 권한 체크 - 사용자 역할: ${authStore.roleName}, 필요 역할: [${to.meta.roles.join(', ')}]`);
                 const hasRequiredRole = to.meta.roles.includes(authStore.roleName);
+                console.log(`✅ 권한 체크 결과: ${hasRequiredRole}`);
 
                 if (!hasRequiredRole) {
                     console.warn(`🚫 접근 권한이 없습니다. 필요 역할: [${to.meta.roles.join(', ')}]`);

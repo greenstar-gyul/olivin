@@ -459,7 +459,7 @@ const loadAllData = async () => {
 
 // 유틸리티 함수들
 const formatNumber = (num) => (num || 0).toLocaleString('ko-KR');
-const formatSales = (amount) => Math.round((amount || 0) / 10000).toLocaleString();
+const formatSales = (amount) => (amount || 0).toLocaleString('ko-KR') + '원';
 const formatTime = (date) => {
     if (date instanceof Date) return date.toLocaleString('ko-KR');
     return new Date(date).toLocaleString('ko-KR');
@@ -558,63 +558,43 @@ onUnmounted(() => {
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             <!-- 당일 매출 -->
             <div class="card">
-                <div class="flex justify-between items-start mb-4">
-                    <div>
-                        <div class="text-muted-color text-sm font-medium mb-2 uppercase tracking-wide">당일 매출</div>
-                        <div class="text-surface-900 dark:text-surface-0 text-2xl font-bold">
-                            {{ kpiData.todaySales || '로딩 중...' }}
-                        </div>
-                        <div :class="['text-sm font-medium mt-1', getChangeClass(kpiData.dailyGrowth)]">전일대비 {{ kpiData.dailyGrowth || '데이터 없음' }}</div>
+                <div class="mb-4">
+                    <div class="text-muted-color text-sm font-medium mb-2 uppercase tracking-wide">당일 매출</div>
+                    <div class="text-surface-900 dark:text-surface-0 text-2xl font-bold">
+                        {{ kpiData.todaySales || '로딩 중...' }}
                     </div>
-                    <div class="flex items-center justify-center bg-green-100 dark:bg-green-400/10 rounded-lg w-12 h-12">
-                        <i class="pi pi-dollar text-green-500 text-xl"></i>
-                    </div>
+                    <div :class="['text-sm font-medium mt-1', getChangeClass(kpiData.dailyGrowth)]">전일대비 {{ kpiData.dailyGrowth || '데이터 없음' }}</div>
                 </div>
             </div>
 
             <!-- 월간 매출 -->
             <div class="card">
-                <div class="flex justify-between items-start mb-4">
-                    <div>
-                        <div class="text-muted-color text-sm font-medium mb-2 uppercase tracking-wide">월간 매출</div>
-                        <div class="text-surface-900 dark:text-surface-0 text-2xl font-bold">
-                            {{ kpiData.monthlySales || '로딩 중...' }}
-                        </div>
-                        <div :class="['text-sm font-medium mt-1', getChangeClass(kpiData.monthlyGrowth)]">전월대비 {{ kpiData.monthlyGrowth || '데이터 없음' }}</div>
+                <div class="mb-4">
+                    <div class="text-muted-color text-sm font-medium mb-2 uppercase tracking-wide">월간 매출</div>
+                    <div class="text-surface-900 dark:text-surface-0 text-2xl font-bold">
+                        {{ kpiData.monthlySales || '로딩 중...' }}
                     </div>
-                    <div class="flex items-center justify-center bg-blue-100 dark:bg-blue-400/10 rounded-lg w-12 h-12">
-                        <i class="pi pi-chart-line text-blue-500 text-xl"></i>
-                    </div>
+                    <div :class="['text-sm font-medium mt-1', getChangeClass(kpiData.monthlyGrowth)]">전월대비 {{ kpiData.monthlyGrowth || '데이터 없음' }}</div>
                 </div>
             </div>
 
             <!-- 재고 현황 -->
             <div class="card">
-                <div class="flex justify-between items-start mb-4">
-                    <div>
-                        <div class="text-muted-color text-sm font-medium mb-2 uppercase tracking-wide">재고 현황</div>
-                        <div class="text-surface-900 dark:text-surface-0 text-2xl font-bold">
-                            {{ kpiData.inventoryValue || '로딩 중...' }}
-                        </div>
-                        <div class="text-muted-color text-sm font-medium mt-1">총 {{ formatNumber(kpiData.totalInventoryItems) }}개 품목</div>
+                <div class="mb-4">
+                    <div class="text-muted-color text-sm font-medium mb-2 uppercase tracking-wide">재고 현황</div>
+                    <div class="text-surface-900 dark:text-surface-0 text-2xl font-bold">
+                        {{ kpiData.inventoryValue || '로딩 중...' }}
                     </div>
-                    <div class="flex items-center justify-center bg-orange-100 dark:bg-orange-400/10 rounded-lg w-12 h-12">
-                        <i class="pi pi-box text-orange-500 text-xl"></i>
-                    </div>
+                    <div class="text-muted-color text-sm font-medium mt-1">총 {{ formatNumber(kpiData.totalInventoryItems) }}개 품목</div>
                 </div>
             </div>
 
             <!-- 거래 건수 -->
             <div class="card">
-                <div class="flex justify-between items-start mb-4">
-                    <div>
-                        <div class="text-muted-color text-sm font-medium mb-2 uppercase tracking-wide">당일 거래</div>
-                        <div class="text-surface-900 dark:text-surface-0 text-2xl font-bold">{{ formatNumber(kpiData.todayTransactions) }}건</div>
-                        <div class="text-muted-color text-sm font-medium mt-1">평균 객단가 {{ kpiData.averageOrderValue || '데이터 없음' }}</div>
-                    </div>
-                    <div class="flex items-center justify-center bg-purple-100 dark:bg-purple-400/10 rounded-lg w-12 h-12">
-                        <i class="pi pi-shopping-cart text-purple-500 text-xl"></i>
-                    </div>
+                <div class="mb-4">
+                    <div class="text-muted-color text-sm font-medium mb-2 uppercase tracking-wide">당일 거래</div>
+                    <div class="text-surface-900 dark:text-surface-0 text-2xl font-bold">{{ formatNumber(kpiData.todayTransactions) }}건</div>
+                    <div class="text-muted-color text-sm font-medium mt-1">평균 객단가 {{ kpiData.averageOrderValue || '데이터 없음' }}</div>
                 </div>
             </div>
         </div>
@@ -668,7 +648,7 @@ onUnmounted(() => {
                         </div>
                         <div class="flex-1">
                             <div class="text-surface-900 dark:text-surface-0 font-medium mb-1">{{ product.PRODUCT_NAME }}</div>
-                            <div class="text-muted-color text-sm">판매량: {{ formatNumber(product.TOTAL_QUANTITY) }}개 | 매출: {{ formatSales(product.TOTAL_SALES) }}만원</div>
+                            <div class="text-muted-color text-sm">판매량: {{ formatNumber(product.TOTAL_QUANTITY) }}개 | 매출: {{ formatSales(product.TOTAL_SALES) }}</div>
                         </div>
                     </div>
                 </div>
