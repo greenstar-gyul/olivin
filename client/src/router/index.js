@@ -227,12 +227,14 @@ const router = createRouter({
                  {
                     path: '/views/dept',
                     name: '부서기준정보',
-                    component: () => import('@/views/standard/DeptStandardPage.vue')
+                    component: () => import('@/views/standard/DeptStandardPage.vue'),
+                    meta: { permissions: ['/views/dept'] }
                 },
                 {
                     path: '/views/emp',
                     name: '사원기준정보',
-                    component: () => import('@/views/standard/EmpStandardPage.vue')
+                    component: () => import('@/views/standard/EmpStandardPage.vue'),
+                    meta: { permissions: ['/views/emp'] }
                 },
                 /* order */
                 {
