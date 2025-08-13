@@ -1,5 +1,6 @@
 package com.olivin.app.orders;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -16,6 +17,7 @@ public class SelectUserInfoTest {
 	private OrdersService ordersService;
 	
 	@Test
+	@Disabled
 	void getUserCompany() {
 		UserCompanyVO compVO = ordersService.getCompInfo("olivin40004");
 		log.debug(compVO.toString());

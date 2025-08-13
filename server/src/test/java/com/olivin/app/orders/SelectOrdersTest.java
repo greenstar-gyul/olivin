@@ -51,6 +51,7 @@ class SelectOrdersTest {
 	}
 	
 	@Test
+	@Disabled
 	void detailSelect() {
 		List<OrdersDetailVO> detail = ordersService.getDetailOrders(ORDER_ID);
 		

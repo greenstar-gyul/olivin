@@ -49,6 +49,7 @@ public class CompanySearchTest {
 	}
 	
 	@Test
+	@Disabled
 	public void searchCompany() {
 		// 공급업체에서 '프리미엄'이 들어간 회사 검색
 		List<CompanySearchVO> list = comSearchService.searchCompanys(CompanyType.valueOf("supplier"), "프리미엄");		

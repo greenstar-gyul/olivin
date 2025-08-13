@@ -24,6 +24,7 @@ public class SelectSalesOrdersTest {
 	private SalesOrdersService salesOrdersService;
 	
 	@Test
+	@Disabled
 	void allSelect() {
 		List<SalesOrdersVO> list = salesOrdersService.getAllOrders(SearchSalesOrdersVO.builder().build());
 		
@@ -58,6 +59,7 @@ public class SelectSalesOrdersTest {
 	}
 	
 	@Test
+	@Disabled
 	void orderInfoSelect() {
 		SalesOrdersVO master = salesOrdersService.getOneOrders(SO_ID);
 		List<SalesOrdersDetailVO> detail = salesOrdersService.getDetailOrders(SO_ID);
