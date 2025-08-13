@@ -18,7 +18,6 @@ const isLoggingIn = ref(false);
 
 // 🔥 로그인 처리 함수
 const handleLogin = async () => {
-    console.log(import.meta.env.VITE_API_URL);
     console.log('🔥 로그인 버튼 클릭됨!', { employeeId: employeeId.value, password: password.value });
 
     // 입력값 검증
