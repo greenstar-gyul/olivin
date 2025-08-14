@@ -2,7 +2,7 @@
 import { useLayout } from '@/layout/composables/layout';
 import AppConfigurator from './AppConfigurator.vue';
 import { useAuth } from '@/composables/useAuth';
-import { ref } from 'vue';
+import { onBeforeMount, ref } from 'vue';
 import { useAuthStore } from '@/stores/auth';
 
 const { toggleMenu, toggleDarkMode, isDarkTheme } = useLayout();
@@ -10,6 +10,21 @@ const { toggleMenu, toggleDarkMode, isDarkTheme } = useLayout();
 // 사용자 인증 정보 가져오기
 const { user } = useAuth();
 const authStore = useAuthStore();
+
+let dashboardPath = "/";
+
+onBeforeMount(() => {
+    user.value = authStore.user;
+    if (user.value.compType === '100001') {
+        dashboardPath += "dashboard/hq";
+    } else if (user.value.compType === '100002') {
+        dashboardPath += "dashboard/branch";
+    } else if (user.value.compType === '100003') {
+        dashboardPath += "dashboard/supplier";
+    }
+    console.log(user.value.compType);  
+    console.log(dashboardPath);
+});
 </script>
 
 <template>
@@ -18,7 +33,7 @@ const authStore = useAuthStore();
             <button class="layout-menu-button layout-topbar-action" @click="toggleMenu">
                 <i class="pi pi-bars"></i>
             </button>
-            <router-link to="/" class="layout-topbar-logo">
+            <router-link :to="dashboardPath" class="layout-topbar-logo">
                 <img src="../../public/demo/images/logo.png" alt="Olivin Logo" class="layout-topbar-logo-image" style="width: 120px; height: auto" />
             </router-link>
         </div>
