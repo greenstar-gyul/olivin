@@ -83,11 +83,22 @@ const supModalHeaders = ref([
 ]);
 
 const getSupModalItems = async (searchValue) => {
-    const req = await axios.get('/api/search/company/supplier', {
-        params: {
-            searchValue
-        }
-    });
+    let req;
+    try {
+        req = await axios.get('/api/search/company/supplier', {
+            params: {
+                searchValue
+            }
+        });
+    } catch (error) {
+        toast.add({
+            severity: 'error',
+            summary: '오류',
+            detail: '공급업체 정보를 불러오는 중 오류가 발생했습니다.',
+            life: 2000
+        });
+        throw Error('공급업체 모달 데이터 불러오기 실패: ' + error);
+    }
     return req.data;
 };
 
@@ -125,24 +136,33 @@ const itemModalHeaders = ref([
 
 const getItemModalItems = async (searchValue) => {
     let req;
-    if (searchValue) {
-        req = await axios.get('/api/search/products', {
-            params: {
-                searchValue
-            }
-        });
-    } else {
-        req = await axios.get('/api/search/products/all');
-    }
+    try {
+        if (searchValue) {
+            req = await axios.get('/api/search/products', {
+                params: {
+                    searchValue
+                }
+            });
+        } else {
+            req = await axios.get('/api/search/products/all');
+        }
 
-    if (req?.data) {
-        return req.data.filter((e) => {
-            const modelData = supModalReturn.value;
-            return e.vendorName == modelData.item[modelData.fieldName];
+        if (req?.data) {
+            return req.data.filter((e) => {
+                const modelData = supModalReturn.value;
+                return e.vendorName == modelData.item[modelData.fieldName];
+            });
+        }
+    } catch (error) {
+        toast.add({
+            severity: 'error',
+            summary: '오류',
+            detail: '제품 정보를 불러오는 중 오류가 발생했습니다.',
+            life: 2000
         });
-    } else {
-        return req;
+        throw Error('제품 모달 데이터 불러오기 실패: ' + error);
     }
+    return req;
 };
 
 const itemCloseModal = () => {
@@ -171,7 +191,7 @@ const itemConfirmModal = async (selectedItems) => {
         modalData.item['productId'] = selectedItems.productId;
         modalData.item['categoryMain'] = selectedItems.categoryMain;
         modalData.item['price'] = selectedItems.purchasePrice;
-        modalData.item['packQty'] = product.data.packQty;
+        modalData.item['packQty'] = product.data.data.packQty;
     }
 
     itemModalVisible.value = false; //모달 닫음
@@ -188,9 +208,12 @@ const formSearch = async (item, fieldName) => {
     // console.log('form search', item);
     // console.log('data', fieldName);
     supModalReturn.value = { item, fieldName };
-
-    supModalItems.value = await getSupModalItems('');
-    supModalVisible.value = true;
+    try {
+        supModalItems.value = await getSupModalItems('');
+        supModalVisible.value = true;
+    } catch (error) {
+        console.error(error);
+    }
 };
 
 const tableSearch = async (item, fieldName, data) => {
@@ -209,8 +232,12 @@ const tableSearch = async (item, fieldName, data) => {
     itemModalReturn.value = { item, fieldName, data };
 
     // 공급업체 먼저 입력
-    itemModalItems.value = await getItemModalItems();
-    itemModalVisible.value = true;
+    try {
+        itemModalItems.value = await getItemModalItems();
+        itemModalVisible.value = true;
+    } catch (error) {
+        console.error(error);
+    }
 };
 
 const fetchOrders = async (formData, tableData) => {
@@ -290,15 +317,25 @@ const saveFormHandler = async (formData, tableData) => {
             label: '저장'
         },
         accept: async () => {
-            fetchOrders(formData, tableData);
-            toast.add({
-                severity: 'success',
-                summary: '성공',
-                detail: '발주서가 등록되었습니다.',
-                life: 2000
-            });
-            inputRef.value.resetFormHandler();
-            inputRef.value.resetTableHandler();
+            try {
+                fetchOrders(formData, tableData);
+                toast.add({
+                    severity: 'success',
+                    summary: '성공',
+                    detail: '발주서가 등록되었습니다.',
+                    life: 2000
+                });
+                inputRef.value.resetFormHandler();
+                inputRef.value.resetTableHandler();
+            } catch (error) {
+                console.error('발주서 등록 중 오류 발생:', error);
+                toast.add({
+                    severity: 'error',
+                    summary: '오류',
+                    detail: '발주서 등록 중 오류가 발생했습니다.',
+                    life: 2000
+                });
+            }
         },
         reject: () => {
             toast.add({
@@ -367,7 +404,18 @@ onMounted(async () => {
         @submit="saveFormHandler"
     />
 
-    <DialogModal title="공급업체 정보" :selectionMode="'single'" :display="supModalVisible" :return="supModalReturn" :headers="supModalHeaders" :items="supModalItems" @close="supCloseModal" @confirm="supConfirmModal" @search-modal="subSearchModal" />
+    <DialogModal 
+        title="공급업체 정보" 
+        :selectionMode="'single'" 
+        :display="supModalVisible" 
+        :return="supModalReturn" 
+        :headers="supModalHeaders" 
+        :items="supModalItems" 
+        @close="supCloseModal" 
+        @confirm="supConfirmModal" 
+        @search-modal="subSearchModal"
+    />
+
     <DialogModal
         title="제품 정보"
         :selectionMode="'single'"

@@ -74,8 +74,18 @@ const confirmModal = async (selectedItems) => {
 // 검색 모달을 열 때 호출되는 함수
 // case 문을 사용하여 모달 이름(item-search 타입의 name을 따름)에 따라 다른 모달을 열 수 있도록 구현
 const loadPurchaseOnClick = async () => {
-    await getOrderData();
-    orderModalVisible.value = true;
+    try {
+        await getOrderData();
+        orderModalVisible.value = true;
+    } catch(error) {
+        console.error(error);
+        toast.add({
+            severity: 'error',
+            summary: '오류',
+            detail: '발주정보를 불러오는 중 오류가 발생했습니다.',
+            life: 2000
+        });
+    }
 };
 
 const searchModal = async (searchValue) => {
@@ -192,7 +202,7 @@ const getOrderData = async () => {
         // console.log('발주정보데이터 확인1 : ', modalItems.value);
         // console.log('발주정보데이터 확인2 : ', result.data);
     } catch (e) {
-        console.error('출고 데이터 불러오기 실패:', e);
+        throw Error('출고 데이터 불러오기 실패 : ' + e);
     }
 };
 
@@ -250,10 +260,6 @@ const resetFormHandler = () => {
     formData.value = {};
     tableData.value = [];
 };
-
-onMounted(() => {
-    getOrderData();
-});
 </script>
 <template>
     <InputMultiTable title="공급업체 출고정보" :defaultForm="formData" :formSchema="formSchema" :tableHeader="tableHeader" :tableData="tableData" :detailCRUD="false" @onRowSelect="onRowSelect" @resetForm="resetFormHandler">

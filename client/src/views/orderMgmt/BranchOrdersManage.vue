@@ -80,11 +80,22 @@ const branchModalHeaders = ref([
 ]);
 
 const getBranchModalItems = async (searchValue) => {
-    const req = await axios.get('/api/search/company/branch', {
-        params: {
-            searchValue
-        }
-    });
+    let req;
+    try {
+        req = await axios.get('/api/search/company/branch', {
+            params: {
+                searchValue
+            }
+        });
+    } catch (error) {
+        toast.add({
+            severity: 'error',
+            summary: '오류',
+            detail: '지점 정보를 불러오는 중 오류가 발생했습니다.',
+            life: 2000
+        });
+        throw Error('지점 모달 데이터 불러오기 실패: ' + error);
+    }
     return req.data;
 };
 
@@ -123,14 +134,24 @@ const itemModalHeaders = ref([
 
 const getItemModalItems = async (searchValue) => {
     let req;
-    if (searchValue) {
-        req = await axios.get('/api/search/products', {
-            params: {
-                searchValue
-            }
+    try {
+        if (searchValue) {
+            req = await axios.get('/api/search/products', {
+                params: {
+                    searchValue
+                }
+            });
+        } else {
+            req = await axios.get('/api/search/products/all');
+        }
+    } catch (error) {
+        toast.add({
+            severity: 'error',
+            summary: '오류',
+            detail: '제품 정보를 불러오는 중 오류가 발생했습니다.',
+            life: 2000
         });
-    } else {
-        req = await axios.get('/api/search/products/all');
+        throw Error('제품 모달 데이터 불러오기 실패: ' + error);
     }
     return req?.data ? req.data : req;
 };
@@ -175,18 +196,24 @@ const formSearch = async (item, fieldName) => {
     // console.log('form search', item);
     // console.log('data', fieldName);
     branchModalReturn.value = { item, fieldName };
-
-    branchModalItems.value = await getBranchModalItems('');
-    branchModalVisible.value = true;
+    try {
+        branchModalItems.value = await getBranchModalItems('');
+        branchModalVisible.value = true;
+    } catch (error) {
+        console.error(error);
+    }
 };
 
 const tableSearch = async (item, fieldName, data) => {
     // console.log('table search', item);
     // console.log('data', fieldName);
     itemModalReturn.value = { item, fieldName, data };
-
-    itemModalItems.value = await getItemModalItems();
-    itemModalVisible.value = true;
+    try {
+        itemModalItems.value = await getItemModalItems();
+        itemModalVisible.value = true;
+    } catch (error) {
+        console.error(error);
+    }
 };
 
 const fetchOrders = async (formData, tableData) => {
@@ -272,15 +299,25 @@ const saveFormHandler = async (formData, tableData) => {
             label: '저장'
         },
         accept: async () => {
-            fetchOrders(formData, tableData);
-            toast.add({
-                severity: 'success',
-                summary: '성공',
-                detail: '발주서가 등록되었습니다.',
-                life: 2000
-            });
-            inputRef.value.resetFormHandler();
-            inputRef.value.resetTableHandler();
+            try {
+                await fetchOrders(formData, tableData);
+                toast.add({
+                    severity: 'success',
+                    summary: '성공',
+                    detail: '발주서가 등록되었습니다.',
+                    life: 2000
+                });
+                inputRef.value.resetFormHandler();
+                inputRef.value.resetTableHandler();
+            } catch (error) {
+                console.error('발주서 등록 중 오류 발생:', error);
+                toast.add({
+                    severity: 'error',
+                    summary: '오류',
+                    detail: '발주서 등록 중 오류가 발생했습니다.',
+                    life: 2000
+                });
+            }
         },
         reject: () => {
             toast.add({
@@ -337,7 +374,6 @@ onBeforeMount(async () => {
         defaultForm.value.orderFrom = branchInfo.compName;
         defaultForm.value.orderFromId = branchInfo.compId;
     } else {
-        // TODO : 임시적으로 추가 했기 때문에 삭제 요함.
         formSchema.value.splice(-4, 1, {
             type: 'item-search',
             label: '지점명',
