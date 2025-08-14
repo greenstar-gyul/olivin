@@ -6,8 +6,10 @@ import axios from '@/service/axios';
 import DialogModal from '@/components/overray/DialogModal.vue';
 import moment from 'moment';
 import { useRoute, useRouter } from 'vue-router';
+import { useToast } from 'primevue';
 
 const router = useRouter();
+const toast = useToast();
 
 // 테스트 데이터
 const items = ref([]);
@@ -145,6 +147,15 @@ const getOrderData = async () => {
  * 제품입고처리 진행 함수
  */
 async function callInbndProcess(orderId) {
+    if (!orderId) {
+        toast.add({
+            severity: 'error',
+            summary: '오류',
+            detail: '입고할 발주정보를 선택해주세요.',
+            life: 2000
+        });
+        return;
+    }
     try {
         const response = await axios.post('/api/inbnd/brProcess', null, {
         // const response = await axios.post('/api/inbnd/brProcessDebug', null, {
@@ -152,14 +163,24 @@ async function callInbndProcess(orderId) {
                 orderId: orderId
             }
         });
-        alert('입고 처리가 완료되었습니다.');
+    toast.add({
+        severity: 'success',
+        summary: '성공',
+        detail: '입고가 완료되었습니다.',
+        life: 2000
+    });
         resetFormHandler();
     } catch (error) {
         console.error('서버 오류 발생:', error);
-
+        toast.add({
+            severity: 'error',
+            summary: '실패',
+            detail: '입고를 실패했습니다.',
+            life: 2000
+        });
         // 에러 메시지 추출
-        const message = error.response?.data?.message || '서버 오류가 발생했습니다.';
-        alert(message);
+        // const message = error.response?.data?.message || '서버 오류가 발생했습니다.';
+        // alert(message);
     }
 }
 
