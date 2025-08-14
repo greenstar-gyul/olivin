@@ -27,7 +27,7 @@ const balanceFrozen = ref(false);
 const accountHeaders = ref([
     { field: 'accountId', header: '계정코드' },
     { field: 'accountName', header: '계정과목' },
-    { field: 'normalBalance', header: '대차구분' }
+    // { field: 'normalBalance', header: '대차구분' }
 ]);
 
 // 모달창의 데이터 아이템

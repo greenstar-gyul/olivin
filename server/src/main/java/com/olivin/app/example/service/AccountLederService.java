@@ -17,4 +17,20 @@ public interface AccountLederService {
      * @return 거래처원장 목록
      */
     List<AccountLederVO> getAccountsByCondition(Map<String, Object> params);
+
+
+    // ------------------ 모달 ------------------
+    /**
+     * 모달창용 - accounts 테이블에서 계정 목록만 조회
+     * @param params 검색 조건
+     * @return 계정 목록 (accountId, accountName, normalBalance만)
+     */
+    List<AccountLederVO> getAccountsOnly(Map<String, Object> params);
+    
+    /**
+     * 검색창용 - accounts 테이블에서 계정 검색
+     * @param searchValue 검색어
+     * @return 계정 목록
+     */
+    List<AccountLederVO> searchAccountsOnly(String searchValue);
 }

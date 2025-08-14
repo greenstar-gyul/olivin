@@ -65,4 +65,28 @@
         ORDER BY al.write_date DESC
     </select>
 
+
+    <!-- accounts 테이블에서 계정 목록만 조회 (모달창용) -->
+    <select id="selectAccountsOnly" resultType="com.olivin.app.example.service.AccountLederVO" parameterType="map">
+        SELECT 
+            account_id AS accountId,
+            account_name AS accountName,
+            normal_balance AS normalBalance
+        FROM accounts
+        <where>
+            <if test="accountId != null and accountId != ''">
+                AND account_id LIKE '%' || #{accountId} || '%'
+            </if>
+            <if test="accountName != null and accountName != ''">
+                AND account_name LIKE '%' || #{accountName} || '%'
+            </if>
+            <if test="searchValue != null and searchValue != ''">
+                AND (
+                    account_id LIKE '%' || #{searchValue} || '%'
+                    OR account_name LIKE '%' || #{searchValue} || '%'
+                )
+            </if>
+        </where>
+        ORDER BY account_id
+    </select>
 </mapper>
