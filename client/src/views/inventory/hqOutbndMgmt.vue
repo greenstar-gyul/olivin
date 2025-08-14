@@ -6,8 +6,10 @@ import axios from '@/service/axios';
 import DialogModal from '@/components/overray/DialogModal.vue';
 import moment from 'moment';
 import { useRoute, useRouter } from 'vue-router';
+import { useToast } from 'primevue';
 
 const router = useRouter();
+const toast = useToast();
 
 // 테스트 데이터
 const items = ref([]);
@@ -187,21 +189,40 @@ const getOrderData = async () => {
  * 제품출고처리 진행 함수 
  */
 async function callOutbndProcess(orderId) {
+    if (!orderId) {
+        toast.add({
+            severity: 'error',
+            summary: '오류',
+            detail: '출고할 발주정보를 선택해주세요.',
+            life: 2000
+        });
+        return;
+    }
     try {
         const response = await axios.post('/api/outbnd/hqProcess', null, {
             params: {
                 orderId: orderId
             }
         });
-        alert('출고 처리가 완료되었습니다.');
+    toast.add({
+        severity: 'success',
+        summary: '성공',
+        detail: '출고가 완료되었습니다.',
+        life: 2000
+    });
         resetFormHandler(); // 전체 폼 초기화
         getOrderData(); // 처리한 발주서 정보 초기화
     } catch (error) {
         console.error('서버 오류 발생:', error);
-
+        toast.add({
+            severity: 'error',
+            summary: '실패',
+            detail: '출고를 실패했습니다.',
+            life: 2000
+        });
         // 에러 메시지 추출
-        const message = error.response?.data?.message || '서버 오류가 발생했습니다.';
-        alert(message);
+        // const message = error.response?.data?.message || '서버 오류가 발생했습니다.';
+        // alert(message);
     }
 }
 
