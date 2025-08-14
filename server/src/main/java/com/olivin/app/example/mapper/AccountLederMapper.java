@@ -22,4 +22,13 @@ public interface AccountLederMapper {
      * @return 거래처원장 목록
      */
     List<AccountLederVO> selectByCondition(Map<String, Object> params);
+    
+    // ------------------ 모달 ------------------
+
+    /**
+     * accounts 테이블에서 계정 목록만 조회 (모달창용)
+     * @param params 검색 조건
+     * @return 계정 목록
+     */
+    List<AccountLederVO> selectAccountsOnly(Map<String, Object> params);
 }

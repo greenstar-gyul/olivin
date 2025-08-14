@@ -47,4 +47,49 @@ public class AccountLederController {
             return ResponseEntity.internalServerError().build();
         }
     }
-}
+    
+    // ------------------ 모달 ------------------
+    
+    
+    /**
+     * DB에서 계정 목록 조회 (모달창용) - accountId, accountName, normalBalance만 조회
+     */
+    @GetMapping("/dbaccounts")
+    public ResponseEntity<List<AccountLederVO>> getDbAccountList(
+            @RequestParam(required = false) Map<String, Object> params
+    ) {
+        try {
+            log.info("DB 계정 목록 조회 요청 - 파라미터: {}", params);
+            
+            List<AccountLederVO> accountList = accountLederService.getAccountsOnly(params);
+            
+            log.info("DB 계정 목록 조회 결과: {} 건", accountList.size());
+            return ResponseEntity.ok(accountList);
+            
+        } catch (Exception e) {
+            log.error("DB 계정 목록 조회 중 오류 발생", e);
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+    
+    /**
+     * 검색 조건으로 계정 목록 조회 (검색창용)
+     */
+    @GetMapping("/accounts")
+    public ResponseEntity<List<AccountLederVO>> getAccountsForSearch(
+        @RequestParam(required = false) String searchValue
+        ) {
+            try {
+                log.info("계정 검색 요청 - 검색어: {}", searchValue);
+            
+                List<AccountLederVO> accountList = accountLederService.searchAccountsOnly(searchValue);
+            
+                log.info("계정 검색 결과: {} 건", accountList.size());
+                return ResponseEntity.ok(accountList);
+                
+            } catch (Exception e) {
+                log.error("계정 검색 중 오류 발생", e);
+                return ResponseEntity.internalServerError().build();
+            }
+        }
+    }
