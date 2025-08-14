@@ -210,9 +210,7 @@ const headerData = {
         productSpec: '용량',
         unit: '단위',
         packQty: '입수량',
-        safetyStock: '안전재고',
-        regUserName: '등록자',
-        regDate: '등록일'
+        safetyStock: '안전재고'
     },
     rightAligned: ['packQty', 'safetyStock', 'purchasePrice', 'sellPrice']
 };
