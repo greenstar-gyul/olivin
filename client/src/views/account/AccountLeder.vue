@@ -39,6 +39,44 @@ const accountModalVisible = ref(false);
 // SearchForm의 ref 추가
 const searchFormRef = ref(null);
 
+// 날짜 포맷팅 유틸리티 함수 추가 (타임존 문제 해결)
+function formatDateForServer(date) {
+    if (!date) return '';
+    
+    console.log('📅 원본 날짜:', date, typeof date);
+    
+    // Date 객체인 경우 로컬 날짜로 포맷 (타임존 오프셋 보정)
+    if (date instanceof Date) {
+        // 타임존 오프셋을 고려하여 로컬 날짜 추출
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const formatted = `${year}-${month}-${day}`;
+        console.log('📅 Date 객체 변환 (로컬):', formatted);
+        return formatted;
+    }
+    
+    // 이미 문자열인 경우
+    if (typeof date === 'string') {
+        // ISO 문자열인 경우 날짜 부분만 추출
+        if (date.includes('T')) {
+            const formatted = date.split('T')[0];
+            console.log('📅 ISO 문자열 변환:', formatted);
+            return formatted;
+        }
+        // YYYY-MM-DD 형태면 그대로
+        if (/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+            console.log('📅 YYYY-MM-DD 형태 그대로:', date);
+            return date;
+        }
+        console.log('📅 문자열 그대로:', date);
+        return date;
+    }
+    
+    console.log('📅 기타 타입:', date);
+    return '';
+}
+
 // 데이터 포맷팅 함수
 function formatCurrency(value) {
     if (value === null || value === undefined || value === '') return '0';
@@ -85,11 +123,12 @@ const loadAccountItems = async () => {
 async function fetchData(searchParams = {}) {
     loading.value = true;
     try {
+        console.log('📤 서버로 전송하는 파라미터:', searchParams);
         const result = await axios.get('/api/account', { params: searchParams });
         items.value = result.data || [];
-        console.log('데이터 조회 성공:', items.value.length, '건');
+        console.log('✅ 데이터 조회 성공:', items.value.length, '건');
     } catch (error) {
-        console.error('데이터를 불러오는 데 실패했습니다:', error);
+        console.error('❌ 데이터를 불러오는 데 실패했습니다:', error);
         items.value = [];
         // 에러 토스트 메시지 (PrimeVue Toast 사용 시)
         // toast.add({severity:'error', summary: '오류', detail: '데이터 조회에 실패했습니다.', life: 3000});
@@ -100,7 +139,7 @@ async function fetchData(searchParams = {}) {
 
 // 검색 폼에서 검색 버튼 클릭 시 호출되는 함수
 const searchData = async (searchOptions) => {
-    console.log('Searching with options:', searchOptions);
+    console.log('🔍 원본 검색 옵션:', searchOptions);
     
     // 검색 파라미터 변환
     const params = {
@@ -109,14 +148,24 @@ const searchData = async (searchOptions) => {
         compName: searchOptions.compName || ''
     };
     
-    // 날짜 범위 처리
+    // 날짜 범위 처리 - 올바른 포맷으로 변환
     if (searchOptions.dateRangeFrom) {
-        params.startDate = searchOptions.dateRangeFrom;
+        params.startDate = formatDateForServer(searchOptions.dateRangeFrom);
+        console.log('📅 시작일 변환:', searchOptions.dateRangeFrom, '->', params.startDate);
     }
     if (searchOptions.dateRangeTo) {
-        params.endDate = searchOptions.dateRangeTo;
+        params.endDate = formatDateForServer(searchOptions.dateRangeTo);
+        console.log('📅 종료일 변환:', searchOptions.dateRangeTo, '->', params.endDate);
     }
     
+    // 빈 값 제거
+    Object.keys(params).forEach(key => {
+        if (params[key] === '' || params[key] === null || params[key] === undefined) {
+            delete params[key];
+        }
+    });
+    
+    console.log('📤 최종 서버 전송 파라미터:', params);
     await fetchData(params);
 };
 
