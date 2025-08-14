@@ -33,7 +33,7 @@ let categoryChartInstance = null;
 let refreshInterval = null;
 
 // API 기본 URL
-const API_BASE_URL = 'http://localhost:3049/api/dashboard/branch';
+const API_BASE_URL = '/api/dashboard/branch';
 
 // 공통 API 호출 함수
 const fetchData = async (url, dataName) => {
