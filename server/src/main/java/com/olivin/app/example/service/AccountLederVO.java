@@ -25,7 +25,8 @@ public class AccountLederVO {
     // 계정 정보
     private String accountId;
     private String accountName;
-    
+    private String nomalBalance; // 대차구분
+
     // 회사 정보
     private String compId;
     private String compName;
