@@ -201,7 +201,7 @@ const filtersData = {
 const filters = ref(filtersData);
 
 const headerData = {
-    title: '제품 기준정보 관리 (승인완료)',
+    title: '제품 기준정보 관리',
     header: {
         productName: '제품명',
         vendorName: '브랜드',
