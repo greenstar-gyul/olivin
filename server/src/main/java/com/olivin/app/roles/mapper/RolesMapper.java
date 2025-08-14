@@ -50,15 +50,15 @@ public interface RolesMapper {
     // 권한 사용 여부 확인 (직원이 사용 중인지)
     int checkRoleInUse(Integer roleId);
     
-    // === 권한-권한 매핑 관련 (PERM_ID를 String으로 변경) ===
+    // === 권한-권한 매핑 관련 ===
     
     // 모든 권한 목록 조회 (Map 형태)
     List<Map<String, Object>> selectAllPermissions();
     
-    // ✅ 특정 권한의 권한 ID 목록 조회 - String으로 변경
+    // 특정 권한의 권한 ID 목록 조회 - String으로 변경
     List<String> selectPermissionIdsByRoleId(Integer roleId);
     
-    // ✅ 권한에 권한 할당 - permId를 String으로 변경
+    // 권한에 권한 할당 - permId를 String으로 변경
     int insertRolePermission(@Param("roleId") Integer roleId, @Param("permId") String permId);
     
     // 권한의 모든 권한 삭제
@@ -67,12 +67,12 @@ public interface RolesMapper {
     // 권한별 권한 수 조회
     List<Map<String, Object>> selectRolePermissionCount();
     
-    // ========== 추가: 사원 관련 메서드 ==========
+    // ========== 사원 관련 메서드 (부서명과 역할설명 포함) ==========
     
-    // 사원 목록 조회 (권한 정보 포함)
+    // 🔥 사원 목록 조회 (권한 정보 포함) - 부서명과 역할설명 조인
     List<Map<String, Object>> selectEmployeesWithPermissions(Map<String, Object> searchParams);
     
-    // ✅ 특정 사원의 권한 ID 목록 조회 (역할을 통해) - String으로 변경
+    // 특정 사원의 권한 ID 목록 조회 (역할을 통해) - String으로 변경
     List<String> selectEmployeePermissionIds(String employeeId);
     
     // 사원의 역할 변경
@@ -83,8 +83,11 @@ public interface RolesMapper {
     
     // ========== 추가: 유틸리티 메서드 ==========
     
-    // 사원의 역할명 조회
+    // 사원의 역할명 조회 (기존)
     String selectEmployeeRoleName(String employeeId);
+    
+    // 🔥 사원의 역할 상세정보 조회 (역할명 + 역할설명)
+    Map<String, Object> selectEmployeeRoleDetails(String employeeId);
     
     // 역할별 사원 수 조회
     Map<String, Object> selectRoleEmployeeCount(Integer roleId);
@@ -92,6 +95,6 @@ public interface RolesMapper {
     // 사원의 권한 상세 정보 조회 (권한명 포함)
     List<Map<String, Object>> selectEmployeePermissionDetails(String employeeId);
     
-    // 부서별 권한 통계
+    // 🔥 부서별 권한 통계 - 부서명 포함
     List<Map<String, Object>> selectDepartmentPermissionStats();
 }

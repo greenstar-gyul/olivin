@@ -2,6 +2,8 @@ package com.olivin.app.common.mapper;
 
 import java.util.List;
 
+import org.apache.ibatis.annotations.Param;
+
 import com.olivin.app.common.service.ProductSearchVO;
 
 /**
@@ -19,4 +21,10 @@ public interface ProductSearchMapper {
 
     // 조건에 맞는 상품 목록을 조회합니다.
     List<ProductSearchVO> selectProductList(String searchValue);
+
+    // 공급업체별 전체 상품 목록을 조회합니다.
+    List<ProductSearchVO> selectProductsByVendor(String vendorName);
+
+    // 공급업체별 상품 목록을 조회합니다.
+    List<ProductSearchVO> selectProductListByVendor(@Param("searchValue") String searchValue, @Param("vendorName") String vendorName);
 }

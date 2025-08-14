@@ -17,4 +17,10 @@ public interface ProductSearchService {
 
     // 조건에 맞는 상품 목록을 검색합니다.
     public List<ProductSearchVO> searchProducts(String searchValue);
+
+    // 공급업체별 전체 상품 목록을 조회합니다.
+    List<ProductSearchVO> selectProductsByVendor(String vendorName);
+
+    // 공급업체별 상품 목록을 검색합니다.
+    List<ProductSearchVO> searchProductsByVendor(String searchValue, String vendorName);
 }

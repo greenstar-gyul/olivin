@@ -35,4 +35,16 @@ public class ProductSearchServiceImpl implements ProductSearchService {
     public List<ProductSearchVO> searchProducts(String searchValue) {
         return productSearchMapper.selectProductList(searchValue);
     }
+
+    // 공급업체별 전체 상품 목록을 조회합니다.
+    @Override
+    public List<ProductSearchVO> selectProductsByVendor(String vendorName) {
+        return productSearchMapper.selectProductsByVendor(vendorName);
+    }
+
+    // 공급업체별 상품 목록을 검색합니다.
+    @Override
+    public List<ProductSearchVO> searchProductsByVendor(String searchValue, String vendorName) {
+        return productSearchMapper.selectProductListByVendor(searchValue, vendorName);
+    }
 }

@@ -21,7 +21,7 @@ public class RolesServiceImpl implements RolesService {
     
     private final RolesMapper roleMapper;
     
-    // ========== 기존 역할 관리 구현 ==========
+    // ========== 기존 역할 관리 구현 (변경사항 없음) ==========
     
     @Override
     public List<RolesVO> getAllRoles() {
@@ -173,23 +173,42 @@ public class RolesServiceImpl implements RolesService {
         return roleMapper.selectRolePermissionCount();
     }
     
-    // ========== 추가: 사원 관련 구현 ==========
+    // ========== 🔥 개선된 사원 관련 구현 - 부서명과 역할설명 처리 ==========
     
     @Override
     public List<Map<String, Object>> getEmployeesWithPermissions(Map<String, Object> searchParams) {
         try {
             List<Map<String, Object>> employees = roleMapper.selectEmployeesWithPermissions(searchParams);
             
-            // 데이터 후처리 (필요한 경우)
+            // 🔥 데이터 후처리 - NULL 값 처리 및 기본값 설정
             for (Map<String, Object> employee : employees) {
                 // permissionCount가 null인 경우 0으로 설정
-                if (employee.get("permissionCount") == null) {
-                    employee.put("permissionCount", 0);
+                if (employee.get("PERMISSION_COUNT") == null) {
+                    employee.put("PERMISSION_COUNT", 0);
                 }
                 // permissionNames가 null인 경우 빈 문자열로 설정
-                if (employee.get("permissionNames") == null) {
-                    employee.put("permissionNames", "");
+                if (employee.get("PERMISSION_NAMES") == null) {
+                    employee.put("PERMISSION_NAMES", "");
                 }
+                // 🔥 부서명이 null인 경우 "미지정" 처리
+                if (employee.get("DEPT_NAME") == null) {
+                    employee.put("DEPT_NAME", "미지정");
+                }
+                // 🔥 역할설명이 null인 경우 기본값 처리
+                if (employee.get("ROLE_DESC") == null) {
+                    employee.put("ROLE_DESC", "설명없음");
+                }
+                
+                // 🔥 소문자 키로도 접근 가능하도록 추가 (Vue.js 호환성)
+                employee.put("permissionCount", employee.get("PERMISSION_COUNT"));
+                employee.put("permissionNames", employee.get("PERMISSION_NAMES"));
+                employee.put("deptName", employee.get("DEPT_NAME"));
+                employee.put("roleDesc", employee.get("ROLE_DESC"));
+                employee.put("employeeId", employee.get("EMPLOYEE_ID"));
+                employee.put("empName", employee.get("EMP_NAME"));
+                employee.put("departmentId", employee.get("DEPARTMENT_ID"));
+                employee.put("baseRole", employee.get("BASE_ROLE"));
+                employee.put("roleId", employee.get("ROLE_ID"));
             }
             
             return employees;
@@ -259,10 +278,10 @@ public class RolesServiceImpl implements RolesService {
         }
     }
     
-    // ========== 추가: 유틸리티 메서드 ==========
+    // ========== 🔥 추가: 개선된 유틸리티 메서드 ==========
     
     /**
-     * 사원의 역할명 조회
+     * 사원의 역할명 조회 (기존)
      */
     public String getEmployeeRoleName(String employeeId) {
         try {
@@ -270,6 +289,37 @@ public class RolesServiceImpl implements RolesService {
         } catch (Exception e) {
             System.err.println("사원 역할명 조회 중 오류: " + e.getMessage());
             return null;
+        }
+    }
+    
+    /**
+     * 🔥 사원의 역할 상세정보 조회 (역할명 + 역할설명)
+     */
+    public Map<String, Object> getEmployeeRoleDetails(String employeeId) {
+        try {
+            if (!isEmployeeExists(employeeId)) {
+                throw new RuntimeException("존재하지 않는 사원입니다: " + employeeId);
+            }
+            
+            Map<String, Object> roleDetails = roleMapper.selectEmployeeRoleDetails(employeeId);
+            
+            // NULL 값 처리
+            if (roleDetails != null) {
+                if (roleDetails.get("ROLE_DESC") == null) {
+                    roleDetails.put("ROLE_DESC", "설명없음");
+                }
+                
+                // 소문자 키 추가 (Vue.js 호환성)
+                roleDetails.put("roleId", roleDetails.get("ROLE_ID"));
+                roleDetails.put("roleName", roleDetails.get("ROLE_NAME"));
+                roleDetails.put("roleDesc", roleDetails.get("ROLE_DESC"));
+            }
+            
+            return roleDetails;
+        } catch (Exception e) {
+            System.err.println("사원 역할 상세정보 조회 중 오류: " + e.getMessage());
+            e.printStackTrace();
+            return new HashMap<>();
         }
     }
     
@@ -303,11 +353,29 @@ public class RolesServiceImpl implements RolesService {
     }
     
     /**
-     * 부서별 권한 통계
+     * 🔥 부서별 권한 통계 - 부서명 포함
      */
     public List<Map<String, Object>> getDepartmentPermissionStats() {
         try {
-            return roleMapper.selectDepartmentPermissionStats();
+            List<Map<String, Object>> stats = roleMapper.selectDepartmentPermissionStats();
+            
+            // 🔥 NULL 값 처리
+            for (Map<String, Object> stat : stats) {
+                if (stat.get("DEPT_NAME") == null) {
+                    stat.put("DEPT_NAME", "미지정");
+                }
+                if (stat.get("AVG_PERMISSION_COUNT") == null) {
+                    stat.put("AVG_PERMISSION_COUNT", 0.0);
+                }
+                
+                // 소문자 키 추가 (Vue.js 호환성)
+                stat.put("departmentId", stat.get("DEPARTMENT_ID"));
+                stat.put("deptName", stat.get("DEPT_NAME"));
+                stat.put("employeeCount", stat.get("EMPLOYEE_COUNT"));
+                stat.put("avgPermissionCount", stat.get("AVG_PERMISSION_COUNT"));
+            }
+            
+            return stats;
         } catch (Exception e) {
             System.err.println("부서별 권한 통계 조회 중 오류: " + e.getMessage());
             e.printStackTrace();
