@@ -2,6 +2,8 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.olivin.app.roles.mapper.RolesMapper">
     
+    <!-- ========== 기존 역할 관리 쿼리들 (변경사항 없음) ========== -->
+    
     <!-- ResultMap 정의 - 실제 DB 구조에 맞게 수정 -->
     <resultMap id="RoleResultMap" type="com.olivin.app.roles.service.RolesVO">
         <id property="roleId" column="ROLE_ID"/>
@@ -107,76 +109,53 @@
         WHERE  ROLE_ID = #{roleId}
     </delete>
 
-    <!-- 권한 ID 존재 여부 확인 -->
+    <!-- 기타 권한 관련 쿼리들... (변경사항 없음) -->
     <select id="checkRoleId" parameterType="Integer" resultType="int">
-        SELECT COUNT(*)
-        FROM   ROLES
-        WHERE  ROLE_ID = #{roleId}
+        SELECT COUNT(*) FROM ROLES WHERE ROLE_ID = #{roleId}
     </select>
 
-    <!-- 권한명 중복 확인 -->
     <select id="checkRoleName" resultType="int">
-        SELECT COUNT(*)
-        FROM   ROLES
-        WHERE  ROLE_NAME = #{roleName}
-        <if test="excludeRoleId != null">
-            AND ROLE_ID != #{excludeRoleId}
-        </if>
+        SELECT COUNT(*) FROM ROLES WHERE ROLE_NAME = #{roleName}
+        <if test="excludeRoleId != null">AND ROLE_ID != #{excludeRoleId}</if>
     </select>
 
-    <!-- 마지막 권한 ID 조회 -->
     <select id="selectLastRoleId" resultType="Integer">
         SELECT MAX(ROLE_ID) FROM ROLES
     </select>
 
-    <!-- 권한별 직원 수 통계 -->
     <select id="selectRoleStatsByEmployee" resultType="map">
-        SELECT r.ROLE_ID,
-               r.ROLE_NAME,
-               COUNT(e.EMPLOYEE_ID) as EMPLOYEE_COUNT
-        FROM   ROLES r
-        LEFT JOIN EMPLOYEES e ON r.ROLE_ID = e.ROLE_ID
-        GROUP BY r.ROLE_ID, r.ROLE_NAME
-        ORDER BY r.ROLE_ID
+        SELECT r.ROLE_ID, r.ROLE_NAME, COUNT(e.EMPLOYEE_ID) as EMPLOYEE_COUNT
+        FROM ROLES r LEFT JOIN EMPLOYEES e ON r.ROLE_ID = e.ROLE_ID
+        GROUP BY r.ROLE_ID, r.ROLE_NAME ORDER BY r.ROLE_ID
     </select>
 
-    <!-- 최근 등록된 권한 조회 -->
     <select id="selectRecentRoles" parameterType="int" resultMap="RoleResultMap">
         SELECT r.ROLE_ID, r.ROLE_NAME, r.ROLE_DESC,
                (SELECT COUNT(*) FROM EMPLOYEES e WHERE e.ROLE_ID = r.ROLE_ID) as EMPLOYEE_COUNT,
                (SELECT COUNT(*) FROM ROLE_PERMISSION rp WHERE rp.ROLE_ID = r.ROLE_ID) as PERMISSION_COUNT,
                (SELECT LISTAGG(p.PERM_NAME, ', ') WITHIN GROUP (ORDER BY p.PERM_NAME)
-                FROM ROLE_PERMISSION rp2 
-                JOIN PERMISSIONS p ON rp2.PERM_ID = p.PERM_ID 
+                FROM ROLE_PERMISSION rp2 JOIN PERMISSIONS p ON rp2.PERM_ID = p.PERM_ID 
                 WHERE rp2.ROLE_ID = r.ROLE_ID) as PERMISSION_NAMES
-        FROM   ROLES r
-        ORDER BY r.ROLE_ID ASC
-        FETCH FIRST #{limit} ROWS ONLY
+        FROM ROLES r ORDER BY r.ROLE_ID ASC FETCH FIRST #{limit} ROWS ONLY
     </select>
 
-    <!-- 권한 사용 여부 확인 -->
     <select id="checkRoleInUse" parameterType="Integer" resultType="int">
-        SELECT COUNT(*)
-        FROM   EMPLOYEES
-        WHERE  ROLE_ID = #{roleId}
+        SELECT COUNT(*) FROM EMPLOYEES WHERE ROLE_ID = #{roleId}
     </select>
 
-    <!-- 모든 권한 목록 조회 (Map 형태) - PERM_ID를 VARCHAR2로 처리 -->
+    <!-- 모든 권한 목록 조회 (Map 형태) -->
     <select id="selectAllPermissions" resultType="map">
         SELECT PERM_ID, PERM_NAME, PERM_DESCRIPTION, ICON, PARENT_TO
-        FROM   PERMISSIONS
-        ORDER BY PERM_ID ASC
+        FROM PERMISSIONS ORDER BY PERM_ID ASC
     </select>
 
-    <!-- 특정 권한의 권한 ID 목록 조회 - PERM_ID를 String으로 반환 -->
+    <!-- 특정 권한의 권한 ID 목록 조회 -->
     <select id="selectPermissionIdsByRoleId" parameterType="Integer" resultType="String">
-        SELECT rp.PERM_ID
-        FROM   ROLE_PERMISSION rp
-        WHERE  rp.ROLE_ID = #{roleId}
-        ORDER BY rp.PERM_ID ASC
+        SELECT rp.PERM_ID FROM ROLE_PERMISSION rp
+        WHERE rp.ROLE_ID = #{roleId} ORDER BY rp.PERM_ID ASC
     </select>
 
-    <!-- 권한에 권한 할당 - PERM_ID를 String으로 처리 -->
+    <!-- 권한에 권한 할당 -->
     <insert id="insertRolePermission">
         INSERT INTO ROLE_PERMISSION (RPERM_ID, ROLE_ID, PERM_ID)
         VALUES ((SELECT NVL(MAX(RPERM_ID), 0) + 1 FROM ROLE_PERMISSION), #{roleId}, #{permId})
@@ -184,34 +163,30 @@
 
     <!-- 권한의 모든 권한 삭제 -->
     <delete id="deleteRolePermissions" parameterType="Integer">
-        DELETE FROM ROLE_PERMISSION 
-        WHERE  ROLE_ID = #{roleId}
+        DELETE FROM ROLE_PERMISSION WHERE ROLE_ID = #{roleId}
     </delete>
 
-    <!-- 권한별 권한 수 조회 -->
     <select id="selectRolePermissionCount" resultType="map">
-        SELECT r.ROLE_ID,
-               r.ROLE_NAME,
-               COUNT(rp.PERM_ID) as PERMISSION_COUNT
-        FROM   ROLES r
-        LEFT JOIN ROLE_PERMISSION rp ON r.ROLE_ID = rp.ROLE_ID
-        GROUP BY r.ROLE_ID, r.ROLE_NAME
-        ORDER BY r.ROLE_ID
+        SELECT r.ROLE_ID, r.ROLE_NAME, COUNT(rp.PERM_ID) as PERMISSION_COUNT
+        FROM ROLES r LEFT JOIN ROLE_PERMISSION rp ON r.ROLE_ID = rp.ROLE_ID
+        GROUP BY r.ROLE_ID, r.ROLE_NAME ORDER BY r.ROLE_ID
     </select>
 
-    <!-- ========== 사원 관련 쿼리 ========== -->
+    <!-- ========== 🔥 수정된 사원 관련 쿼리 - 부서명과 역할설명 조인 ========== -->
 
-    <!-- 사원 목록 조회 (권한 정보 포함) -->
+    <!-- 🔥 사원 목록 조회 (권한 정보 포함) - 부서명과 역할설명 추가 -->
     <select id="selectEmployeesWithPermissions" parameterType="Map" resultType="map">
         SELECT 
             e.EMPLOYEE_ID,
             e.EMP_NAME,
             e.DEPARTMENT_ID,
+            d.DEPT_NAME,                    /* 🔥 부서명 조인 추가 */
             e.POSITION,
             e.STATUS,
             e.HIRE_DATE,
             e.ROLE_ID,
-            r.ROLE_NAME as BASE_ROLE,
+            r.ROLE_NAME as BASE_ROLE,       /* 역할명 (검색용) */
+            r.ROLE_DESC,                    /* 🔥 역할설명 추가 */
             (SELECT COUNT(*) FROM ROLE_PERMISSION rp WHERE rp.ROLE_ID = e.ROLE_ID) as PERMISSION_COUNT,
             (SELECT LISTAGG(p.PERM_NAME, ', ') WITHIN GROUP (ORDER BY p.PERM_NAME)
              FROM ROLE_PERMISSION rp2 
@@ -219,6 +194,7 @@
              WHERE rp2.ROLE_ID = e.ROLE_ID) as PERMISSION_NAMES
         FROM EMPLOYEES e
         LEFT JOIN ROLES r ON e.ROLE_ID = r.ROLE_ID
+        LEFT JOIN DEPARTMENTS d ON e.DEPARTMENT_ID = d.DEPARTMENT_ID    /* 🔥 부서 테이블 조인 */
         WHERE 1=1
         <if test="employeeId != null and employeeId != ''">
             AND e.EMPLOYEE_ID LIKE '%' || #{employeeId} || '%'
@@ -228,6 +204,9 @@
         </if>
         <if test="departmentId != null and departmentId != ''">
             AND e.DEPARTMENT_ID LIKE '%' || #{departmentId} || '%'
+        </if>
+        <if test="deptName != null and deptName != ''">
+            AND d.DEPT_NAME LIKE '%' || #{deptName} || '%'    /* 🔥 부서명으로 검색 */
         </if>
         <if test="position != null and position != ''">
             AND e.POSITION LIKE '%' || #{position} || '%'
@@ -244,7 +223,7 @@
         ORDER BY e.EMPLOYEE_ID ASC
     </select>
 
-    <!-- 특정 사원의 권한 ID 목록 조회 - String으로 반환 -->
+    <!-- 특정 사원의 권한 ID 목록 조회 (역할을 통해) -->
     <select id="selectEmployeePermissionIds" parameterType="String" resultType="String">
         SELECT rp.PERM_ID
         FROM EMPLOYEES e
@@ -267,9 +246,20 @@
         WHERE EMPLOYEE_ID = #{employeeId}
     </select>
 
-    <!-- 사원의 역할명 조회 -->
+    <!-- 🔥 사원의 역할명과 역할설명 조회 -->
     <select id="selectEmployeeRoleName" parameterType="String" resultType="String">
         SELECT r.ROLE_NAME
+        FROM EMPLOYEES e
+        JOIN ROLES r ON e.ROLE_ID = r.ROLE_ID
+        WHERE e.EMPLOYEE_ID = #{employeeId}
+    </select>
+
+    <!-- 🔥 사원의 역할 상세정보 조회 (역할명 + 역할설명) -->
+    <select id="selectEmployeeRoleDetails" parameterType="String" resultType="map">
+        SELECT 
+            r.ROLE_ID,
+            r.ROLE_NAME,
+            r.ROLE_DESC
         FROM EMPLOYEES e
         JOIN ROLES r ON e.ROLE_ID = r.ROLE_ID
         WHERE e.EMPLOYEE_ID = #{employeeId}
@@ -302,17 +292,19 @@
         ORDER BY p.PERM_ID ASC
     </select>
 
-    <!-- 부서별 권한 통계 -->
+    <!-- 🔥 부서별 권한 통계 - 부서명 포함 -->
     <select id="selectDepartmentPermissionStats" resultType="map">
         SELECT 
             e.DEPARTMENT_ID,
+            d.DEPT_NAME,                    /* 🔥 부서명 추가 */
             COUNT(DISTINCT e.EMPLOYEE_ID) as EMPLOYEE_COUNT,
             AVG(
                 (SELECT COUNT(*) FROM ROLE_PERMISSION rp WHERE rp.ROLE_ID = e.ROLE_ID)
             ) as AVG_PERMISSION_COUNT
         FROM EMPLOYEES e
+        LEFT JOIN DEPARTMENTS d ON e.DEPARTMENT_ID = d.DEPARTMENT_ID    /* 🔥 부서 테이블 조인 */
         WHERE e.DEPARTMENT_ID IS NOT NULL
-        GROUP BY e.DEPARTMENT_ID
+        GROUP BY e.DEPARTMENT_ID, d.DEPT_NAME
         ORDER BY AVG_PERMISSION_COUNT DESC, e.DEPARTMENT_ID
     </select>
 
