@@ -53,12 +53,12 @@
             </if>
             <if test="startDate != null and startDate != ''">
                 <![CDATA[
-                    AND al.write_date >= #{startDate}
+                    AND al.write_date >= TO_DATE(#{startDate}, 'YYYY-MM-DD')
                 ]]>
             </if>
             <if test="endDate != null and endDate != ''">
                 <![CDATA[
-                    AND al.write_date <= #{endDate}
+                    AND al.write_date <= TO_DATE(#{endDate},   'YYYY-MM-DD')
                 ]]>
             </if>
         </where>
