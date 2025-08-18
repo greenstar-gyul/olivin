@@ -140,8 +140,9 @@
         WHERE EXISTS (
             SELECT 1 
             FROM INBND_PRODUCT_D ipd 
-            WHERE ipd.UNIT = p.UNIT
-              AND ipd.REMAIN_QUANTITY >= 0
+            JOIN INBND_PRODUCT ip ON ipd.INBND_PRODUCT_NO = ip.INBND_PRODUCT_NO
+            WHERE ip.PRODUCT_ID = p.PRODUCT_ID
+              AND ipd.REMAIN_QUANTITY > 0
         )
     </select>
 
@@ -153,12 +154,13 @@
           AND EXISTS (
               SELECT 1
               FROM (
-                  SELECT UNIT, SUM(REMAIN_QUANTITY) as total_remain
-                  FROM INBND_PRODUCT_D
-                  WHERE REMAIN_QUANTITY >= 0
-                  GROUP BY UNIT
+                  SELECT ip.PRODUCT_ID, SUM(ipd.REMAIN_QUANTITY) as total_remain
+                  FROM INBND_PRODUCT_D ipd
+                  JOIN INBND_PRODUCT ip ON ipd.INBND_PRODUCT_NO = ip.INBND_PRODUCT_NO
+                  WHERE ipd.REMAIN_QUANTITY >= 0
+                  GROUP BY ip.PRODUCT_ID
               ) ipd_sum
-              WHERE ipd_sum.UNIT = p.UNIT
+              WHERE ipd_sum.PRODUCT_ID = p.PRODUCT_ID
                 AND ipd_sum.total_remain > 0
                 AND ipd_sum.total_remain < p.SAFETY_STOCK
           )
@@ -171,7 +173,8 @@
         WHERE NOT EXISTS (
             SELECT 1
             FROM INBND_PRODUCT_D ipd
-            WHERE ipd.UNIT = p.UNIT
+            JOIN INBND_PRODUCT ip ON ipd.INBND_PRODUCT_NO = ip.INBND_PRODUCT_NO
+            WHERE ip.PRODUCT_ID = p.PRODUCT_ID
               AND ipd.REMAIN_QUANTITY > 0
         )
     </select>
@@ -179,12 +182,13 @@
     <select id="getTotalInventoryValue" resultType="java.math.BigDecimal">
         SELECT NVL(SUM(ipd_sum.total_remain * p.PURCHASE_PRICE), 0) as total_inventory_value
         FROM (
-            SELECT UNIT, SUM(REMAIN_QUANTITY) as total_remain
-            FROM INBND_PRODUCT_D
-            WHERE REMAIN_QUANTITY > 0
-            GROUP BY UNIT
+            SELECT ip.PRODUCT_ID, SUM(ipd.REMAIN_QUANTITY) as total_remain
+            FROM INBND_PRODUCT_D ipd
+            JOIN INBND_PRODUCT ip ON ipd.INBND_PRODUCT_NO = ip.INBND_PRODUCT_NO
+            WHERE ipd.REMAIN_QUANTITY > 0
+            GROUP BY ip.PRODUCT_ID
         ) ipd_sum
-        JOIN PRODUCTS p ON ipd_sum.UNIT = p.UNIT
+        JOIN PRODUCTS p ON ipd_sum.PRODUCT_ID = p.PRODUCT_ID
         WHERE p.PURCHASE_PRICE IS NOT NULL
     </select>
 
@@ -204,11 +208,12 @@
             NVL(SUM(ipd_sum.total_remain * p.PURCHASE_PRICE), 0) as total_value
         FROM PRODUCTS p
         LEFT JOIN (
-            SELECT UNIT, SUM(REMAIN_QUANTITY) as total_remain
-            FROM INBND_PRODUCT_D
-            WHERE REMAIN_QUANTITY > 0
-            GROUP BY UNIT
-        ) ipd_sum ON p.UNIT = ipd_sum.UNIT
+            SELECT ip.PRODUCT_ID, SUM(ipd.REMAIN_QUANTITY) as total_remain
+            FROM INBND_PRODUCT_D ipd
+            JOIN INBND_PRODUCT ip ON ipd.INBND_PRODUCT_NO = ip.INBND_PRODUCT_NO
+            WHERE ipd.REMAIN_QUANTITY > 0
+            GROUP BY ip.PRODUCT_ID
+        ) ipd_sum ON p.PRODUCT_ID = ipd_sum.PRODUCT_ID
         WHERE p.CATEGORY_MAIN IS NOT NULL
         GROUP BY p.CATEGORY_MAIN
         ORDER BY total_value DESC
@@ -258,12 +263,13 @@
                 'HIGH' as priority,
                 3 as sort_order
             FROM (
-                SELECT UNIT, SUM(REMAIN_QUANTITY) as total_remain
-                FROM INBND_PRODUCT_D
-                WHERE REMAIN_QUANTITY >= 0
-                GROUP BY UNIT
+                SELECT ip.PRODUCT_ID, SUM(ipd.REMAIN_QUANTITY) as total_remain
+                FROM INBND_PRODUCT_D ipd
+                JOIN INBND_PRODUCT ip ON ipd.INBND_PRODUCT_NO = ip.INBND_PRODUCT_NO
+                WHERE ipd.REMAIN_QUANTITY >= 0
+                GROUP BY ip.PRODUCT_ID
             ) ipd_sum
-            JOIN PRODUCTS p ON ipd_sum.UNIT = p.UNIT
+            JOIN PRODUCTS p ON ipd_sum.PRODUCT_ID = p.PRODUCT_ID
             WHERE ipd_sum.total_remain > 0
             AND p.SAFETY_STOCK > 0
             AND ipd_sum.total_remain < p.SAFETY_STOCK * 0.5

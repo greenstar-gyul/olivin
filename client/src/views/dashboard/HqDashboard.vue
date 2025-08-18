@@ -679,17 +679,17 @@ onUnmounted(() => {
                 </div>
             </div>
 
-            <!-- 긴급 알림 -->
+            <!-- 알림 -->
             <div class="card">
-                <div class="text-surface-900 dark:text-surface-0 text-xl font-semibold mb-6">긴급 알림</div>
-                <div v-if="alerts.length === 0" class="text-center text-muted-color p-8 bg-surface-50 dark:bg-surface-800 rounded-lg">현재 긴급 알림이 없습니다.</div>
+                <div class="text-surface-900 dark:text-surface-0 text-xl font-semibold mb-6">알림</div>
+                <div v-if="alerts.length === 0" class="text-center text-muted-color p-8 bg-surface-50 dark:bg-surface-800 rounded-lg">현재 알림이 없습니다.</div>
                 <div v-else class="space-y-4">
                     <div
                         v-for="alert in alerts"
                         :key="alert.id"
                         :class="[
                             'flex items-start p-4 rounded-lg border-l-4',
-                            alert.priority === 'high' ? 'bg-red-50 dark:bg-red-950/20 border-l-red-500' : alert.priority === 'medium' ? 'bg-orange-50 dark:bg-orange-950/20 border-l-orange-500' : 'bg-blue-50 dark:bg-blue-950/20 border-l-blue-500'
+                            alert.priority === 'high' ? 'bg-red-50 dark:bg-red-950/20 border-l-red-50' : alert.priority === 'medium' ? 'bg-orange-50 dark:bg-orange-950/20 border-l-orange-500' : 'bg-blue-50 dark:bg-blue-950/20 border-l-blue-500'
                         ]"
                     >
                         <div class="text-xl mr-3">{{ getAlertIcon(alert.alert_type) }}</div>

@@ -661,7 +661,7 @@ onUnmounted(() => {
             <!-- 1. 이번 달 발주 건수 -->
             <div class="card">
                 <div class="mb-4">
-                    <div class="text-muted-color text-sm font-medium mb-2 uppercase tracking-wide">이번 달 발주 건수</div>
+                    <div class="text-muted-color text-sm font-medium mb-2 uppercase tracking-wide">월간 발주 건수</div>
                     <div class="text-surface-900 dark:text-surface-0 text-2xl font-bold">
                         {{ kpiData.qualityScore || '로딩 중...' }}
                     </div>
@@ -715,7 +715,7 @@ onUnmounted(() => {
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
             <!-- 발주 수량 트렌드 차트 -->
             <div class="card">
-                <div class="text-surface-900 dark:text-surface-0 text-xl font-semibold mb-6">월간 발주 건수 트렌드</div>
+                <div class="text-surface-900 dark:text-surface-0 text-xl font-semibold mb-6">월별 발주 건수</div>
                 <div class="h-80">
                     <canvas ref="orderTrendChart"></canvas>
                 </div>
@@ -782,7 +782,7 @@ onUnmounted(() => {
                         <div class="text-xl mr-3">{{ getAlertIcon(alert.alert_type) }}</div>
                         <div class="flex-1">
                             <div class="text-surface-900 dark:text-surface-0 font-semibold mb-1">{{ alert.title }}</div>
-                            <div class="text-muted-color text-sm mb-2">{{ alert.message }}</div>
+                            <div class="text-muted-color text-sm mb-2 whitespace-pre-line">{{ alert.message }}</div>
                             <div class="text-muted-color text-xs">{{ formatTime(alert.created_at) }}</div>
                         </div>
                     </div>
