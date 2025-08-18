@@ -81,6 +81,8 @@ const handleLogin = async () => {
                 roleName: authStore.roleName,
                 path: redirectPath 
             });
+            
+            // ROLE 기반 대시보드로 리다이렉트
             router.push(redirectPath);
         } else {
             // 로그인 실패 처리

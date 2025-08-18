@@ -535,11 +535,13 @@ onUnmounted(() => {
 <template>
     <div class="surface-ground min-h-screen p-6">
         <!-- 헤더 -->
-        <div class="flex justify-between items-center mb-8 pb-6">
-            <h1 class="text-surface-900 dark:text-surface-0 text-4xl font-bold">본사 SCM 대시보드</h1>
-            <div class="flex items-center gap-4">
-                <Button @click="refreshData" :disabled="isLoading" icon="pi pi-refresh" :label="isLoading ? '로딩중...' : '새로고침'" />
-                <div class="text-muted-color text-sm">마지막 업데이트: {{ lastUpdated }}</div>
+        <div class="bg-surface-0 dark:bg-surface-900 p-6 rounded-lg shadow-md mb-8">
+            <div class="flex justify-between items-center">
+                <h1 class="text-surface-900 dark:text-surface-0 text-2xl font-bold">본사 SCM 대시보드</h1>
+                <div class="flex items-center gap-4">
+                    <Button @click="refreshData" :disabled="isLoading" icon="pi pi-refresh" :label="isLoading ? '로딩중...' : '새로고침'" />
+                    <div class="text-muted-color text-sm">마지막 업데이트: {{ lastUpdated }}</div>
+                </div>
             </div>
         </div>
 
