@@ -51,8 +51,9 @@ const onRowUnselect = (event) => emit('rowUnselect', event.data);
                 :field="col.field" 
                 :header="col.header" 
                 :style="col.style" 
-                :class="col.class" 
-                :frozen="col.frozen" 
+                :frozen="col.frozen"
+                :class="col.class"
+                :headerClass="col.headerClass"
                 :alignFrozen="col.alignFrozen"
                 sortable
             >
