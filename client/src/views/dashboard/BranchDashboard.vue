@@ -482,13 +482,13 @@ const getAlertIcon = (alertType) => {
 const getUrgencyClass = (urgency) => {
     switch (urgency) {
         case 'HIGH':
-            return 'bg-red-50 dark:bg-red-950/20 border-l-red-500';
+            return 'bg-red-50 dark:bg-red-950/20 border-l-red-50';
         case 'MEDIUM':
-            return 'bg-orange-50 dark:bg-orange-950/20 border-l-orange-500';
+            return 'bg-orange-50 dark:bg-orange-950/20 border-l-orange-50';
         case 'LOW':
-            return 'bg-green-50 dark:bg-green-950/20 border-l-green-500';
+            return 'bg-green-50 dark:bg-green-950/20 border-l-green-50';
         default:
-            return 'bg-blue-50 dark:bg-blue-950/20 border-l-blue-500';
+            return 'bg-blue-50 dark:bg-blue-950/20 border-l-blue-50';
     }
 };
 
@@ -532,20 +532,22 @@ onUnmounted(() => {
 <template>
     <div class="surface-ground min-h-screen p-6">
         <!-- 헤더 -->
-        <div class="flex justify-between items-start mb-8">
-            <div>
-                <h1 class="text-surface-900 dark:text-surface-0 text-4xl font-bold mb-2">{{ branchInfo.COMP_NAME || '지점' }} 대시보드</h1>
-                <p class="text-muted-color text-lg mb-4">{{ branchInfo.COMP_TYPE_NAME || '' }} | {{ branchInfo.ADDRESS || '' }}</p>
+        <div class="bg-surface-0 dark:bg-surface-900 p-6 rounded-lg shadow-md mb-8">
+            <div class="flex justify-between items-start">
+                <div>
+                    <h1 class="text-surface-900 dark:text-surface-0 text-2xl font-bold mb-2">{{ branchInfo.COMP_NAME || '지점' }} 대시보드</h1>
+                    <p class="text-muted-color text-lg mb-4">{{ branchInfo.COMP_TYPE_NAME || '' }} | {{ branchInfo.ADDRESS || '' }}</p>
 
-                <!-- 본사용 지점 선택 드롭다운 -->
-                <div v-if="isHeadquarter && availableBranches.length > 0" class="mb-4">
-                    <label for="branchSelect" class="block text-muted-color text-sm font-medium mb-2">조회할 지점:</label>
-                    <Dropdown id="branchSelect" v-model="selectedBranchId" @change="onBranchChange" :options="availableBranches" optionLabel="COMP_NAME" optionValue="COMP_ID" placeholder="지점을 선택하세요" class="w-64" />
+                    <!-- 본사용 지점 선택 드롭다운 -->
+                    <div v-if="isHeadquarter && availableBranches.length > 0" class="mb-4">
+                        <label for="branchSelect" class="block text-muted-color text-sm font-medium mb-2">조회할 지점:</label>
+                        <Dropdown id="branchSelect" v-model="selectedBranchId" @change="onBranchChange" :options="availableBranches" optionLabel="COMP_NAME" optionValue="COMP_ID" placeholder="지점을 선택하세요" class="w-64" />
+                    </div>
                 </div>
-            </div>
-            <div class="flex items-center gap-4">
-                <Button @click="refreshData" :disabled="isLoading" icon="pi pi-refresh" :label="isLoading ? '로딩중...' : '새로고침'" />
-                <div class="text-muted-color text-sm">마지막 업데이트: {{ lastUpdated }}</div>
+                <div class="flex items-center gap-4">
+                    <Button @click="refreshData" :disabled="isLoading" icon="pi pi-refresh" :label="isLoading ? '로딩중...' : '새로고침'" />
+                    <div class="text-muted-color text-sm">마지막 업데이트: {{ lastUpdated }}</div>
+                </div>
             </div>
         </div>
 

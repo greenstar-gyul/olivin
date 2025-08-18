@@ -318,8 +318,10 @@ const createOrderTrendChart = async () => {
                         beginAtZero: true,
                         grid: { color: '#e2e8f0' },
                         ticks: {
+                            stepSize: 1,  // 1단위로만 표시
+                            precision: 0,  // 소수점 제거
                             callback: function (value) {
-                                return value + '건';
+                                return Math.floor(value) + '건';  // 정수로 변환
                             }
                         }
                     }
@@ -359,7 +361,18 @@ const createEmptyOrderTrendChart = (ctx) => {
             plugins: { legend: { display: false } },
             scales: {
                 x: { display: true, title: { display: true, text: '월' } },
-                y: { display: true, title: { display: true, text: '발주 건수 (건)' }, beginAtZero: true }
+                y: { 
+                    display: true, 
+                    title: { display: true, text: '발주 건수 (건)' }, 
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 1,
+                        precision: 0,
+                        callback: function (value) {
+                            return Math.floor(value) + '건';
+                        }
+                    }
+                }
             }
         }
     });
@@ -619,35 +632,36 @@ onUnmounted(() => {
 <template>
     <div class="surface-ground min-h-screen p-6">
         <!-- 헤더 -->
-        <div class="flex justify-between items-start mb-8">
-            <div>
-                <h1 class="text-surface-900 dark:text-surface-0 text-4xl font-bold mb-2">{{ supplierInfo.COMP_NAME || '공급업체' }} SCM 대시보드</h1>
-                <p class="text-muted-color text-lg mb-4">
-                    {{ supplierInfo.COMP_TYPE_NAME || '' }} | {{ supplierInfo.ADDRESS || '' }}
-                    <span v-if="supplierInfo.TOTAL_PURCHASE_COUNT !== undefined" class="ml-4 text-sm"> (총 발주 건수: {{ supplierInfo.TOTAL_PURCHASE_COUNT }}건) </span>
-                </p>
+        <div class="bg-surface-0 dark:bg-surface-900 p-6 rounded-lg shadow-md mb-8">
+            <div class="flex justify-between items-start">
+                <div>
+                    <h1 class="text-surface-900 dark:text-surface-0 text-2xl font-bold mb-2">{{ supplierInfo.COMP_NAME || '공급업체' }} SCM 대시보드</h1>
+                    <p class="text-muted-color text-lg mb-4">
+                        {{ supplierInfo.COMP_TYPE_NAME || '' }} | {{ supplierInfo.ADDRESS || '' }}
+                        <span v-if="supplierInfo.TOTAL_PURCHASE_COUNT !== undefined" class="ml-4 text-sm"> (총 발주 건수: {{ supplierInfo.TOTAL_PURCHASE_COUNT }}건) </span>
+                    </p>
 
-                <!-- 본사용 공급업체 선택 드롭다운 -->
-                <div v-if="isSystemAdmin" class="mb-4">
-                    <label for="supplierSelect" class="block text-muted-color text-sm font-medium mb-2">조회할 공급업체:</label>
-                    <Dropdown
-                        id="supplierSelect"
-                        v-model="selectedSupplierId"
-                        @change="onSupplierChange"
-                        :options="availableSuppliers"
-                        optionLabel="COMP_NAME"
-                        optionValue="COMP_ID"
-                        :placeholder="availableSuppliers.length === 0 ? '공급업체를 로딩 중...' : '공급업체를 선택하세요'"
-                        :disabled="availableSuppliers.length === 0 || isLoading"
-                        class="w-80"
-                    />
-                    <p v-if="availableSuppliers.length === 0 && isSystemAdmin" class="text-red-500 text-sm mt-2">등록된 공급업체가 없거나 로딩 중입니다.</p>
-                    <p v-else-if="availableSuppliers.length > 0 && selectedSupplierId" class="text-green-600 text-sm mt-2">{{ availableSuppliers.find((s) => s.COMP_ID === selectedSupplierId)?.COMP_NAME }} 데이터를 표시하고 있습니다.</p>
+                    <!-- 본사용 공급업체 선택 드롭다운 -->
+                    <div v-if="isSystemAdmin" class="mb-4">
+                        <label for="supplierSelect" class="block text-muted-color text-sm font-medium mb-2">조회할 공급업체:</label>
+                        <Dropdown
+                            id="supplierSelect"
+                            v-model="selectedSupplierId"
+                            @change="onSupplierChange"
+                            :options="availableSuppliers"
+                            optionLabel="COMP_NAME"
+                            optionValue="COMP_ID"
+                            :placeholder="availableSuppliers.length === 0 ? '공급업체를 로딩 중...' : '공급업체를 선택하세요'"
+                            :disabled="availableSuppliers.length === 0 || isLoading"
+                            class="w-80"
+                        />
+                        <p v-if="availableSuppliers.length === 0 && isSystemAdmin" class="text-red-500 text-sm mt-2">등록된 공급업체가 없거나 로딩 중입니다.</p>
+                    </div>
                 </div>
-            </div>
-            <div class="flex items-center gap-4">
-                <Button @click="refreshData" :disabled="isLoading" icon="pi pi-refresh" :label="isLoading ? '로딩중...' : '새로고침'" />
-                <div class="text-muted-color text-sm">마지막 업데이트: {{ lastUpdated }}</div>
+                <div class="flex items-center gap-4">
+                    <Button @click="refreshData" :disabled="isLoading" icon="pi pi-refresh" :label="isLoading ? '로딩중...' : '새로고침'" />
+                    <div class="text-muted-color text-sm">마지막 업데이트: {{ lastUpdated }}</div>
+                </div>
             </div>
         </div>
 
