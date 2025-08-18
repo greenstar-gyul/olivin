@@ -3,7 +3,7 @@ import axios from 'axios';
 
 // 기본 axios 인스턴스 생성
 const instance = axios.create({
-    baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3049/',
+    baseURL: window.location.origin || 'http://localhost:3049/',
     timeout: 15000,
     headers: {
         'Content-Type': 'application/json'

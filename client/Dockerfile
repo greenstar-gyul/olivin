@@ -4,7 +4,6 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm install
 COPY . .
-ENV VITE_API_URL=http://www.olivin.store/
 RUN npm run build
 
 # ===== 2단계: Nginx로 서빙 =====
