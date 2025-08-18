@@ -50,4 +50,12 @@ public class OutbndController {
     public void processSubOutbnd(@RequestParam String orderId) {
         outbndService.processSubOutbnd(orderId);
     } // end of processSubOutbnd
+
+    /*
+     * 
+     */
+    @PostMapping("/outbnd/checkStock")
+    public List<String> validateOrderStock(@RequestParam String orderId) {
+        return outbndService.validateOrderStock(orderId);
+    } // end of processSubOutbnd
 } // end of class
