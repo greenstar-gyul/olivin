@@ -99,9 +99,9 @@ const tableColumns = computed(() => [
     { field: 'compId', header: '회사코드', style: 'min-width: 120px' },
     { field: 'compName', header: '회사명', style: 'min-width: 120px' },
     { field: 'accountId', header: '계정코드', style: 'min-width: 120px' },
-    { field: 'accountName', header: '계정명', style: 'min-width: 120px' },
-    { field: 'increase', header: '차변', style: 'min-width: 150px' },
-    { field: 'decrease', header: '대변', style: 'min-width: 150px' },
+    { field: 'accountName', header: '계정명', style: 'min-width: 120px', class: 'text-center' },
+    { field: 'increase', header: '차변', style: 'min-width: 150px', class: 'text-right' },
+    { field: 'decrease', header: '대변', style: 'min-width: 150px', class: 'text-right' },
     { field: 'writeDate', header: '작성일', style: 'min-width: 150px' },
     { field: 'detail', header: '상세', style: 'min-width: 200px' },
     { field: 'balance', header: '잔액', style: 'min-width: 150px', alignFrozen: 'right', frozen: balanceFrozen.value }
@@ -252,7 +252,7 @@ onMounted(() => {
 </script>
 
 <template>
-    <div class="card">
+    
         <SearchForm 
             ref="searchFormRef" 
             :filters="filters" 
@@ -260,15 +260,7 @@ onMounted(() => {
             @openSearchModal="handleOpenModal" 
             @resetSearchOptions="resetList"
         />
-        <div class="font-semibold text-xl mb-4">거래처원장</div>
-        <ToggleButton 
-            v-model="balanceFrozen" 
-            onIcon="pi pi-lock" 
-            offIcon="pi pi-lock-open" 
-            onLabel="잔액고정" 
-            offLabel="잔액고정해제"
-            class="mb-4"
-        />
+    
 
         <AccountTable 
             :data="items" 
@@ -277,17 +269,27 @@ onMounted(() => {
             :loading="loading"
             dataKey="accountLederId"
         >
+        <template #header-buttons>
+            <ToggleButton 
+            v-model="balanceFrozen" 
+            onIcon="pi pi-lock" 
+            offIcon="pi pi-lock-open" 
+            onLabel="잔액고정" 
+            offLabel="잔액고정해제"
+            class="mb-4"
+            />
+        </template>
             <!-- 잔액 컬럼 커스텀 포맷 -->
             <template #body-balance="{ data }">
-                <span class="font-bold text-green-600">{{ formatCurrency(data.balance) }}</span>
+                <span class="font-bold text-green-600 text-right block">{{ formatCurrency(data.balance) }}</span>
             </template>
             <!-- 차변 컬럼 커스텀 포맷 -->
             <template #body-increase="{ data }">
-                <span class="text-blue-600">{{ formatCurrency(data.increase) }}</span>
+                <span class="text-blue-600 text-right block" >{{ formatCurrency(data.increase) }}</span>
             </template>
             <!-- 대변 컬럼 커스텀 포맷 -->
             <template #body-decrease="{ data }">
-                <span class="text-red-600">{{ formatCurrency(data.decrease) }}</span>
+                <span class="text-red-600 text-right block">{{ formatCurrency(data.decrease) }}</span>
             </template>
             <!-- 작성일 컬럼 커스텀 포맷 -->
             <template #body-writeDate="{ data }">
@@ -307,5 +309,4 @@ onMounted(() => {
             @confirm="confirmAccountModal"
             @searchModal="searchAccounts"
         />
-    </div>
 </template>
