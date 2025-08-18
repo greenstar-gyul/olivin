@@ -1,9 +1,27 @@
 // src/service/axios.js
 import axios from 'axios';
 
+// 내부 IP인지 확인하는 함수
+function isInternalIP(hostname) {
+  if (hostname === 'localhost' || hostname === '127.0.0.1') return true;
+
+  // IPv4 사설망 범위 체크
+  const match = hostname.match(/^(\d+)\.(\d+)\.(\d+)\.(\d+)$/);
+  if (!match) return false;
+
+  const [_, a, b] = match.map(Number);
+  return (
+    a === 10 ||
+    (a === 172 && b >= 16 && b <= 31) ||
+    (a === 192 && b === 168)
+  );
+}
+
 // 기본 axios 인스턴스 생성
 const instance = axios.create({
-    baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3049/',
+    baseURL: isInternalIP(window.location.hostname) 
+        ? `${window.location.protocol}//${window.location.hostname}:3049` // local
+        : window.location.origin,
     timeout: 15000,
     headers: {
         'Content-Type': 'application/json'
