@@ -198,32 +198,50 @@ async function callOutbndProcess(orderId) {
         });
         return;
     }
-    try {
-        const response = await axios.post('/api/outbnd/hqProcess', null, {
+        const checkStock = await axios.post('/api/outbnd/checkStock', null, {
             params: {
                 orderId: orderId
             }
         });
-    toast.add({
-        severity: 'success',
-        summary: '성공',
-        detail: '출고가 완료되었습니다.',
-        life: 2000
-    });
-        resetFormHandler(); // 전체 폼 초기화
-        getOrderData(); // 처리한 발주서 정보 초기화
-    } catch (error) {
-        console.error('서버 오류 발생:', error);
+        console.log('부족재고 확인', checkStock.data);
+    if (checkStock.data.length === 0){
+        try {
+            console.log('ID 확인', orderId);
+            const response = await axios.post('/api/outbnd/hqProcess', null, {
+                params: {
+                    orderId: orderId
+                }
+            });
         toast.add({
-            severity: 'error',
-            summary: '실패',
-            detail: '출고를 실패했습니다.',
+            severity: 'success',
+            summary: '성공',
+            detail: '출고가 완료되었습니다.',
             life: 2000
         });
-        // 에러 메시지 추출
-        // const message = error.response?.data?.message || '서버 오류가 발생했습니다.';
-        // alert(message);
+            resetFormHandler(); // 전체 폼 초기화
+            getOrderData(); // 처리한 발주서 정보 초기화
+        } catch (error) {
+            console.error('서버 오류 발생:', error);
+            toast.add({
+                severity: 'error',
+                summary: '실패',
+                detail: '출고를 실패했습니다.',
+                life: 2000
+            });
+            // 에러 메시지 추출
+            // const message = error.response?.data?.message || '서버 오류가 발생했습니다.';
+            // alert(message);
+        }
+    } else {
+            let outputText = '재고가 부족합니다\n(' + checkStock.data.join(', ') + ')';
+            toast.add({
+            severity: 'error',
+            summary: '오류',
+            detail: outputText,
+            life: 5000
+        });
     }
+
 }
 
 // 출고처리 버튼 이벤트 함수

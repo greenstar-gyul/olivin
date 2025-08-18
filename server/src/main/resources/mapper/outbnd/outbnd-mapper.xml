@@ -25,4 +25,8 @@
     <update id="callProcSubOutbndProcess" parameterType="string" statementType="CALLABLE">
         {CALL proc_vendor_outbnd_process(#{orderId, mode=IN, jdbcType=VARCHAR})}
     </update>
+    <select id="checkOrderStock" resultType="String">
+        SELECT product_name
+        FROM TABLE(fn_check_order_stock(#{orderId}))
+    </select>
 </mapper>
