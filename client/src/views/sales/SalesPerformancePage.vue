@@ -91,7 +91,7 @@ const loadBranches = async () => {
 
         // "전지점 요약" 옵션 추가
         availableBranches.value.unshift({
-            label: '전지점 요약',
+            label: '전 지점 요약',
             value: 'ALL_BRANCHES'
         });
 
