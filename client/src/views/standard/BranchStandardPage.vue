@@ -131,7 +131,7 @@ const header = ref({
 const inputs = ref({
     title: '지점 등록/수정',
     inputs: [
-        { type: 'text', label: '지점ID', placeholder: '자동생성 (COM20001~COM49999)', name: 'compId', readonly: true },
+        { type: 'text', label: '지점ID', placeholder: '자동생성', name: 'compId', readonly: true },
         { type: 'text', label: '지점명', placeholder: '지점명을 입력하세요', name: 'compName', required: true },
         { type: 'text', label: '사업자번호', placeholder: '000-00-00000', name: 'bizNumber', required: true },
         { type: 'text', label: '지점장명', placeholder: '지점장명을 입력하세요', name: 'ceoName', required: true },
