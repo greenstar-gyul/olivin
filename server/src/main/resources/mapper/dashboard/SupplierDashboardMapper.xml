@@ -264,25 +264,31 @@
         SELECT 
             po.ORDER_ID AS ID,
             CASE 
-                WHEN po.ORDER_STATUS = '030001' THEN '발주 대기'
-                WHEN po.ORDER_STATUS = '030002' THEN '발주 승인'
+                WHEN po.ORDER_STATUS = '030001' THEN '승인 대기'
+                WHEN po.ORDER_STATUS = '030002' THEN '승인 완료'
                 WHEN po.ORDER_STATUS = '030004' THEN '발주 반려'
                 WHEN po.ORDER_STATUS = '030005' THEN '입고 완료'
-                WHEN po.DUE_DATE &lt; SYSDATE AND po.ORDER_STATUS NOT IN ('030005', '030003') THEN '납기일 경과'
-                ELSE '발주 알림'
+                WHEN po.DUE_DATE &lt; SYSDATE AND po.ORDER_STATUS NOT IN ('030005', '030003') THEN '납기 지연'
+                WHEN po.ORDER_STATUS = '030006' THEN '진행 중'
+                WHEN po.ORDER_STATUS = '030007' THEN '출고 준비'
+                ELSE '상태 변경'
             END AS TITLE,
             CASE 
-                WHEN po.ORDER_STATUS = '030001' THEN '발주번호 ' || po.ORDER_ID || '이(가) 승인 대기중입니다'
-                WHEN po.ORDER_STATUS = '030002' THEN '발주번호 ' || po.ORDER_ID || '이(가) 승인되었습니다'
-                WHEN po.ORDER_STATUS = '030004' THEN '발주번호 ' || po.ORDER_ID || '이(가) 반려되었습니다'
-                WHEN po.ORDER_STATUS = '030005' THEN '발주번호 ' || po.ORDER_ID || '의 입고가 완료되었습니다'
-                WHEN po.DUE_DATE &lt; SYSDATE AND po.ORDER_STATUS NOT IN ('030005', '030003') THEN '발주번호 ' || po.ORDER_ID || '의 납기일이 ' || TO_CHAR(po.DUE_DATE, 'MM/DD') || '로 경과되었습니다'
-                ELSE '발주번호 ' || po.ORDER_ID || ' 관련 알림'
+                WHEN po.ORDER_STATUS = '030001' THEN '발주번호 ' || po.ORDER_ID || ' - 본사 승인 대기 중. 예상 금액: ' || TO_CHAR(po.TOTAL_AMOUNT, 'FM999,999,999,999') || '원'
+                WHEN po.ORDER_STATUS = '030002' THEN '발주번호 ' || po.ORDER_ID || ' - 발주 승인됨. 납기일: ' || TO_CHAR(po.DUE_DATE, 'MM/DD') || ', 금액: ' || TO_CHAR(po.TOTAL_AMOUNT, 'FM999,999,999,999') || '원'
+                WHEN po.ORDER_STATUS = '030004' THEN '발주번호 ' || po.ORDER_ID || ' - 발주가 반려됨. 사유 확인 후 재신청 바랍니다'
+                WHEN po.ORDER_STATUS = '030005' THEN '발주번호 ' || po.ORDER_ID || ' - 입고 완료됨.' || CHR(10) || '총 금액: ' || TO_CHAR(po.TOTAL_AMOUNT, 'FM999,999,999,999') || '원'
+                WHEN po.DUE_DATE &lt; SYSDATE AND po.ORDER_STATUS NOT IN ('030005', '030003') THEN '발주번호 ' || po.ORDER_ID || ' - 납기일(' || TO_CHAR(po.DUE_DATE, 'MM/DD') || ')이 ' || (TRUNC(SYSDATE) - TRUNC(po.DUE_DATE)) || '일 지연됨'
+                WHEN po.ORDER_STATUS = '030006' THEN '발주번호 ' || po.ORDER_ID || ' - 발주 진행 중. 납기일: ' || TO_CHAR(po.DUE_DATE, 'MM/DD')
+                WHEN po.ORDER_STATUS = '030007' THEN '발주번호 ' || po.ORDER_ID || ' - 출고 준비 중'
+                ELSE '발주번호 ' || po.ORDER_ID || ' - 상태가 변경됨'
             END AS MESSAGE,
             TO_CHAR(po.ORDER_DATE, 'YYYY-MM-DD HH24:MI:SS') AS CREATED_AT,
             CASE 
                 WHEN po.ORDER_STATUS = '030004' THEN 'high'
                 WHEN po.DUE_DATE &lt; SYSDATE AND po.ORDER_STATUS NOT IN ('030005', '030003') THEN 'high'
+                WHEN po.ORDER_STATUS = '030001' THEN 'medium'
+                WHEN po.ORDER_STATUS = '030002' THEN 'medium'
                 WHEN po.ORDER_STATUS = '030005' THEN 'low'
                 ELSE 'medium'
             END AS PRIORITY,
@@ -290,13 +296,22 @@
                 WHEN po.ORDER_STATUS = '030004' THEN 'ORDER_REJECTED'
                 WHEN po.DUE_DATE &lt; SYSDATE AND po.ORDER_STATUS NOT IN ('030005', '030003') THEN 'DELIVERY_DELAY'
                 WHEN po.ORDER_STATUS = '030005' THEN 'ORDER_COMPLETED'
+                WHEN po.ORDER_STATUS = '030001' THEN 'ORDER_PENDING'
+                WHEN po.ORDER_STATUS = '030002' THEN 'ORDER_APPROVED'
                 ELSE 'ORDER_UPDATE'
             END AS ALERT_TYPE
         FROM PURCHASE_ORDERS po
         WHERE (po.ORDER_TO_ID = #{supplierId} OR po.ORDER_FROM_ID = #{supplierId})
           AND po.ORDER_DATE >= SYSDATE - 30
-          AND ROWNUM &lt;= 3
-        ORDER BY po.ORDER_DATE DESC
+          AND ROWNUM &lt;= 5
+        ORDER BY 
+            CASE 
+                WHEN po.ORDER_STATUS = '030004' THEN 1  -- 반려된 것 우선
+                WHEN po.DUE_DATE &lt; SYSDATE AND po.ORDER_STATUS NOT IN ('030005', '030003') THEN 2  -- 지연된 것 다음
+                WHEN po.ORDER_STATUS = '030001' THEN 3  -- 대기 중인 것
+                ELSE 4
+            END,
+            po.ORDER_DATE DESC
     </select>
 
 </mapper>
