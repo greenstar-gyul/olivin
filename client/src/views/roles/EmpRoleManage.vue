@@ -1,3 +1,5 @@
+// EmpRoleManage.vue - 조회조건 필드명을 데이터베이스 스키마에 맞춰 통일
+
 <script setup>
 import StandardInput from '@/components/common/StandardInput.vue';
 import DialogModal from '@/components/overray/DialogModal.vue';
@@ -6,7 +8,7 @@ import axios from '@/service/axios';
 import Button from 'primevue/button';
 import Dialog from 'primevue/dialog';
 
-// Vue 경고 숨기기 설정 (개발 환경용)
+// Vue 경고 숨기기 설정 (개발환경용)
 const instance = getCurrentInstance();
 if (instance && process.env.NODE_ENV === 'development') {
     const originalWarn = console.warn;
@@ -30,36 +32,38 @@ const currentUser = ref({
     empName: '관리자'
 });
 
+// 🔥 검색 조건 - 데이터베이스 필드명으로 통일
 const filters = ref({
     title: '조회 조건',
     filters: [
-        { type: 'text', label: '사원ID', value: '', placeholder: '사원ID를 입력하세요', name: 'employeeId' },
-        { type: 'text', label: '사원명', value: '', placeholder: '사원명을 입력하세요', name: 'empName' },
-        { type: 'text', label: '부서', value: '', placeholder: '부서를 입력하세요', name: 'departmentId' },
-        { type: 'select', label: '역할', value: '', placeholder: '역할을 선택하세요', name: 'baseRole', options: [] }
+        { type: 'text', label: '사원명', value: '', placeholder: '사원명을 입력하세요', name: 'EMP_NAME' },
+        { type: 'text', label: '부서명', value: '', placeholder: '부서명을 입력하세요', name: 'DEPT_NAME' },
+        { type: 'select', label: '역할명', value: '', placeholder: '역할을 선택하세요', name: 'ROLE_DESC', options: [] }
     ]
 });
 
 const items = ref([]);
 
+// 테이블 헤더 - 부서명과 역할설명이 표시되도록 수정
 const header = ref({
     title: '권한 기준정보 관리',
     header: {
         empName: '사원명',
-        departmentId: '부서',
-        baseRole: '역할',
+        deptName: '부서명',      // 부서 코드 대신 부서명 표시
+        roleDesc: '역할설명',    // 역할명 대신 역할설명 표시
         permissionNames: '보유권한'
     },
     rightAligned: []
 });
 
+// 입력 폼 - 부서명과 현재 역할설명도 함께 표시
 const inputs = ref({
     title: '사원 권한(역할) 변경',
     inputs: [
         { type: 'text', label: '사원ID', placeholder: '사원ID', name: 'employeeId', readonly: true },
         { type: 'text', label: '사원명', placeholder: '사원명', name: 'empName', readonly: true },
-        { type: 'text', label: '부서', placeholder: '부서', name: 'departmentId', readonly: true },
-        { type: 'text', label: '현재역할', placeholder: '현재 역할', name: 'currentRole', readonly: true },
+        { type: 'text', label: '부서명', placeholder: '부서명', name: 'deptName', readonly: true },
+        { type: 'text', label: '현재역할', placeholder: '현재 역할설명', name: 'currentRoleDesc', readonly: true },
         { type: 'select', label: '변경할역할', placeholder: '변경할 역할을 선택하세요', name: 'newRoleId', options: [] }
     ]
 });
@@ -100,13 +104,16 @@ const initializeFilters = () => {
     }
 };
 
+// 사원 데이터 처리 - 부서명과 역할설명 포함
 const processEmployeeData = (rawData) => {
     return rawData.map((item, index) => ({
         id: item.employeeId || item.EMPLOYEE_ID || `emp_${index}`,
         employeeId: item.employeeId || item.EMPLOYEE_ID,
         empName: item.empName || item.EMP_NAME,
         departmentId: item.departmentId || item.DEPARTMENT_ID,
-        baseRole: item.baseRole || item.BASE_ROLE,
+        deptName: item.deptName || item.DEPT_NAME,          // 부서명 추가
+        baseRole: item.baseRole || item.BASE_ROLE,          // 역할명 (검색용)
+        roleDesc: item.roleDesc || item.ROLE_DESC,          // 역할설명 추가
         roleId: item.roleId || item.ROLE_ID,
         permissionNames: item.permissionNames || item.PERMISSION_NAMES || ''
     }));
@@ -119,9 +126,14 @@ const updateSearchRoleOptions = () => {
             return;
         }
 
-        const roleFilter = filters.value.filters.find((filter) => filter.name === 'baseRole');
+        // 🔥 필드명 수정: 'BASE_ROLE' → 'ROLE_DESC'
+        const roleFilter = filters.value.filters.find((filter) => filter.name === 'ROLE_DESC');
         if (roleFilter) {
-            roleFilter.options = [...availableRoles.value];
+            // 역할 옵션을 역할설명으로 표시하되, 값은 역할ID 사용
+            roleFilter.options = availableRoles.value.map(role => ({
+                name: role.desc,  // 역할설명만 표시
+                value: role.value  // 역할ID 값
+            }));
         }
     } catch (error) {
         // 에러 무시
@@ -136,11 +148,17 @@ const updateSelectOptions = (excludeRoleId = null) => {
 
         const newRoleInput = inputs.value.inputs.find((input) => input.name === 'newRoleId');
         if (newRoleInput) {
+            let roleOptions = availableRoles.value;
+            
             if (excludeRoleId) {
-                newRoleInput.options = availableRoles.value.filter((role) => role.value !== excludeRoleId);
-            } else {
-                newRoleInput.options = availableRoles.value;
+                roleOptions = availableRoles.value.filter((role) => role.value !== excludeRoleId);
             }
+            
+            // 변경할 역할 선택 시에도 역할설명 표시
+            newRoleInput.options = roleOptions.map(role => ({
+                name: `${role.name} (${role.desc})`,  // 역할명 + 역할설명 표시
+                value: role.value
+            }));
         }
     } catch (error) {
         // 에러 무시
@@ -154,13 +172,14 @@ const loadInitialData = async () => {
     initializeFilters();
 
     try {
-        // 역할 데이터 로드
+        // 역할 데이터 로드 - 역할설명도 함께 로드
         try {
             const rolesResponse = await axios.get(ROLES_API_URL);
 
             if (rolesResponse.data.result_code === 'SUCCESS' && rolesResponse.data.data) {
                 availableRoles.value = rolesResponse.data.data.map((role) => ({
                     name: role.roleName || role.ROLE_NAME,
+                    desc: role.roleDesc || role.ROLE_DESC,    // 역할설명 추가
                     value: role.roleId || role.ROLE_ID
                 }));
 
@@ -195,23 +214,31 @@ const loadInitialData = async () => {
 };
 
 // ==================== 이벤트 핸들러 ====================
+// 🔥 검색 데이터 처리 - 데이터베이스 필드명으로 매핑
 const searchData = async (searchOptions) => {
     try {
         const searchParams = {};
 
+        // 🔥 검색 파라미터 매핑 (대문자 필드명 → 백엔드 호환)
         Object.keys(searchOptions).forEach((key) => {
             const value = searchOptions[key];
             if (value && value.toString().trim() !== '') {
-                if (key === 'baseRole' && value !== '') {
+                // 역할설명으로 검색 처리
+                if (key === 'ROLE_DESC' && value !== '') {
                     const selectedRole = availableRoles.value.find((role) => role.value === parseInt(value));
                     if (selectedRole) {
-                        searchParams.baseRole = selectedRole.name;
+                        // 백엔드에서 기대하는 필드명으로 매핑 (역할명으로 검색)
+                        searchParams.baseRole = selectedRole.name;  // 역할명으로 검색
                     }
                 } else {
-                    searchParams[key] = value.toString().trim();
+                    // 다른 필드들은 카멜케이스로 변환
+                    const camelCaseKey = convertToCamelCase(key);
+                    searchParams[camelCaseKey] = value.toString().trim();
                 }
             }
         });
+
+        console.log('🔍 검색 파라미터:', searchParams);
 
         const response = await axios.get(`${API_BASE_URL}/permissions`, { params: searchParams });
 
@@ -229,17 +256,34 @@ const searchData = async (searchOptions) => {
     }
 };
 
+// 🔥 대문자 스네이크케이스를 카멜케이스로 변환하는 유틸리티 함수
+const convertToCamelCase = (str) => {
+    const conversions = {
+        'EMPLOYEE_ID': 'employeeId',
+        'EMP_NAME': 'empName',
+        'DEPARTMENT_ID': 'departmentId',
+        'DEPT_NAME': 'deptName',
+        'BASE_ROLE': 'baseRole'
+    };
+    
+    return conversions[str] || str.toLowerCase().replace(/_([a-z])/g, (match, letter) => letter.toUpperCase());
+};
+
 const onRowSelect = (employee) => {
     selectedEmployee.value = employee;
     updateSelectOptions(employee.roleId);
+
+    // 현재 역할의 설명 찾기
+    const currentRole = availableRoles.value.find(role => role.value === employee.roleId);
+    const currentRoleDesc = currentRole ? `${currentRole.name} (${currentRole.desc})` : employee.baseRole;
 
     nextTick(() => {
         if (standardInputRef.value?.inputFormRef?.inputDatas) {
             const formData = standardInputRef.value.inputFormRef.inputDatas;
             formData.employeeId = employee.employeeId || '';
             formData.empName = employee.empName || '';
-            formData.departmentId = employee.departmentId || '';
-            formData.currentRole = employee.baseRole || '';
+            formData.deptName = employee.deptName || '';           // 부서명 표시
+            formData.currentRoleDesc = currentRoleDesc;            // 역할설명 표시
             formData.newRoleId = '';
         }
     });
@@ -279,7 +323,9 @@ const saveData = async (inputData) => {
         const response = await axios.put(`${API_BASE_URL}/${selectedEmployee.value.employeeId}/role`, updateData);
 
         if (response.data.result_code === 'SUCCESS') {
-            const newRoleName = availableRoles.value.find((r) => r.value === parseInt(inputData.newRoleId))?.name || '알 수 없음';
+            const newRole = availableRoles.value.find((r) => r.value === parseInt(inputData.newRoleId));
+            const newRoleName = newRole ? `${newRole.name} (${newRole.desc})` : '알 수 없음';
+            
             alert(`사원 "${selectedEmployee.value.empName}"의 역할이 "${newRoleName}"으로 변경되었습니다.`);
 
             if (standardInputRef.value?.inputFormRef) {

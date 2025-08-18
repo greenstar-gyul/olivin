@@ -31,14 +31,24 @@ public class ProductSearchController {
     // 전체 상품 목록을 조회하는 API 엔드포인트를 정의합니다.
     // 클라이언트에서 요청한 전체 상품 목록을 반환합니다.
     @GetMapping("/search/products/all")
-    public List<ProductSearchVO> selectAllProducts() {
+    public List<ProductSearchVO> selectAllProducts(@RequestParam(required = false) String vendorName) {
+        if (vendorName != null && !vendorName.trim().isEmpty()) {
+            // 공급업체 필터가 있으면 해당 공급업체 제품만 조회
+            return productSearchService.selectProductsByVendor(vendorName);
+        }
         return productSearchService.selectAllProducts();
     }
 
     // 상품 검색 API 엔드포인트를 정의합니다.
     // 클라이언트에서 요청한 상품 조건에 맞는 상품 목록을 반환합니다.
     @GetMapping("/search/products")
-    public List<ProductSearchVO> searchProducts(@RequestParam String searchValue) {
+    public List<ProductSearchVO> searchProducts(
+            @RequestParam String searchValue,
+            @RequestParam(required = false) String vendorName) {
+        if (vendorName != null && !vendorName.trim().isEmpty()) {
+            // 공급업체 필터가 있으면 해당 공급업체 제품만 검색
+            return productSearchService.searchProductsByVendor(searchValue, vendorName);
+        }
         return productSearchService.searchProducts(searchValue);
     }
 }

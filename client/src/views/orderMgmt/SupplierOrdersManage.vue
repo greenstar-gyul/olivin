@@ -20,7 +20,7 @@ const defaultForm = ref({
 });
 
 // 폼 스키마
-const formSchema = [
+const formSchema = ref([
     { type: 'text', label: '제안명', id: 'orderTitle', placeholder: '제안명을 입력하세요.' },
     {
         type: 'select',
@@ -42,7 +42,7 @@ const formSchema = [
     { type: 'text', label: '비고', id: 'note', placeholder: '비고를 입력하세요.' },
     { type: 'data', label: '발주요청일', id: 'orderDate', data: 'date' },
     { type: 'data', label: '총 가격', id: 'totalAmount', data: 'text' }
-];
+]);
 
 /* Input Table */
 
@@ -67,6 +67,60 @@ const columns = [
 
 /* modal */
 
+//공급업체 모달
+const supModalVisible = ref(false);
+const supModalReturn = ref({});
+const supModalItems = ref([]);
+
+const supModalHeaders = ref([
+    { field: 'compName', header: '회사명' },
+    { field: 'ceoName', header: '대표자' },
+    { field: 'phone', header: '전화번호' },
+    { field: 'address', header: '주소' },
+    { field: 'settleMgr', header: '매니저' },
+    { field: 'note', header: '비고' }
+]);
+
+const getSupModalItems = async (searchValue) => {
+    let res;
+    try {
+        res = await axios.get('/api/search/company/supplier', {
+            params: {
+                searchValue
+            }
+        });
+    } catch (error) {
+        toast.add({
+            severity: 'error',
+            summary: '오류',
+            detail: '공급업체 정보를 불러오는 중 오류가 발생했습니다.',
+            life: 2000
+        });
+        throw Error('공급업체 모달 데이터 불러오기 실패: ' + error);
+    }
+    return res.data;
+};
+
+const supCloseModal = () => {
+    supModalVisible.value = false;
+};
+
+const supConfirmModal = (selectedItems) => {
+    const modelData = supModalReturn.value;
+    // console.log('selected Item', selectedItems);
+    console.log('data', modelData);
+    modelData.item[modelData.fieldName + 'Id'] = selectedItems.compId;
+    modelData.item[modelData.fieldName] = selectedItems.compName;
+
+    supModalVisible.value = false; //모달 닫음
+    inputRef.value.resetTableHandler();
+};
+
+const subSearchModal = async (searchValue) => {
+    supModalItems.value = await getSupModalItems(searchValue);
+};
+
+// 제품 모달
 const itemModalVisible = ref(false);
 const itemModalReturn = ref({});
 const itemModalItems = ref([]);
@@ -80,40 +134,43 @@ const itemModalHeaders = ref([
 ]);
 
 const getItemModalItems = async (searchValue) => {
-    let req;
-    if (searchValue) {
-        req = await axios.get('/api/inventory/headStock', {
-            params: {
-                productName: searchValue
-            }
-        });
-    } else {
-        req = await axios.get('/api/inventory/headStock/all');
-    }
-
-    if (req?.data) {
-        const filtered = req.data.filter((e) => {
-            return e.vendorName === defaultForm.value.orderTo;
-        });
-
-        // 같은 상품명을 기준으로 그룹핑 후 재고수량/안전재고 합산
-        const merged = Object.values(
-            filtered.reduce((acc, cur) => {
-                const key = cur.productName; // 상품명 기준
-                if (!acc[key]) {
-                    acc[key] = { ...cur }; // 처음 등장 → 복사
-                } else {
-                    acc[key].stockQty += cur.stockQty; // 재고수량 합산
-                    acc[key].safeStock += cur.safeStock; // 안전재고 합산
+    let res;
+    try {
+        if (searchValue) {
+            res = await axios.get('/api/inventory/headStock', {
+                params: {
+                    productName: searchValue
                 }
-                return acc;
-            }, {})
-        );
-
-        return merged;
-    } else {
-        return req;
+            });
+        } else {
+            res = await axios.get('/api/inventory/headStock/all');
+        }
+        if (res?.data) {
+            const formData = inputRef.value.getFormData();
+            
+            const filtered = res.data.filter((e) => {
+                return e.vendorName === formData.value.orderTo;
+            });
+    
+            // 같은 상품명을 기준으로 그룹핑 후 재고수량/안전재고 합산
+            const merged = Object.values(
+                filtered.reduce((acc, cur) => {
+                    const key = cur.productName; // 상품명 기준
+                    if (!acc[key]) {
+                        acc[key] = { ...cur }; // 처음 등장 → 복사
+                    } else {
+                        acc[key].stockQty += cur.stockQty; // 재고수량 합산
+                        acc[key].safeStock += cur.safeStock; // 안전재고 합산
+                    }
+                    return acc;
+                }, {})
+            );
+            return merged;
+        }
+    } catch (error) {
+        throw Error('제품 모달 데이터 불러오기 실패: ' + error);
     }
+    return res;
 };
 
 const itemCloseModal = () => {
@@ -141,8 +198,8 @@ const itemConfirmModal = async (selectedItems) => {
         modalData.item[modalData.fieldName] = selectedItems.productName;
         modalData.item['productId'] = selectedItems.productId;
         modalData.item['categoryMain'] = selectedItems.categoryMain;
-        modalData.item['price'] = product.data.purchasePrice;
-        modalData.item['packQty'] = product.data.packQty;
+        modalData.item['price'] = product.data.data.purchasePrice;
+        modalData.item['packQty'] = product.data.data.packQty;
     }
 
     itemModalVisible.value = false; //모달 닫음
@@ -155,13 +212,34 @@ const itemSearchModal = async (searchValue) => {
 
 // 모달 이벤트
 
+const formSearch = async (item, fieldName) => {
+    // console.log('form search', item);
+    // console.log('data', fieldName);
+    supModalReturn.value = { item, fieldName };
+    try {
+        supModalItems.value = await getSupModalItems('');
+        supModalVisible.value = true;
+    } catch (error) {
+        console.error(error);
+    }
+};
+
 const tableSearch = async (item, fieldName, data) => {
     // console.log('table search', item);
     // console.log('data', fieldName);
     itemModalReturn.value = { item, fieldName, data };
-
-    itemModalItems.value = await getItemModalItems();
-    itemModalVisible.value = true;
+    try {
+        itemModalItems.value = await getItemModalItems();
+        itemModalVisible.value = true;
+    } catch (error) {
+        console.error('제품 검색 중 오류 발생:', error);
+        toast.add({
+            severity: 'error',
+            summary: '오류',
+            detail: '제품 검색 중 오류가 발생했습니다.',
+            life: 2000
+        });
+    }
 };
 
 const fetchOrders = async (formData, tableData) => {
@@ -232,15 +310,25 @@ const saveFormHandler = async (formData, tableData) => {
             label: '저장'
         },
         accept: async () => {
-            fetchOrders(formData, tableData);
-            toast.add({
-                severity: 'success',
-                summary: '성공',
-                detail: '발주서가 등록되었습니다.',
-                life: 2000
-            });
-            inputRef.value.resetFormHandler();
-            inputRef.value.resetTableHandler();
+            try {
+                await fetchOrders(formData, tableData);
+                toast.add({
+                    severity: 'success',
+                    summary: '성공',
+                    detail: '발주서가 등록되었습니다.',
+                    life: 2000
+                });
+                inputRef.value.resetFormHandler();
+                inputRef.value.resetTableHandler();
+            } catch (error) {
+                console.error('발주서 등록 중 오류 발생:', error);
+                toast.add({
+                    severity: 'error',
+                    summary: '오류',
+                    detail: '발주서 등록 중 오류가 발생했습니다.',
+                    life: 2000
+                });
+            }
         },
         reject: () => {
             toast.add({
@@ -279,7 +367,7 @@ const getSupplierInfo = async (empId) => {
 
     //공급업체 정보
     if (req.data.compType == '100003') return req.data;
-    return {};
+    return undefined;
 };
 
 onBeforeMount(async () => {
@@ -292,8 +380,17 @@ onBeforeMount(async () => {
     defaultForm.value.creatorName = user.value.empName;
 
     const supplierInfo = await getSupplierInfo(user.value.employeeId);
-    defaultForm.value.orderTo = supplierInfo.compName;
-    defaultForm.value.orderToId = supplierInfo.compId;
+    if (supplierInfo) {
+        defaultForm.value.orderTo = supplierInfo.compName;
+        defaultForm.value.orderToId = supplierInfo.compId;
+    } else {
+        formSchema.value.splice(-4, 1, {
+            type: 'item-search',
+            label: '공급업체',
+            id: 'orderTo',
+            placeholder: '공급업체을 입력하세요.'
+        });
+    }
 });
 
 onMounted(() => {
@@ -302,7 +399,30 @@ onMounted(() => {
 </script>
 <template>
     <ConfirmDialog />
-    <InputDataTable ref="inputRef" title="발주서정보" tableTitle="제품 목록" :defaultForm="defaultForm" :formSchema="formSchema" :defaultTable="defaultTable" :columns="columns" @tableSearch="tableSearch" @submit="saveFormHandler" />
+    <InputDataTable 
+        ref="inputRef"
+        title="발주서정보"
+        tableTitle="제품 목록"
+        :defaultForm="defaultForm"
+        :formSchema="formSchema"
+        :defaultTable="defaultTable"
+        :columns="columns"
+        @formSearch="formSearch"
+        @tableSearch="tableSearch"
+        @submit="saveFormHandler"
+    />
+
+    <DialogModal 
+        title="공급업체 정보" 
+        :selectionMode="'single'" 
+        :display="supModalVisible" 
+        :return="supModalReturn" 
+        :headers="supModalHeaders" 
+        :items="supModalItems" 
+        @close="supCloseModal" 
+        @confirm="supConfirmModal" 
+        @search-modal="subSearchModal"
+    />
 
     <DialogModal
         title="제품 정보"

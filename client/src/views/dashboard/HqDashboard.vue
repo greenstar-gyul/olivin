@@ -234,7 +234,7 @@ const createCategorySalesChart = (categoryData) => {
 // KPI 데이터 조회 - 새로운 KPI 필드명으로 수정
 const fetchKpiData = async () => {
     try {
-        const data = await fetchData('http://localhost:3049/api/dashboard/hq/kpi', 'KPI');
+        const data = await fetchData('/api/dashboard/hq/kpi', 'KPI');
 
         if (data && typeof data === 'object') {
             // 새로운 KPI 필드명으로 매핑
@@ -265,7 +265,7 @@ const fetchKpiData = async () => {
 // 매출 트렌드 데이터 조회
 const fetchSalesTrend = async () => {
     try {
-        const data = await fetchData('http://localhost:3049/api/dashboard/hq/sales-trend', '매출 트렌드');
+        const data = await fetchData('/api/dashboard/hq/sales-trend', '매출 트렌드');
 
         if (data && Array.isArray(data) && data.length > 0) {
             cachedTrendData = data;
@@ -281,7 +281,7 @@ const fetchSalesTrend = async () => {
 // 카테고리별 매출 데이터 조회 - 수정된 버전
 const fetchCategorySales = async () => {
     try {
-        const data = await fetchData('http://localhost:3049/api/dashboard/hq/category-sales', '카테고리 매출');
+        const data = await fetchData('/api/dashboard/hq/category-sales', '카테고리 매출');
 
         if (data && Array.isArray(data) && data.length > 0) {
             const processedData = data.map((item) => ({
@@ -305,7 +305,7 @@ const fetchCategorySales = async () => {
 // 🔥 공급업체 데이터 조회 - 새로운 쿼리 기준으로 수정
 const fetchTopSuppliers = async () => {
     try {
-        const data = await fetchData('http://localhost:3049/api/dashboard/hq/suppliers', '공급업체');
+        const data = await fetchData('/api/dashboard/hq/suppliers', '공급업체');
 
         console.log('공급업체 원본 데이터:', data); // 디버깅용
 
@@ -330,7 +330,7 @@ const fetchTopSuppliers = async () => {
 // 재고 데이터 조회
 const fetchInventoryData = async () => {
     try {
-        const data = await fetchData('http://localhost:3049/api/dashboard/hq/inventory', '재고');
+        const data = await fetchData('/api/dashboard/hq/inventory', '재고');
 
         if (data && typeof data === 'object') {
             inventoryData.value = {
@@ -348,7 +348,7 @@ const fetchInventoryData = async () => {
 // 알림 데이터 조회 - 새로운 알림 타입 포함
 const fetchAlerts = async () => {
     try {
-        const data = await fetchData('http://localhost:3049/api/dashboard/hq/alerts', '알림');
+        const data = await fetchData('/api/dashboard/hq/alerts', '알림');
 
         if (data && Array.isArray(data) && data.length > 0) {
             alerts.value = data.map((alert, index) => ({

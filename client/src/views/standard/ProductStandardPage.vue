@@ -201,7 +201,7 @@ const filtersData = {
 const filters = ref(filtersData);
 
 const headerData = {
-    title: '제품 기준정보 관리 (승인완료)',
+    title: '제품 기준정보 관리',
     header: {
         productName: '제품명',
         vendorName: '브랜드',
@@ -210,9 +210,7 @@ const headerData = {
         productSpec: '용량',
         unit: '단위',
         packQty: '입수량',
-        safetyStock: '안전재고',
-        regUserName: '등록자',
-        regDate: '등록일'
+        safetyStock: '안전재고'
     },
     rightAligned: ['packQty', 'safetyStock', 'purchasePrice', 'sellPrice']
 };

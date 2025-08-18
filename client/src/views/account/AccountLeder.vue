@@ -4,26 +4,16 @@ import axios from '@/service/axios';
 
 import SearchForm from '@/components/inputForm/SearchForm.vue';
 import AccountTable from './AccountTable.vue';
+import DialogModal from '@/components/overray/DialogModal.vue';
 import ToggleButton from 'primevue/togglebutton';
 
+// 검색 조건 필터 설정
 const filters = ref({});
 filters.value.title = '조회 조건';
 filters.value.filters = [
-    // {
-    //     type: 'select',
-    //     label: '회계단위',
-    //     value: '',
-    //     placeholder: '회계단위를 선택하세요',
-    //     name: 'accountUnit',
-    //     options: [
-    //         { name: '전년도', value: '전기' },
-    //         { name: '올해', value: '당해' }
-    //     ]
-    // },
-    { type: 'text', label: '계정코드', value: '', placeholder: '계정코드를 입력하세요', name: 'accountId' },
-    { type: 'text', label: '계정과목', value: '', placeholder: '계정과목을 입력하세요', name: 'accountName' },
-    { type: 'dateRange', label: '회계기간', value: '', fromPlaceholder: '시작일', toPlaceholder: '종료일', name: 'dateRange' },
-    // { type: 'text', label: '거래처코드', value: '', placeholder: '거래처코드를 입력하세요', name: 'compId' },
+    // { type: 'item-search', label: '계정코드', value: '', placeholder: '계정코드를 선택하세요', name: 'accountId' },
+    { type: 'item-search', label: '계정과목', value: '', placeholder: '계정과목을 선택하세요', name: 'accountName' },
+    { type: 'dateRange', label: '회계기간', fromPlaceholder: '시작일', toPlaceholder: '종료일', name: 'dateRange' },
     { type: 'text', label: '회사명', value: '', placeholder: '회사명을 입력하세요', name: 'compName' }
 ];
 
@@ -32,6 +22,60 @@ const items = ref([]);
 const loading = ref(false);
 // 'Balance' 컬럼의 고정 여부를 제어할 ref
 const balanceFrozen = ref(false);
+
+// 모달창의 테이블 헤더 정보
+const accountHeaders = ref([
+    { field: 'accountId', header: '계정코드' },
+    { field: 'accountName', header: '계정과목' },
+    // { field: 'normalBalance', header: '대차구분' }
+]);
+
+// 모달창의 데이터 아이템
+const accountItems = ref([]);
+
+// 모달의 visible 상태를 관리하는 ref 변수
+const accountModalVisible = ref(false);
+
+// SearchForm의 ref 추가
+const searchFormRef = ref(null);
+
+// 날짜 포맷팅 유틸리티 함수 추가 (타임존 문제 해결)
+function formatDateForServer(date) {
+    if (!date) return '';
+    
+    console.log('📅 원본 날짜:', date, typeof date);
+    
+    // Date 객체인 경우 로컬 날짜로 포맷 (타임존 오프셋 보정)
+    if (date instanceof Date) {
+        // 타임존 오프셋을 고려하여 로컬 날짜 추출
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const formatted = `${year}-${month}-${day}`;
+        console.log('📅 Date 객체 변환 (로컬):', formatted);
+        return formatted;
+    }
+    
+    // 이미 문자열인 경우
+    if (typeof date === 'string') {
+        // ISO 문자열인 경우 날짜 부분만 추출
+        if (date.includes('T')) {
+            const formatted = date.split('T')[0];
+            console.log('📅 ISO 문자열 변환:', formatted);
+            return formatted;
+        }
+        // YYYY-MM-DD 형태면 그대로
+        if (/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+            console.log('📅 YYYY-MM-DD 형태 그대로:', date);
+            return date;
+        }
+        console.log('📅 문자열 그대로:', date);
+        return date;
+    }
+    
+    console.log('📅 기타 타입:', date);
+    return '';
+}
 
 // 데이터 포맷팅 함수
 function formatCurrency(value) {
@@ -55,25 +99,36 @@ const tableColumns = computed(() => [
     { field: 'compId', header: '회사코드', style: 'min-width: 120px' },
     { field: 'compName', header: '회사명', style: 'min-width: 120px' },
     { field: 'accountId', header: '계정코드', style: 'min-width: 120px' },
-    { field: 'accountName', header: '계정명', style: 'min-width: 120px' },
-    { field: 'increase', header: '차변', style: 'min-width: 150px' },
-    { field: 'decrease', header: '대변', style: 'min-width: 150px' },
+    { field: 'accountName', header: '계정명', style: 'min-width: 120px', class: 'text-center' },
+    { field: 'increase', header: '차변', style: 'min-width: 150px', class: 'text-right' },
+    { field: 'decrease', header: '대변', style: 'min-width: 150px', class: 'text-right' },
     { field: 'writeDate', header: '작성일', style: 'min-width: 150px' },
     { field: 'detail', header: '상세', style: 'min-width: 200px' },
-    // { field: 'productName', header: '제품명', style: 'min-width: 120px' },
-    // { field: 'productId', header: '제품코드', style: 'min-width: 120px' },
     { field: 'balance', header: '잔액', style: 'min-width: 150px', alignFrozen: 'right', frozen: balanceFrozen.value }
 ]);
+
+// 계정 데이터 조회 함수
+const loadAccountItems = async () => {
+    try {
+        const response = await axios.get('/api/dbaccounts');
+        accountItems.value = response.data || [];
+        console.log('Account items loaded:', accountItems.value);
+    } catch (error) {
+        console.error('Error loading account items:', error);
+        accountItems.value = [];
+    }
+};
 
 // 데이터 조회 함수
 async function fetchData(searchParams = {}) {
     loading.value = true;
     try {
+        console.log('📤 서버로 전송하는 파라미터:', searchParams);
         const result = await axios.get('/api/account', { params: searchParams });
         items.value = result.data || [];
-        console.log('데이터 조회 성공:', items.value.length, '건');
+        console.log('✅ 데이터 조회 성공:', items.value.length, '건');
     } catch (error) {
-        console.error('데이터를 불러오는 데 실패했습니다:', error);
+        console.error('❌ 데이터를 불러오는 데 실패했습니다:', error);
         items.value = [];
         // 에러 토스트 메시지 (PrimeVue Toast 사용 시)
         // toast.add({severity:'error', summary: '오류', detail: '데이터 조회에 실패했습니다.', life: 3000});
@@ -82,11 +137,113 @@ async function fetchData(searchParams = {}) {
     }
 }
 
-// 검색 버튼 클릭 시 실행될 함수
-function handleSearchData(searchData) {
-    console.log('검색 조건:', searchData);
-    fetchData(searchData);
-}
+// 검색 폼에서 검색 버튼 클릭 시 호출되는 함수
+const searchData = async (searchOptions) => {
+    console.log('🔍 원본 검색 옵션:', searchOptions);
+    
+    // 검색 파라미터 변환
+    const params = {
+        accountId: searchOptions.accountId || '',
+        accountName: searchOptions.accountName || '',
+        compName: searchOptions.compName || ''
+    };
+    
+    // 날짜 범위 처리 - 올바른 포맷으로 변환
+    if (searchOptions.dateRangeFrom) {
+        params.startDate = formatDateForServer(searchOptions.dateRangeFrom);
+        console.log('📅 시작일 변환:', searchOptions.dateRangeFrom, '->', params.startDate);
+    }
+    if (searchOptions.dateRangeTo) {
+        params.endDate = formatDateForServer(searchOptions.dateRangeTo);
+        console.log('📅 종료일 변환:', searchOptions.dateRangeTo, '->', params.endDate);
+    }
+    
+    // 빈 값 제거
+    Object.keys(params).forEach(key => {
+        if (params[key] === '' || params[key] === null || params[key] === undefined) {
+            delete params[key];
+        }
+    });
+    
+    console.log('📤 최종 서버 전송 파라미터:', params);
+    await fetchData(params);
+};
+
+// 검색 모달을 열 때 호출되는 함수
+const handleOpenModal = (filterName) => {
+    console.log('Open modal for filter:', filterName);
+    switch (filterName) {
+        case 'accountId':
+        case 'accountName':
+            loadAccountItems();
+            accountModalVisible.value = true;
+            break;
+        default:
+            console.warn('No modal defined for filter:', filterName);
+    }
+};
+
+// 모달창 닫기 함수
+const closeAccountModal = () => {
+    accountModalVisible.value = false;
+};
+
+// SearchForm의 필터 값을 업데이트하는 함수
+const updateFilterValue = (filterName, selectedItem) => {
+    if (searchFormRef.value && searchFormRef.value.searchOptions) {
+        searchFormRef.value.searchOptions[filterName] = selectedItem;
+    }
+};
+
+// 모달창 확인 버튼 클릭 시 호출되는 함수
+const confirmAccountModal = (selectedItems) => {
+    console.log('Selected items from account modal:', selectedItems);
+    if (selectedItems) {
+        // 어떤 필드에서 모달이 호출되었는지에 따라 처리
+        // 여기서는 둘 다 업데이트하되, 실제로는 호출한 필드에 맞게 처리
+        updateFilterValue('accountId', selectedItems.accountId);
+        updateFilterValue('accountName', selectedItems.accountName);
+        
+        // 표시용 값도 업데이트
+        const accountIdFilter = filters.value.filters.find(f => f.name === 'accountId');
+        const accountNameFilter = filters.value.filters.find(f => f.name === 'accountName');
+        
+        if (accountIdFilter) {
+            accountIdFilter.value = `${selectedItems.accountId} (${selectedItems.accountName})`;
+        }
+        if (accountNameFilter) {
+            accountNameFilter.value = `${selectedItems.accountName} (${selectedItems.accountId})`;
+        }
+    }
+    accountModalVisible.value = false;
+};
+
+// 계정 검색 함수
+const searchAccounts = async (searchValue) => {
+    try {
+        console.log('Searching accounts with value:', searchValue);
+        const response = await axios.get('/api/accounts', {
+            params: {
+                searchValue: searchValue
+            }
+        });
+        accountItems.value = response.data || [];
+    } catch (error) {
+        console.error('Error searching accounts:', error);
+        accountItems.value = [];
+    }
+};
+
+// 초기화 함수
+const resetList = () => {
+    fetchData();
+    // 필터 값들도 초기화
+    filters.value.filters.forEach(filter => {
+        if (filter.type === 'item-search') {
+            filter.value = '';
+        }
+    });
+};
 
 // 컴포넌트가 마운트될 때 초기 데이터를 가져옵니다.
 onMounted(() => {
@@ -95,17 +252,15 @@ onMounted(() => {
 </script>
 
 <template>
-    <div class="card">
-        <SearchForm :filters="filters" @searchData="handleSearchData"></SearchForm>
-        <div class="font-semibold text-xl mb-4">거래처원장</div>
-        <ToggleButton 
-            v-model="balanceFrozen" 
-            onIcon="pi pi-lock" 
-            offIcon="pi pi-lock-open" 
-            onLabel="잔액고정" 
-            offLabel="잔액고정해제" 
-            class="mb-4"
+    
+        <SearchForm 
+            ref="searchFormRef" 
+            :filters="filters" 
+            @searchData="searchData" 
+            @openSearchModal="handleOpenModal" 
+            @resetSearchOptions="resetList"
         />
+    
 
         <AccountTable 
             :data="items" 
@@ -114,22 +269,44 @@ onMounted(() => {
             :loading="loading"
             dataKey="accountLederId"
         >
+        <template #header-buttons>
+            <ToggleButton 
+            v-model="balanceFrozen" 
+            onIcon="pi pi-lock" 
+            offIcon="pi pi-lock-open" 
+            onLabel="잔액고정" 
+            offLabel="잔액고정해제"
+            class="mb-4"
+            />
+        </template>
             <!-- 잔액 컬럼 커스텀 포맷 -->
             <template #body-balance="{ data }">
-                <span class="font-bold text-green-600">{{ formatCurrency(data.balance) }}</span>
+                <span class="font-bold text-green-600 text-right block">{{ formatCurrency(data.balance) }}</span>
             </template>
             <!-- 차변 컬럼 커스텀 포맷 -->
             <template #body-increase="{ data }">
-                <span class="text-blue-600">{{ formatCurrency(data.increase) }}</span>
+                <span class="text-blue-600 text-right block" >{{ formatCurrency(data.increase) }}</span>
             </template>
             <!-- 대변 컬럼 커스텀 포맷 -->
             <template #body-decrease="{ data }">
-                <span class="text-red-600">{{ formatCurrency(data.decrease) }}</span>
+                <span class="text-red-600 text-right block">{{ formatCurrency(data.decrease) }}</span>
             </template>
             <!-- 작성일 컬럼 커스텀 포맷 -->
             <template #body-writeDate="{ data }">
                 <span>{{ formatDate(data.writeDate) }}</span>
             </template>
         </AccountTable>
-    </div>
+
+        <!-- 계정 선택 모달 -->
+        <DialogModal
+            v-model:display="accountModalVisible"
+            :items="accountItems"
+            :headers="accountHeaders"
+            title="계정 선택"
+            placeholder="계정코드 또는 계정과목을 입력하세요"
+            selectionMode="single"
+            @close="closeAccountModal"
+            @confirm="confirmAccountModal"
+            @searchModal="searchAccounts"
+        />
 </template>

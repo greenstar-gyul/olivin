@@ -1,5 +1,6 @@
 package com.olivin.app.example.service.impl;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -42,6 +43,39 @@ public class AccountLederServiceImpl implements AccountLederService {
         } catch (Exception e) {
             log.error("조건부 거래처원장 조회 중 오류 발생", e);
             throw new RuntimeException("거래처원장 조회에 실패했습니다.", e);
+        }
+    }
+    // ------------------ 모달 ------------------
+    
+    @Override
+    public List<AccountLederVO> getAccountsOnly(Map<String, Object> params) {
+        try {
+            log.debug("계정 목록 조회 시작 - 조건: {}", params);
+            List<AccountLederVO> result = accountLederMapper.selectAccountsOnly(params);
+            log.debug("계정 목록 조회 완료: {} 건", result.size());
+            return result;
+        } catch (Exception e) {
+            log.error("계정 목록 조회 중 오류 발생", e);
+            throw new RuntimeException("계정 목록 조회에 실패했습니다.", e);
+        }
+    }
+    
+    @Override
+    public List<AccountLederVO> searchAccountsOnly(String searchValue) {
+        try {
+            log.debug("계정 검색 시작 - 검색어: {}", searchValue);
+            
+            Map<String, Object> params = new HashMap<>();
+            if (searchValue != null && !searchValue.trim().isEmpty()) {
+                params.put("searchValue", searchValue.trim());
+            }
+            
+            List<AccountLederVO> result = accountLederMapper.selectAccountsOnly(params);
+            log.debug("계정 검색 완료: {} 건", result.size());
+            return result;
+        } catch (Exception e) {
+            log.error("계정 검색 중 오류 발생", e);
+            throw new RuntimeException("계정 검색에 실패했습니다.", e);
         }
     }
 }
