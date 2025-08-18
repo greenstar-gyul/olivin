@@ -423,7 +423,8 @@ const loadDetailData = async () => {
 // 지점 변경 핸들러
 const handleBranchChange = async () => {
     await searchSalesPerformance();
-    // searchSalesPerformance에서 이미 loadDetailData()를 호출하므로 따로 호출하지 않음
+    // 지점 변경 시 상세 데이터도 함께 새로고침
+    await loadDetailData();
 };
 
 // 초기화

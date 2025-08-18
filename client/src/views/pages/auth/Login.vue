@@ -4,6 +4,7 @@ import { ref, onMounted } from 'vue';
 // 🔥 추가: 로그인 로직
 import { useAuthStore } from '@/stores/auth';
 import { useRouter } from 'vue-router';
+import { useToast } from 'primevue/usetoast';
 
 // 기존 UI 상태 유지
 const employeeId = ref('');
@@ -13,8 +14,10 @@ const checked = ref(false);
 // 🔥 새로 추가: 로그인 관련 상태
 const authStore = useAuthStore();
 const router = useRouter();
+const toast = useToast();
 const loginError = ref('');
 const isLoggingIn = ref(false);
+const toastCount = ref(0); // 토스트 개수 추적
 
 // 🔥 ROLE 기반 리다이렉트 경로 결정 함수
 const getRedirectPathByRole = (roleName) => {
@@ -112,10 +115,34 @@ const handleKeyPress = (event) => {
         handleLogin();
     }
 };
+
+// 🔥 비밀번호 찾기 처리
+const handleForgotPassword = () => {
+    // 토스트가 3개 이상이면 더 이상 추가하지 않음
+    if (toastCount.value >= 3) {
+        return;
+    }
+    
+    toast.add({
+        severity: 'success',
+        summary: '비밀번호 찾기',
+        detail: '관리자에게 문의해 주세요!',
+        life: 2800,
+        closable: true
+    });
+    
+    toastCount.value++;
+    
+    // 2.8초 후 카운트 감소
+    setTimeout(() => {
+        toastCount.value = Math.max(0, toastCount.value - 1);
+    }, 2800);
+};
 </script>
 
 <template>
     <FloatingConfigurator />
+    <Toast position="top-center" />
     <div class="bg-surface-50 dark:bg-surface-950 flex items-center justify-center min-h-screen min-w-[100vw] overflow-hidden">
         <div class="flex flex-col items-center justify-center">
             <div style="border-radius: 56px; padding: 0.3rem; background: linear-gradient(180deg, var(--primary-color) 10%, rgba(33, 150, 243, 0) 30%)">
@@ -161,7 +188,7 @@ const handleKeyPress = (event) => {
                                     <Checkbox v-model="checked" id="rememberme1" binary class="mr-2" :disabled="isLoggingIn"></Checkbox>
                                     <label for="rememberme1">아이디 저장</label>
                                 </div>
-                                <span class="font-medium no-underline ml-2 text-right cursor-pointer text-primary">비밀번호 찾기</span>
+                                <span @click="handleForgotPassword" class="font-medium no-underline ml-2 text-right cursor-pointer text-primary hover:text-primary-600 transition-colors">비밀번호 찾기</span>
                             </div>
 
                             <!-- 🔥 Button을 실제 로그인과 연결 -->
@@ -184,4 +211,5 @@ const handleKeyPress = (event) => {
     transform: scale(1.6);
     margin-right: 1rem;
 }
+
 </style>
