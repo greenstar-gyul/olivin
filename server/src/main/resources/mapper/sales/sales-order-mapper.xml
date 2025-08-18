@@ -38,14 +38,11 @@
         	<if test="status != null and status != ''">
                 AND so.status = #{status}
             </if>
-            <if test="soDateFrom != null and soDateTo != null">
-	            AND TRUNC(so.so_date) BETWEEN #{soDateFrom} AND #{soDateTo}
+	        <if test="soDateFrom != null and soDateFrom != ''">
+	            AND so.so_date &gt; TO_DATE(#{soDateFrom}, 'yyyy-MM-dd') - 1
 	        </if>
-	        <if test="soDateFrom != null and soDateTo == null">
-	            AND TRUNC(so.so_date) &gt;= #{soDateFrom}
-	        </if>
-	        <if test="soDateFrom == null and soDateTo != null">
-	            AND TRUNC(so.so_date) &lt;= #{soDateTo}
+	        <if test="soDateTo != null and soDateTo != ''">
+	            AND so.so_date &lt; TO_DATE(#{soDateTo}, 'yyyy-MM-dd') + 1
 	        </if>
         </where>
         ORDER BY so.so_id DESC
