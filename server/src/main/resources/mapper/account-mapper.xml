@@ -19,7 +19,7 @@
         FROM account_leder al
         LEFT JOIN accounts a ON al.account_id = a.account_id
         LEFT JOIN companys c ON al.comp_id = c.comp_id
-        ORDER BY al.write_date DESC
+        ORDER BY al.write_date
     </select>
     
     <!-- 조건 검색 -->
@@ -62,31 +62,34 @@
                 ]]>
             </if>
         </where>
-        ORDER BY al.write_date DESC
+        ORDER BY al.write_date
     </select>
 
 
     <!-- accounts 테이블에서 계정 목록만 조회 (모달창용) -->
     <select id="selectAccountsOnly" resultType="com.olivin.app.example.service.AccountLederVO" parameterType="map">
-        SELECT 
-            account_id AS accountId,
-            account_name AS accountName,
-            normal_balance AS normalBalance
-        FROM accounts
-        <where>
-            <if test="accountId != null and accountId != ''">
-                AND account_id LIKE '%' || #{accountId} || '%'
-            </if>
-            <if test="accountName != null and accountName != ''">
-                AND account_name LIKE '%' || #{accountName} || '%'
-            </if>
-            <if test="searchValue != null and searchValue != ''">
-                AND (
-                    account_id LIKE '%' || #{searchValue} || '%'
-                    OR account_name LIKE '%' || #{searchValue} || '%'
-                )
-            </if>
-        </where>
-        ORDER BY account_id
-    </select>
+    SELECT 
+        a.account_id AS accountId,
+        a.account_name AS accountName,
+        a.normal_balance AS normalBalance,
+        MAX(al.write_date) AS lastWriteDate
+    FROM accounts a
+    LEFT JOIN account_leder al ON a.account_id = al.account_id
+    <where>
+        <if test="accountId != null and accountId != ''">
+            AND a.account_id LIKE '%' || #{accountId} || '%'
+        </if>
+        <if test="accountName != null and accountName != ''">
+            AND a.account_name LIKE '%' || #{accountName} || '%'
+        </if>
+        <if test="searchValue != null and searchValue != ''">
+            AND (
+                a.account_id LIKE '%' || #{searchValue} || '%'
+                OR a.account_name LIKE '%' || #{searchValue} || '%'
+            )
+        </if>
+    </where>
+    GROUP BY a.account_id, a.account_name, a.normal_balance
+    ORDER BY lastWriteDate DESC
+</select>
 </mapper>
