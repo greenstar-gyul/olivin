@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch } from 'vue';
+import { nextTick, ref, watch } from 'vue';
 import InputMaster from '@/components/inputForm/InputMaster.vue';
 import InputTable from '@/components/table/InputTable.vue';
 
@@ -129,7 +129,7 @@ const addProductHandler = () => {
     });
 };
 
-const removeProductHandler = () => {
+const removeProductHandler = async () => {
     const selected = inputTableRef.value.getSelection();
     const selectedIds = selected.map((item) => item.id);
 

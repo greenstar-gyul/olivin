@@ -5,6 +5,9 @@ import Column from 'primevue/column';
 import InputText from 'primevue/inputtext';
 import InputNumber from 'primevue/inputnumber';
 import DatePicker from 'primevue/datepicker';
+import Button from 'primevue/button';
+import Select from 'primevue/select';
+import InputGroup from 'primevue/inputgroup';
 
 const props = defineProps({
     data: {
