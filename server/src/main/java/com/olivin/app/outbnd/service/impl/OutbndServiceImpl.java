@@ -42,4 +42,13 @@ public class OutbndServiceImpl implements OutbndService {
     public void processSubOutbnd(String orderId) {
         outbndMapper.callProcSubOutbndProcess(orderId);
     } // end of processHqOutbnd
+    
+    /**
+     * 재고가 부족한 제품의 이름을 출력하는 함수
+     * param_orderId_발주 ID
+     */
+    @Override
+    public List<String> validateOrderStock(String orderId){
+        return outbndMapper.checkOrderStock(orderId);
+    }
 } // end of class

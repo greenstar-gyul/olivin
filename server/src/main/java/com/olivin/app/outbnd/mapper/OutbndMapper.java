@@ -14,4 +14,5 @@ public interface OutbndMapper {
 
     void callProcHqOutbndProcess(String orderId); // 제품출고용 프로시저 생성
     void callProcSubOutbndProcess(String orderId); // 공급업체 출고용 프로시저 생성
+    List<String> checkOrderStock(String orderId); //재고가 부족한 제품들의 목록을 출력할 함수 
 }

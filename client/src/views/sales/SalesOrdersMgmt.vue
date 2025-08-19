@@ -113,7 +113,7 @@ const itemConfirmModal = async (selectedItems) => {
         modalData.item[modalData.fieldName] = selectedItems.productName;
         modalData.item['productId'] = selectedItems.productId;
         modalData.item['categoryMain'] = selectedItems.categoryMain;
-        modalData.item['price'] = product.data.sellPrice;
+        modalData.item['price'] = product.data.data.sellPrice;
     }
 
     itemModalVisible.value = false; //모달 닫음

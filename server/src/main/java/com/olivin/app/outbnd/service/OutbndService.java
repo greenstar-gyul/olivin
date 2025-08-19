@@ -8,4 +8,6 @@ public interface OutbndService {
 
     void processHqOutbnd(String orderId); // 출고 처리 프로시저 호출용 메서드
     void processSubOutbnd(String orderId); //공급업체 출고 처리 프로시저
+    List<String> validateOrderStock(String orderId); //재고가 부족한 제품들의 목록을 출력할 함수 
+    
 }

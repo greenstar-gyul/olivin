@@ -24,7 +24,7 @@ const getRedirectPathByRole = (roleName) => {
     const hqRoles = ['ROLE_SYSTEM_ADMIN', 'ROLE_MANAGER', 'ROLE_EMPLOYEE'];
     
     // 지점 대시보드로 이동할 역할들
-    const branchRoles = ['ROLE_STORE_MANAGER'];
+    const branchRoles = ['ROLE_STORE_MANAGER', 'ROLE_STORE_EMPLOYEE'];
     
     // 공급업체 대시보드로 이동할 역할들
     const supplierRoles = ['ROLE_SUPPLIER'];
