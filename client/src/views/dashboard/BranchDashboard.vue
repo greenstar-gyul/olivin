@@ -583,7 +583,7 @@ onUnmounted(() => {
             <!-- 재고 현황 -->
             <div class="card">
                 <div class="mb-4">
-                    <div class="text-muted-color text-sm font-medium mb-2 uppercase tracking-wide">재고 현황</div>
+                    <div class="text-muted-color text-sm font-medium mb-2 uppercase tracking-wide">총 재고 가치</div>
                     <div class="text-surface-900 dark:text-surface-0 text-2xl font-bold">
                         {{ kpiData.inventoryValue || '로딩 중...' }}
                     </div>

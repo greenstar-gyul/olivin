@@ -73,6 +73,10 @@ const salesSummary = ref({
 const isLoading = ref(false);
 const errorMessage = ref('');
 
+// API 요청 취소를 위한 AbortController
+let summaryAbortController = null;
+let detailAbortController = null;
+
 // 상세 데이터 관련 변수들
 const detailData = ref([]);
 const isDetailLoading = ref(false);
@@ -204,12 +208,15 @@ const handlePeriodTypeChange = async () => {
         updateDateRange();
         // 새로운 기간으로 데이터 자동 조회
         await searchSalesPerformance();
+        await loadDetailData();
     }
 };
 
 // 세부 옵션 변경 처리
-const handleDetailOptionChange = () => {
+const handleDetailOptionChange = async () => {
     updateDateRange();
+    await searchSalesPerformance();
+    await loadDetailData();
 };
 
 // 날짜 범위 업데이트
@@ -227,8 +234,10 @@ const updateDateRange = () => {
 };
 
 // 직접 선택 날짜 변경 처리
-const handleCustomDateChange = () => {
+const handleCustomDateChange = async () => {
     updateDateRange();
+    await searchSalesPerformance();
+    await loadDetailData();
 };
 
 // 매출 데이터 조회
@@ -237,6 +246,14 @@ const searchSalesPerformance = async () => {
         errorMessage.value = '조회 기간을 선택해주세요.';
         return;
     }
+
+    // 이전 요청이 있다면 취소
+    if (summaryAbortController) {
+        summaryAbortController.abort();
+    }
+
+    // 새로운 AbortController 생성
+    summaryAbortController = new AbortController();
 
     isLoading.value = true;
     errorMessage.value = '';
@@ -282,7 +299,10 @@ const searchSalesPerformance = async () => {
                 params.compId = selectedBranch.value;
             }
 
-            const response = await axios.get('/api/sales/performance/summary', { params });
+            const response = await axios.get('/api/sales/performance/summary', { 
+                params,
+                signal: summaryAbortController.signal 
+            });
 
             // 응답 데이터 검증
             if (response.data && typeof response.data === 'object') {
@@ -294,6 +314,11 @@ const searchSalesPerformance = async () => {
 
         salesSummary.value = summaryData;
     } catch (error) {
+        // 요청이 취소된 경우 무시
+        if (error.name === 'AbortError' || error.code === 'ERR_CANCELED') {
+            return;
+        }
+
         console.error('매출 실적 조회 실패:', error);
 
         // 에러 메시지 설정
@@ -375,6 +400,14 @@ const loadDetailData = async () => {
         return;
     }
 
+    // 이전 요청이 있다면 취소
+    if (detailAbortController) {
+        detailAbortController.abort();
+    }
+
+    // 새로운 AbortController 생성
+    detailAbortController = new AbortController();
+
     isDetailLoading.value = true;
     detailErrorMessage.value = '';
 
@@ -400,10 +433,18 @@ const loadDetailData = async () => {
             console.log('제품별 데이터 조회:', endpoint, params);
         }
 
-        const response = await axios.get(endpoint, { params });
+        const response = await axios.get(endpoint, { 
+            params,
+            signal: detailAbortController.signal 
+        });
         console.log('상세 데이터 응답:', response.data);
         detailData.value = response.data || [];
     } catch (error) {
+        // 요청이 취소된 경우 무시
+        if (error.name === 'AbortError' || error.code === 'ERR_CANCELED') {
+            return;
+        }
+
         console.error('상세 데이터 조회 실패:', error);
 
         if (error.response?.status === 404) {
@@ -442,7 +483,6 @@ onMounted(async () => {
         <div class="flex justify-between items-center mb-8">
             <div>
                 <h1 class="text-surface-900 dark:text-surface-0 text-4xl font-bold mb-2">매출 실적 조회</h1>
-                <p class="text-muted-color text-lg">선택한 기간 동안의 매출 현황을 확인하세요</p>
             </div>
             <div class="flex items-center gap-4">
                 <!-- 지점 선택 (본사만) -->
@@ -455,7 +495,7 @@ onMounted(async () => {
         </div>
 
         <!-- 기간 선택 -->
-        <div class="card mb-6 rounded-xl shadow-sm">
+        <div class="card mb-6 rounded-xl shadow-sm" style="padding-bottom: 10px; margin-bottom: 20px;">
             <div class="mb-4">
                 <!-- 기간 타입 선택 -->
                 <div class="grid grid-cols-4 gap-3 mb-4">
@@ -487,8 +527,6 @@ onMounted(async () => {
                         @click="
                             selectedDetailOption = option.value;
                             handleDetailOptionChange();
-                            searchSalesPerformance();
-                            loadDetailData();
                         "
                     />
                 </div>
@@ -498,11 +536,7 @@ onMounted(async () => {
                     <label class="text-muted-color text-sm font-medium">조회 기간:</label>
                     <Calendar
                         v-model="customDateRange"
-                        @update:modelValue="
-                            handleCustomDateChange();
-                            searchSalesPerformance();
-                            loadDetailData();
-                        "
+                        @update:modelValue="handleCustomDateChange"
                         selectionMode="range"
                         dateFormat="yy-mm-dd"
                         :showIcon="true"
@@ -513,7 +547,7 @@ onMounted(async () => {
                 </div>
 
                 <!-- 현재 선택된 기간 표시 -->
-                <div class="text-center mt-4 p-3 bg-surface-50 dark:bg-surface-800 rounded-lg shadow-sm">
+                <div class="text-center mt-4 p-3 bg-surface-50 dark:bg-surface-800 rounded-lg shadow-sm" style="padding: 10px;">
                     <div class="text-muted-color text-sm">조회 기간</div>
                     <div class="text-surface-900 dark:text-surface-0 font-semibold">{{ fromDate ? fromDate.toLocaleDateString('ko-KR') : '' }} ~ {{ toDate ? toDate.toLocaleDateString('ko-KR') : '' }}</div>
                 </div>
