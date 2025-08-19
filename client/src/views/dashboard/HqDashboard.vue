@@ -146,7 +146,7 @@ const createSalesTrendChart = (trendData) => {
                         display: true,
                         title: {
                             display: true,
-                            text: '매출액 (만원)'
+                            text: '매출액'
                         },
                         beginAtZero: true,
                         max: yAxisMax,

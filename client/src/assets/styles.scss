@@ -3,3 +3,27 @@
 @use '@/assets/tailwind.css';
 @use '@/assets/layout/layout.scss';
 @use '@/assets/demo/demo.scss';
+
+/* Toast 메시지 글로벌 스타일 오버라이드 */
+.p-toast .p-toast-message-success {
+    background: rgba(132, 204, 22, 0.9) !important;
+    border: none !important;
+    color: #ffffff !important;
+}
+
+.p-toast .p-toast-message-success .p-toast-message-icon {
+    color: #ffffff !important;
+}
+
+.p-toast .p-toast-message-success .p-toast-summary {
+    color: #ffffff !important;
+    font-weight: 600;
+}
+
+.p-toast .p-toast-message-success .p-toast-detail {
+    color: #ffffff !important;
+}
+
+.p-toast .p-toast-message-success .p-toast-icon-close {
+    color: #ffffff !important;
+}
