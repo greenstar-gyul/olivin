@@ -130,7 +130,6 @@ const addProductHandler = () => {
 };
 
 const removeProductHandler = async () => {
-    await nextTick();
     const selected = inputTableRef.value.getSelection();
     const selectedIds = selected.map((item) => item.id);
 
