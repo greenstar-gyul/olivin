@@ -24,7 +24,7 @@ const header = ref({
         orderStatusName: '발주상태',
         creatorName: '등록자'
     },
-    rightAligned: ['totalAmount']
+    rightAligned: ['totalAmount', 'orderDate', 'dueDate']
 });
 
 const items = ref([]);
@@ -102,7 +102,7 @@ const getOrdersData = async (options) => {
         return {
             ...item,
             orderDate: convertDate(item.orderDate),
-            totalAmount: Number(item.totalAmount).toLocaleString()
+            totalAmount: Number(item.totalAmount).toLocaleString() + '원'
         };
     });
     items.value = viewData;

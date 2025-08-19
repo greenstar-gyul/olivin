@@ -17,7 +17,7 @@ const header = ref({
         regUserName: '등록자',
         reason: '사유'
     },
-    rightAligned: ['year', 'quarter', 'totalAmount']
+    rightAligned: ['targetAmount']
 });
 
 const items = ref([]);
@@ -54,6 +54,8 @@ const getOrdersData = async (options) => {
     const viewData = result.map((item) => {
         return {
             ...item,
+            year: item.year + '년',
+            quarter: item.quarter + '분기',
             regDate: convertDate(item.regDate),
             targetAmount: Number(item.targetAmount).toLocaleString() + '원'
         };
