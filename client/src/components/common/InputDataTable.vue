@@ -171,7 +171,7 @@ defineExpose({
             </template>
         </InputMaster>
 
-        <InputTable :ref="'inputTableRef'" :title="props.tableTitle" :data="tableData" :columns="props.columns" :selected="true" :maxHeight="props.tableHeight" @tableSearch="tableSearch">
+        <InputTable ref="inputTableRef" :title="props.tableTitle" :data="tableData" :columns="props.columns" :selected="true" :maxHeight="props.tableHeight" @tableSearch="tableSearch">
             <template #btn>
                 <Button label="추가" @click="addProductHandler" />
                 <Button label="삭제" severity="danger" @click="removeProductHandler" />
