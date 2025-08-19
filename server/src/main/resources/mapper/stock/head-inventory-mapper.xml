@@ -199,6 +199,8 @@
                NVL(SUM(ls.stock_quantity), 0) AS stock_quantity
         FROM   products p LEFT JOIN lot_stocks ls ON p.product_id = ls.product_id
         WHERE  p.product_id = #{productId}
+          AND  ls.stock_quantity IS NOT NULL
+          AND  ls.stock_quantity > 0
         GROUP BY p.product_id, p.product_name, ls.lot_no, 
                  p.vendor_name, p.product_spec, p.pack_qty, p.unit
         ORDER BY ls.lot_no
