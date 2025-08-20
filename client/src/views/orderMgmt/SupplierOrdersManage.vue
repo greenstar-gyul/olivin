@@ -136,15 +136,12 @@ const itemModalHeaders = ref([
 const getItemModalItems = async (searchValue) => {
     let res;
     try {
-        if (searchValue) {
-            res = await axios.get('/api/inventory/headStock', {
+            res = await axios.get('/api/inventory/headStock/search', {
                 params: {
                     productName: searchValue
                 }
             });
-        } else {
-            res = await axios.get('/api/inventory/headStock/all');
-        }
+
         if (res?.data) {
             const formData = inputRef.value.getFormData();
             
