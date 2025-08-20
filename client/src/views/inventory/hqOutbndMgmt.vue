@@ -98,12 +98,6 @@ const formSchema = [
     { type: 'data', label: '입고지', id: 'inbndTo', data: 'text' },
     { type: 'data', label: '출고일', id: 'outbndDate', data: 'text' }
 
-    // { type: 'text', label: '출고상태', id: 'outbndStatus',
-    //   // options: [
-    //   //   { name: '옵션1', value: 1 },
-    //   //   { name: '옵션2', value: 2 }
-    //   // ]
-    // },
 ];
 
 /* 제품목록 시작 */
@@ -122,45 +116,6 @@ const tableHeader = {
     rightAligned: ['price']
 };
 /* 제품목록 끝 */
-
-/* Input Table Detail 
-const detailData = ref([]);
-
-// 테이블 컬럼 정의
-const columns = [
-  { inputType: 'text', header: 'LOT', field: 'lotNo' },
-  { inputType: 'number', header: '출고수량', field: 'outbndQuantity' },
-  { inputType: 'text', header: '단위', field: 'unit' },
-  // { inputType: 'text', header: '출고상태', field: 'outbnStatus' },
-];
-*/
-
-// // 폼과 테이블 데이터를 저장하는 핸들러
-// const onRowSelect = async (select) => {
-//   console.log('Selected Row:', select.productId);
-
-//   const test = await axios.get(`/api/inbnd/test/${select.productId}`);
-//   console.log(test.data);
-//   // fetch 사용하는 시간때문에 250ms 지연
-//   // 실제로는 서버에서 데이터를 가져오는 로직이 필요합니다.
-//   setTimeout(() => {
-//     // 선택된 행의 데이터를 폼에 채우기
-//     // axios나 fetch를 사용하여 서버에서 데이터를 가져올 수 있습니다.
-//     if (select.id === 0) {
-//       detailData.value = [
-//         { id: 1, lot: 'LOT001', quantity: 10, status: '출고대기' },
-//         { id: 2, lot: 'LOT002', quantity: 20, status: '출고대기' }
-//       ];
-//     } else if (select.id === 2) {
-//       detailData.value = [
-//         { id: 3, lot: 'LOT003', quantity: 30, status: '출고대기' },
-//         { id: 4, lot: 'LOT004', quantity: 40, status: '출고완료' }
-//       ];
-//     } else {
-//       detailData.value = [];
-//     }
-//   }, 250);
-// };
 
 // 발주정보 불러오기
 const getOrderData = async () => {
@@ -181,7 +136,12 @@ const getOrderData = async () => {
         // console.log('발주정보데이터 확인1 : ', modalItems.value);
         // console.log('발주정보데이터 확인2 : ', result.data);
     } catch (e) {
-        console.error('출고 데이터 불러오기 실패:', e);
+        toast.add({
+            severity: 'error',
+            summary: '오류',
+            detail: '발주 데이터 불러오기 실패',
+            life: 2000
+        });
     }
 };
 
@@ -203,7 +163,7 @@ async function callOutbndProcess(orderId) {
                 orderId: orderId
             }
         });
-        console.log('부족재고 확인', checkStock.data);
+        // console.log('부족재고 확인', checkStock.data);
     if (checkStock.data.length === 0){
         try {
             console.log('ID 확인', orderId);

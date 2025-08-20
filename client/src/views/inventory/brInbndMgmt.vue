@@ -188,7 +188,7 @@ async function callInbndProcess(orderId) {
 const inbndHandler = () => {
     // console.log('함수실행 전');
     const inbndOrderId = formData.value.orderId;
-    console.log('전달값 확인', inbndOrderId);
+    // console.log('전달값 확인', inbndOrderId);
     callInbndProcess(inbndOrderId);
     // console.log('함수실행 후');
 };
